@@ -2,8 +2,11 @@ package com.ddiring.backend_market.investment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
+
 import java.time.LocalDate;
 
+@Slf4j
 @Entity
 @Table(name = "investment")
 @Getter
@@ -22,6 +25,9 @@ public class Investment {
 
     @Column(name = "project_id", nullable = false)
     private Integer projectId;
+
+    @Column(name = "investment_id", nullable = false)
+    private Integer investmentId;
 
     @Column(name = "invested_price", nullable = false)
     private Integer investedPrice;
