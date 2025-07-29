@@ -3,7 +3,6 @@ package com.ddiring.backend_market.investment.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
-
 import java.time.LocalDate;
 
 @Slf4j

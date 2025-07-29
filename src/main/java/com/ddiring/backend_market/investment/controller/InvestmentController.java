@@ -23,6 +23,6 @@ public class InvestmentController {
     // 투자 상품 전체 조회
     @GetMapping("/list")
     public ResponseEntity<List<ListInvestmentResponse>> getListInvestment() {
-        return ResponseEntity.ok(listInvestmentService.getAllInvestmentProducts());
+        return ResponseEntity.ok(listInvestmentService.getListInvestment());
     }
 }
