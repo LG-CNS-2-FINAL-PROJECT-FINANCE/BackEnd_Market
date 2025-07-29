@@ -23,8 +23,8 @@ public class Investment {
     @Column(name = "user_seq", nullable = false)
     private Integer userSeq;
 
-    @Column(name = "project_id", nullable = false)
-    private Integer projectId;
+    @Column(name = "product_id", nullable = false)
+    private Integer productId;
 
     @Column(name = "investment_id", nullable = false)
     private Integer investmentId;

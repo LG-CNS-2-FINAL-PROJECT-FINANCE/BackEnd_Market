@@ -5,12 +5,19 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+// 투자 상품 전체 조회 DTO
 public class ListInvestmentResponse {
-    private Integer projectId;
-    private Integer userSeq;
-    private Integer tokenQuantity;
+    private Integer investmentSeq;
+    private Integer productId;
+    private String title;
+    private int goal_amount;
+    private LocalDate startDate;
+    private LocalDate endDate;
 }
+
