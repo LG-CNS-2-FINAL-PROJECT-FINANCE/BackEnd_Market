@@ -25,9 +25,6 @@ public class Investment {
     @Column(name = "product_id", nullable = false)
     private Integer productId;
 
-    @Column(name = "investment_id", nullable = false)
-    private Integer investmentId;
-
     @Column(name = "invested_price", nullable = false)
     private Integer investedPrice;
 
