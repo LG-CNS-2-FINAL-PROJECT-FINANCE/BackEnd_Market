@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.investment.dto.response;
+package com.ddiring.backend_market.api.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -11,12 +11,9 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-// 투자 상품 전체 조회 응답 DTO
-public class ListInvestmentResponse {
+public class ProductDTO {
 
-    private Integer productId;
     private String title;
     private Integer goalAmount;
     private LocalDate endDate;
 }
-
