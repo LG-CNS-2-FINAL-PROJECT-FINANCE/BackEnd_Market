@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 // TODO: 실제 주소로 변경
-@FeignClient(name = "productClient", url = "http://localhost:8081")
+@FeignClient(name = "product-service", url = "${service.product.url}")
 public interface ProductClient {
 
-    @GetMapping("/api/product/{productId}/market")
-    ProductDTO getListInvestment(@PathVariable("productId") Integer productId);
+    @GetMapping("/api/market/invest/list")
+    ProductDTO getProduct(@PathVariable("productId") Integer productId);
 }

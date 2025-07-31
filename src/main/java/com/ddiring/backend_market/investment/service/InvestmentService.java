@@ -1,13 +1,17 @@
 package com.ddiring.backend_market.investment.service;
 
 import com.ddiring.backend_market.api.client.ProductClient;
+import com.ddiring.backend_market.api.dto.AssetDTO;
 import com.ddiring.backend_market.api.dto.ProductDTO;
+import com.ddiring.backend_market.common.exception.BadParameter;
+import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.ListInvestmentResponse;
 import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 @Slf4j
@@ -27,7 +31,7 @@ public class InvestmentService {
 
         return investments.stream()
                 .map(investment -> {
-                    ProductDTO product = productClient.getListInvestment(investment.getProductId());
+                    ProductDTO product = productClient.getProduct(investment.getProductId());
                     return ListInvestmentResponse.builder()
                             .productId(investment.getProductId())
                             .title(product.getTitle())
@@ -38,10 +42,54 @@ public class InvestmentService {
                 .toList();
     }
 
-//    @ResponseStatus(HttpStatus.BAD_REQUEST)
-//    @ExceptionHandler({ClientError.class})
-//    public int buyInvestment(Integer productId, Integer investedPrice, Integer tokenQuantity, BuyException e) {
-//
-//        Investment buyInvestment =
-//    }
+    // 주문
+    @Transactional
+    public void buyInvestment(BuyInvestmentRequest request) {
+
+        validateBuyRequest(request);
+
+        ProductDTO product = productClient.getProduct(request.getProductId());
+
+        if (!"승인 완료".equals(product.getStatus())) {
+            throw new BadParameter("해당 상품은 현재 모집 중이 아닙니다.");
+        }
+
+        Investment investment = Investment.builder()
+                .userSeq(request.getUserSeq())
+                .productId(request.getProductId())
+                .tokenQuantity(request.getTokenQuantity())
+                .investedPrice(request.getInvestedPrice())
+                .build();
+
+        investmentRepository.save(investment);
+
+        AssetDTO dto = AssetDTO.builder()
+                .userSeq(request.getUserSeq())
+                .build();
+
+    }
+
+    // 유효성 검사
+    private void validateBuyRequest(BuyInvestmentRequest request) {
+
+        if (request == null) {
+            throw new BadParameter("요청 데이터가 없습니다.");
+        }
+
+        if (request.getUserSeq() == null || request.getUserSeq() <= 0) {
+            throw new BadParameter("유효하지 않은 사용자 ID입니다.");
+        }
+
+        if (request.getProductId() == null || request.getProductId() <= 0) {
+            throw new BadParameter("유효하지 않은 상품 ID입니다.");
+        }
+
+        if (request.getTokenQuantity() == null || request.getTokenQuantity() <= 0) {
+            throw new BadParameter("토큰 수량은 1개 이상이어야 합니다.");
+        }
+
+        if (request.getInvestedPrice() == null || request.getInvestedPrice() <= 0) {
+            throw new BadParameter("투자 금액은 1원 이상이어야 합니다.");
+        }
+    }
 }
