@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,5 +15,8 @@ import lombok.NoArgsConstructor;
 public class ListInvestmentResponse {
 
     private Integer productId;
+    private String title;
+    private Integer goalAmount;
+    private LocalDate endDate;
 }
 
