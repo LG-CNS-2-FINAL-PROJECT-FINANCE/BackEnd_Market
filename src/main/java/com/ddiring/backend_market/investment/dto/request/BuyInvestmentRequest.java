@@ -11,4 +11,5 @@ public class BuyInvestmentRequest {
     private Integer userSeq;
     private Integer productId;
     private Integer tokenQuantity;
+    private Integer investedPrice;
 }
