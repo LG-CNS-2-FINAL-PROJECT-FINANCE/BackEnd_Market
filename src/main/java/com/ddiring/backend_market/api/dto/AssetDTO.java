@@ -13,4 +13,7 @@ public class AssetDTO {
 
     private Integer userSeq;
     private Integer deposit;
+    private Integer productId;
+    private Integer tokenQuantity;
+    private Integer investedPrice;
 }

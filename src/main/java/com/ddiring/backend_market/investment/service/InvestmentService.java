@@ -1,5 +1,6 @@
 package com.ddiring.backend_market.investment.service;
 
+import com.ddiring.backend_market.api.client.AssetClient;
 import com.ddiring.backend_market.api.client.ProductClient;
 import com.ddiring.backend_market.api.dto.AssetDTO;
 import com.ddiring.backend_market.api.dto.ProductDTO;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDate;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +23,7 @@ public class InvestmentService {
 
     private final InvestmentRepository investmentRepository;
     private final ProductClient productClient;
+    private final AssetClient assetClient;
 
     // 투자 상품 전체 조회
     public List<ListInvestmentResponse> getListInvestment() {
@@ -54,19 +57,30 @@ public class InvestmentService {
             throw new BadParameter("해당 상품은 현재 모집 중이 아닙니다.");
         }
 
+        LocalDate now = LocalDate.now();
+        
         Investment investment = Investment.builder()
+                .userSeq(request.getUserSeq())
+                .productId(request.getProductId())
+                .tokenQuantity(request.getTokenQuantity())
+                .investedPrice(request.getInvestedPrice())
+                .investedAt(now)
+                .createdId(request.getUserSeq())
+                .createdAt(now)
+                .updatedId(request.getUserSeq())
+                .updatedAt(now)
+                .build();
+
+        investmentRepository.save(investment);
+
+        AssetDTO assetDTO = AssetDTO.builder()
                 .userSeq(request.getUserSeq())
                 .productId(request.getProductId())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedPrice(request.getInvestedPrice())
                 .build();
 
-        investmentRepository.save(investment);
-
-        AssetDTO dto = AssetDTO.builder()
-                .userSeq(request.getUserSeq())
-                .build();
-
+        assetClient.updateAsset(assetDTO);
     }
 
     // 유효성 검사

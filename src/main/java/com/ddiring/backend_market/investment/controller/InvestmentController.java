@@ -26,9 +26,7 @@ public class InvestmentController {
 
     // 주문
     @PostMapping("/buy")
-    public ResponseEntity<Void> buyInvestment(
-            @RequestBody BuyInvestmentRequest request
-    ) {
+    public ResponseEntity<Void> buyInvestment(@RequestBody BuyInvestmentRequest request) {
 
         investmentService.buyInvestment(request);
         return ResponseEntity.ok().build();
