@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 server:
   port: 8080
 
@@ -18,4 +16,3 @@ spring:
     generate-ddl: true # 오직 테스트 환경에서만 (spring.jpa.generate-ddl)
     show-sql: true
     open-in-view: false
->>>>>>> Stashed changes
