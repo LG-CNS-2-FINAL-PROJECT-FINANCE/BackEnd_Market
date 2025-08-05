@@ -2,10 +2,8 @@ package com.ddiring.backend_market.investment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.extern.slf4j.Slf4j;
 import java.time.LocalDate;
 
-@Slf4j
 @Entity
 @Table(name = "investment")
 @Getter
@@ -22,8 +20,8 @@ public class Investment {
     @Column(name = "user_seq", nullable = false)
     private Integer userSeq;
 
-    @Column(name = "product_id", nullable = false)
-    private Integer productId;
+    @Column(name = "project_id", nullable = false)
+    private Integer projectId;
 
     @Column(name = "invested_price", nullable = false)
     private Integer investedPrice;
@@ -33,6 +31,22 @@ public class Investment {
 
     @Column(name = "invested_at", nullable = false)
     private LocalDate investedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "inv_status", nullable = false)
+    private InvestmentStatus invStatus;
+
+    @Column(name = "current_amount", nullable = false)
+    private Integer currentAmount;
+
+    @Column(name = "total_investment", nullable = false)
+    private Integer totalInvestment;
+
+    @Column(name = "total_investor", nullable = false)
+    private Integer totalInvestor;
+
+    @Column(name = "achievement_rate", nullable = false)
+    private Integer achievementRate;
 
     @Column(name = "created_id", nullable = false)
     private Integer createdId;
@@ -45,4 +59,30 @@ public class Investment {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDate updatedAt;
+
+    @Getter
+    public enum InvestmentStatus {
+        PENDING("대기"),
+        COMPLETED("체결"),
+        CANCELLED("취소");
+
+        private final String description;
+
+        InvestmentStatus(String description) {
+            this.description = description;
+        }
+
+    }
+
+    public boolean isPending() {
+        return this.invStatus == InvestmentStatus.PENDING;
+    }
+
+    public boolean isCompleted() {
+        return this.invStatus == InvestmentStatus.COMPLETED;
+    }
+
+    public boolean isCancelled() {
+        return this.invStatus == InvestmentStatus.CANCELLED;
+    }
 }
