@@ -1,6 +1,7 @@
-package com.ddiring.backend_market.investment.controller;
+package com.ddiring.backend_market.investment;
 
 import com.ddiring.backend_market.api.dto.ProductDTO;
+import com.ddiring.backend_market.investment.controller.InvestmentController;
 import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -20,7 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;

@@ -1,6 +1,7 @@
-package com.ddiring.backend_market.investment.repository;
+package com.ddiring.backend_market.investment;
 
 import com.ddiring.backend_market.investment.entity.Investment;
+import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

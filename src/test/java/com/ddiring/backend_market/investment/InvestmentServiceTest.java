@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.investment.service;
+package com.ddiring.backend_market.investment;
 
 import com.ddiring.backend_market.api.client.AssetClient;
 import com.ddiring.backend_market.api.client.ProductClient;
@@ -10,6 +10,7 @@ import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
+import com.ddiring.backend_market.investment.service.InvestmentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
