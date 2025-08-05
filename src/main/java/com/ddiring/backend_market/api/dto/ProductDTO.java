@@ -14,6 +14,8 @@ public class ProductDTO {
 
     private String title;
     private Integer goalAmount;
+    private LocalDate startDate;
     private LocalDate endDate;
     private String status;
+    private Integer minInvestment;
 }
