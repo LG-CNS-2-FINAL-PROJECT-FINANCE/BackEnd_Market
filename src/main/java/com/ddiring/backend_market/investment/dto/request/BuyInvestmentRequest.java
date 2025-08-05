@@ -8,6 +8,7 @@ import lombok.*;
 @Builder
 public class BuyInvestmentRequest {
 
+    private Integer investmentSeq;
     private Integer userSeq;
     private Integer productId;
     private Integer tokenQuantity;
