@@ -23,10 +23,8 @@ repositories {
 	mavenCentral()
 }
 
-dependencyManagement {
-	imports {
-		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.1"
-	}
+ext {
+	set('springCloudVersion', "2025.0.0")
 }
 
 dependencies {
@@ -43,6 +41,28 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+jar {
+	enabled = false // plain.jar 생성 완전히 비활성화
+}
+
+tasks.register('getAppName') {
+	doLast {
+		println "${rootProject.name}"
+	}
+}
+
+tasks.register('getAppVersion') {
+	doLast {
+		println "${project.version}"
+	}
 }
