@@ -82,15 +82,23 @@ pipeline {
                         def imageRepo = "${REGISTRY_HOST}/${APP_NAME}"
                         def imageTag = "${APP_VERSION}"
                         def MANIFEST_REPO = "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/LG-CNS-2-FINAL-PROJECT-FINANCE/Backend_Manifests.git"
+                        def TARGET_DIR = Backend_Manifests
 
                         sh """
                              # Git 사용자 정보 설정(커밋 사용자 명시땜에)
                             git config --global user.email "${USER_EMAIL}"
                             git config --global user.name "${USER_ID}"
                             
-                            # 매니페스트 레포 클론
-                            git clone ${MANIFEST_REPO}
-                            cd Backend_Manifests
+                            # 매니페스트 레포 클론, 있으면 pull
+                            if [ -d "${TARGET_DIR}/.git" ]; then
+                              echo "Repository already exists. Pulling latest changes..."
+                              cd ${TARGET_DIR}
+                              git pull
+                            else
+                              echo "Cloning repository..."
+                              git clone ${MANIFEST_REPO}
+                              cd ${TARGET_DIR}
+                            fi
 
                             # yq를 사용하여 개발 환경의 values 파일 업데이트
                             yq -i '.image.repository = "${imageRepo}"' helm_chart/${SERVICE_NAME}/values-dev.yaml
