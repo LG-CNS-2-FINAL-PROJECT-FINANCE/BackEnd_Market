@@ -89,6 +89,7 @@ pipeline {
                             git config --global user.name "${USER_ID}"
                             
                             # 매니페스트 레포 클론
+                            cd ..
                             git clone ${MANIFEST_REPO}
                             cd Backend_Manifests
 
