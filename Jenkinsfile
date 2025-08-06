@@ -113,11 +113,5 @@ pipeline {
                 }
             }
         }
-
-        stage('Clean Workspace') {
-            steps {
-                deleteDir() // workspace 전체 정리
-            }
-        }
     }
 }
