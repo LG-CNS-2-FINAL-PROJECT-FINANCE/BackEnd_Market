@@ -3,9 +3,9 @@ server:
 
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/market?serverTimezone=UTC&characterEncoding=UTF-8
-    username: root
-    password: 1234
+    url: jdbc:mariadb://192.168.0.222:3306/market?serverTimezone=UTC&characterEncoding=UTF-8
+    username: admin
+    password: admin
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
       connection-test-query: SELECT 1 # HikariCP 유효성 검사 추가
