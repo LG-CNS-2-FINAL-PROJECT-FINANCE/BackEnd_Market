@@ -23,7 +23,12 @@ repositories {
 	mavenCentral()
 }
 
+ext {
+	set('springCloudVersion', "2025.0.0")
+}
+
 dependencies {
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.kafka:spring-kafka'
@@ -32,17 +37,32 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	testImplementation 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+jar {
+	enabled = false // plain.jar 생성 완전히 비활성화
+}
+
 tasks.register('getAppName') {
 	doLast {
-		println "${rootProject.name}" }
+		println "${rootProject.name}"
+	}
 }
+
 tasks.register('getAppVersion') {
 	doLast {
-		println "${project.version}" }
+		println "${project.version}"
+	}
 }

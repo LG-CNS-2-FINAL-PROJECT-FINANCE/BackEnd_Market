@@ -16,6 +16,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 @Order(value = 1)
 @RestControllerAdvice
 public class ApiCommonAdvice {
+
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler({Exception.class})
     public ApiResponseDto<String> handleException(Exception e) {
