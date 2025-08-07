@@ -72,7 +72,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void OrderReception(Integer userSeq, Integer projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+    public void OrderReception(Integer userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
         if (userSeq == null || projectId == null || purchasePrice == null || tokenQuantity < 0) {
             throw new BadParameter("값 없음 넣으셈");
         }
@@ -98,7 +98,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void updateOrder(Integer ordersId, Integer userSeq, Integer projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+    public void updateOrder(Integer ordersId, Integer userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
         if (ordersId == null || userSeq == null || projectId == null || (purchasePrice == null && tokenQuantity == null)) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
@@ -116,7 +116,7 @@ public class TradeService {
     }
 
     @Transactional
-    public List<TradeHistoryResponseDto> getTradeHistory(Integer projectId) {
+    public List<TradeHistoryResponseDto> getTradeHistory(String projectId) {
         if (projectId == null) {
             throw new BadParameter("번호 내놔");
         }
@@ -127,7 +127,7 @@ public class TradeService {
     }
 
     @Transactional
-    public List<OrdersResponseDto> getPurchaseOrders(Integer projectId) {
+    public List<OrdersResponseDto> getPurchaseOrders(String projectId) {
         if (projectId == null) {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
         }
@@ -139,7 +139,7 @@ public class TradeService {
     }
 
     @Transactional
-    public List<OrdersResponseDto> getSellOrders(Integer projectId) {
+    public List<OrdersResponseDto> getSellOrders(String projectId) {
         if (projectId == null) {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
         }

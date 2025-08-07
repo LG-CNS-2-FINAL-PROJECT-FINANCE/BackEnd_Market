@@ -20,7 +20,7 @@ public class Orders {
     private Integer ordersId;             // 주문 번호 (PK)
 
     @Column(name = "project_id", nullable = false)
-    private Integer projectId;           // 프로젝트 번호 (FK)
+    private String projectId;           // 프로젝트 번호 (FK)
 
     @Column(name = "user_seq", nullable = false)
     private Integer userSeq;             // 사용자 번호 (FK, 구매자)
@@ -50,7 +50,7 @@ public class Orders {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(Integer projectId, Integer userSeq, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDate registedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Orders(String projectId, Integer userSeq, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDate registedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.ordersType = ordersType;

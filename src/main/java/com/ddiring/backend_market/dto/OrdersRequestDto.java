@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class OrdersRequestDto {
     private Integer userSeq;
-    private Integer projectId;
+    private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;
 }

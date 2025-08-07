@@ -18,7 +18,7 @@ public class Trade {
     private Integer tradeSeq;           // 체결 번호 (PK, auto)
 
     @Column(name = "project_id", nullable = false)
-    private Integer projectId;           // 프로젝트 번호 (FK)
+    private String projectId;           // 프로젝트 번호 (FK)
 
     @Column(name = "purchase_id", nullable = false)
     private Integer purchaseId;          // 구매 주문 번호 (FK)
@@ -48,7 +48,7 @@ public class Trade {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Trade(Integer projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDate tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDate tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.purchaseId = purchaseId;
         this.sellId = sellId;

@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 public class TradeSearchResponseDto {
-    private Integer projectId; // 프로젝트 번호
+    private String projectId; // 프로젝트 번호
     private Integer ordersId; // 주문 번호 (purchase_id 또는 sell_id에서 유추)
     private Integer orderType; // 주문 유형 (0: 판매, 1: 구매)
     private Integer tradePrice; // 체결 금액

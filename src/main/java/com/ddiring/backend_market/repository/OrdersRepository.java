@@ -10,10 +10,10 @@ import java.util.Optional;
 @Repository
 public interface OrdersRepository extends JpaRepository<Orders, Integer> {
     // projectId와 ordersType이 0(판매)인 주문 중, purchasePrice 오름차순(최저가)으로 정렬하여 조회
-    List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(Integer projectId, Integer ordersType);
+    List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(String projectId, Integer ordersType);
     // projectId와 ordersType이 1(구매)인 주문 중, purchasePrice 내림차순(최고가)으로 정렬하여 조회
-    List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(Integer projectId, Integer ordersType);
-    Optional<Orders> findByOrdersIdAndUserSeqAndProjectId(Integer ordersId, Integer userSeq, Integer projectId);
+    List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(String projectId, Integer ordersType);
+    Optional<Orders> findByOrdersIdAndUserSeqAndProjectId(Integer ordersId, Integer userSeq, String projectId);
 
     List<Orders> findByUserSeq(Integer userSeq);
 

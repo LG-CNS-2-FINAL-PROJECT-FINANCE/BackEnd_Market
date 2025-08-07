@@ -15,7 +15,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 public class OrdersResponseDto {
     private Integer userSeq;
-    private Integer projectId;
+    private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;
     private LocalDate registedAt;

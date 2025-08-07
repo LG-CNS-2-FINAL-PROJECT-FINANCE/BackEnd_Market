@@ -29,17 +29,17 @@ public class TradeController {
         return ApiResponseDto.defaultOk();
     }
     @GetMapping("/{projectId}/history")
-    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistory(@PathVariable Integer projectId) {
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistory(@PathVariable String projectId) {
         List<TradeHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
         return ApiResponseDto.createOk(tradeHistory);
     }
     @GetMapping("/{projectId}/purchase")
-    public ApiResponseDto<List<OrdersResponseDto>>  purchaseCorrection(@PathVariable Integer projectId) {
+    public ApiResponseDto<List<OrdersResponseDto>>  purchaseCorrection(@PathVariable String projectId) {
         List<OrdersResponseDto> historyResponseDtos = tradeService.getPurchaseOrders(projectId);
         return ApiResponseDto.createOk(historyResponseDtos);
     }
     @GetMapping("/{projectId}/sell")
-    public ApiResponseDto<List<OrdersResponseDto>>  sellCorrection(@PathVariable Integer projectId) {
+    public ApiResponseDto<List<OrdersResponseDto>>  sellCorrection(@PathVariable String projectId) {
         List<OrdersResponseDto> historyResponseDtos = tradeService.getSellOrders(projectId);
         return ApiResponseDto.createOk(historyResponseDtos);
     }
