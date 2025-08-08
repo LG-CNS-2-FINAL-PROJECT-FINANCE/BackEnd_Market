@@ -35,7 +35,7 @@ public class InvestmentService {
 
         return investments.stream()
                 .map(investment -> {
-                    ProductDTO product = productClient.getProject(investment.getProjectId());
+                    ProductDTO product = productClient.getProduct(investment.getProjectId());
                     return AllProductListResponse.builder()
                             .projectId(investment.getProjectId())
                             .title(product.getTitle())
@@ -53,7 +53,7 @@ public class InvestmentService {
 
         return investmentRepository.findByUserSeq(userSeq).stream()
                 .map(investment -> {
-                    ProductDTO product = productClient.getProject(investment.getProjectId());
+                    ProductDTO product = productClient.getProduct(investment.getProjectId());
                     return UserInvestmentListResponse.builder()
                             .userSeq(investment.getUserSeq())
                             .projectId(investment.getProjectId())
@@ -65,11 +65,11 @@ public class InvestmentService {
     }
 
     // 상품별 투자자 조회
-    public List<ProductInvestorListResponse> getProductInvestor(String projectId) {
+    public List<ProductInvestorListResponse> getProductInvestor(Integer projectId) {
 
         return investmentRepository.findByProjectId(projectId).stream()
                 .map(investment -> {
-                    ProductDTO product = productClient.getProject(investment.getProjectId());
+                    ProductDTO product = productClient.getProduct(investment.getProjectId());
                     return ProductInvestorListResponse.builder()
                             .projectId(investment.getProjectId())
                             .totalInvestment(investment.getTotalInvestment())
@@ -89,7 +89,7 @@ public class InvestmentService {
         // 기본 값 유효성 검사
         validateBuyRequest(request, dto);
 
-        ProductDTO product = productClient.getProject(request.getProjectId());
+        ProductDTO product = productClient.getProduct(request.getProductId());
 
         if (!"승인 완료".equals(product.getStatus())) {
             throw new BadParameter("해당 상품은 현재 모집 중이 아닙니다.");
@@ -101,7 +101,7 @@ public class InvestmentService {
         LocalDate now = LocalDate.now();
         Investment investment = Investment.builder()
                 .userSeq(request.getUserSeq())
-                .projectId(request.getProjectId())
+                .projectId(request.getProductId())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedPrice(investedPrice)
                 .investedAt(now)
@@ -115,7 +115,7 @@ public class InvestmentService {
 
         AssetDTO assetDTO = AssetDTO.builder()
                 .userSeq(request.getUserSeq())
-                .projectId(request.getProjectId())
+                .productId(request.getProductId())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedPrice(investedPrice)
                 .build();
@@ -133,7 +133,7 @@ public class InvestmentService {
         Investment order = investmentRepository.findById(request.getInvestmentSeq())
                 .orElseThrow(() -> new BadParameter("존재하지 않는 주문입니다."));
 
-        if (!order.getUserSeq().equals(request.getUserSeq()) || !order.getProjectId().equals(request.getProjectId())) {
+        if (!order.getUserSeq().equals(request.getUserSeq()) || !order.getProjectId().equals(request.getProductId())) {
             throw new BadParameter("주문 정보가 일치하지 않습니다.");
         }
 
@@ -163,7 +163,7 @@ public class InvestmentService {
             throw new BadParameter("유효하지 않은 사용자입니다.");
         }
 
-        if (request.getProjectId() == null) {
+        if (request.getProductId() == null || request.getProductId() <= 0) {
             throw new BadParameter("유효하지 않은 상품입니다.");
         }
 

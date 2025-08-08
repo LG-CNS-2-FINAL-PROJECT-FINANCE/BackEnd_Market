@@ -20,12 +20,6 @@ public class Investment {
     @Column(name = "user_seq", nullable = false)
     private Integer userSeq;
 
-    @Column(name = "project_id", nullable = false)
-    private String projectId;
-
-    @Column(name = "account")
-    private String account;
-
     @Column(name = "invested_price", nullable = false)
     private Integer investedPrice;
 
