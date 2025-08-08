@@ -14,8 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -41,8 +40,7 @@ public class InvestmentService {
                             .title(product.getTitle())
                             .currentAmount(investment.getCurrentAmount())
                             .achievementRate(investment.getAchievementRate())
-                            .startDate(product.getStartDate())
-                            .endDate(product.getEndDate())
+                            .deadline(product.getDeadline())
                             .build();
                 })
                 .toList();
@@ -98,7 +96,7 @@ public class InvestmentService {
         // 투자 금액 계산 (토큰 1개의 가격 * 토큰수량)
         Integer investedPrice = dto.getMinInvestment() * request.getTokenQuantity();
 
-        LocalDate now = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
         Investment investment = Investment.builder()
                 .userSeq(request.getUserSeq())
                 .projectId(request.getProjectId())
@@ -137,11 +135,11 @@ public class InvestmentService {
             throw new BadParameter("주문 정보가 일치하지 않습니다.");
         }
 
-        if (order.isCancelled()) {
-            throw new BadParameter("이미 취소된 주문입니다.");
-        }
-
-        order.isCancelled();
+//        if (Investment.InvestmentStatus.CANCELLED.isCancelled()) {
+//            throw new BadParameter("이미 취소된 주문입니다.");
+//        }
+//
+//        order.;
 
         // TODO: 환불 처리
 

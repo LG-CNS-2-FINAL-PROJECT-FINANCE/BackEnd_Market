@@ -2,14 +2,18 @@ package com.ddiring.backend_market.investment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "investment")
 @Getter
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EntityListeners(AuditingEntityListener.class)
 public class Investment {
 
     @Id
@@ -30,7 +34,7 @@ public class Investment {
     private Integer tokenQuantity;
 
     @Column(name = "invested_at", nullable = false)
-    private LocalDate investedAt;
+    private LocalDateTime investedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "inv_status", nullable = false)
@@ -51,14 +55,16 @@ public class Investment {
     @Column(name = "created_id", nullable = false)
     private Integer createdId;
 
+    @CreatedDate
     @Column(name = "created_at", nullable = false)
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_id", nullable = false)
     private Integer updatedId;
 
+    @LastModifiedDate
     @Column(name = "updated_at", nullable = false)
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
 
     @Getter
     public enum InvestmentStatus {
@@ -72,17 +78,8 @@ public class Investment {
             this.description = description;
         }
 
-    }
-
-    public boolean isPending() {
-        return this.invStatus == InvestmentStatus.PENDING;
-    }
-
-    public boolean isCompleted() {
-        return this.invStatus == InvestmentStatus.COMPLETED;
-    }
-
-    public boolean isCancelled() {
-        return this.invStatus == InvestmentStatus.CANCELLED;
+        public boolean isPending() {return this == PENDING;}
+        public boolean isCompleted() {return this == COMPLETED;}
+        public boolean isCancelled() {return this == CANCELLED;}
     }
 }

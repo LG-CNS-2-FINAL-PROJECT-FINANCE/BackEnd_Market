@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 // 투자 상품 전체 조회
 @Getter
@@ -16,9 +15,7 @@ public class AllProductListResponse {
 
     private String projectId;
     private String title;
-    private Integer currentAmount; // 현재 투자 금액
-    private Integer achievementRate; // 달성률
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String status;
+    private Integer currentAmount;
+    private Integer achievementRate;
+    private Integer deadline;
 }

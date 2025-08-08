@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.apache.kafka.common.protocol.types.Field;
+
 import java.time.LocalDate;
 
 @Getter
@@ -12,10 +14,10 @@ import java.time.LocalDate;
 @Builder
 public class ProductDTO {
 
+    private String projectId;
     private String title;
     private Integer goalAmount;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String status;
+    private Integer deadline;
     private Integer minInvestment;
+    private String status;
 }
