@@ -10,7 +10,7 @@ public class BuyInvestmentRequest {
 
     private Integer investmentSeq;
     private Integer userSeq;
-    private Integer productId;
+    private String projectId;
     private Integer tokenQuantity;
     private Integer investedPrice;
 }

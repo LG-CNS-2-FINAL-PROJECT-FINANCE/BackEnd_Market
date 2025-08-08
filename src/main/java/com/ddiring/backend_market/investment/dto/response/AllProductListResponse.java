@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Builder
 public class AllProductListResponse {
 
-    private Integer projectId;
+    private String projectId;
     private String title;
     private Integer currentAmount; // 현재 투자 금액
     private Integer achievementRate; // 달성률

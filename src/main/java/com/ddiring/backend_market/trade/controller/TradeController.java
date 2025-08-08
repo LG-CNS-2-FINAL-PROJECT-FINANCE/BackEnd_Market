@@ -1,8 +1,9 @@
-package com.ddiring.backend_market.controller;
+package com.ddiring.backend_market.trade.controller;
 
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
-import com.ddiring.backend_market.dto.*;
-import com.ddiring.backend_market.service.TradeService;
+import com.ddiring.backend_market.trade.dto.*;
+import com.ddiring.backend_market.trade.service.TradeService;
+import com.ddiring.backend_market.trade.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;

@@ -1,6 +1,6 @@
-package com.ddiring.backend_market.repository;
+package com.ddiring.backend_market.trade.repository;
 
-import com.ddiring.backend_market.entity.Trade;
+import com.ddiring.backend_market.trade.entity.Trade;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

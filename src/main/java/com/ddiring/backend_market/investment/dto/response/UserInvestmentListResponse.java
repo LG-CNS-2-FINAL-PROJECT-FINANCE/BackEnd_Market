@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public class UserInvestmentListResponse {
 
     private Integer userSeq;
-    private Integer projectId;
+    private String projectId;
     private String title;
     private Integer investedPrice;
     private Integer tokenQuantity;

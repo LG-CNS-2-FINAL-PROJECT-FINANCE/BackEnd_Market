@@ -36,7 +36,7 @@ public class InvestmentController {
 
     // 상품별 투자자 조회
     @GetMapping("/{productId}/userlist")
-    public ResponseEntity<List<ProductInvestorListResponse>> getListInvestorByProductId(@PathVariable("productId") Integer projectId) {
+    public ResponseEntity<List<ProductInvestorListResponse>> getListInvestorByProductId(@PathVariable("projectId") String projectId) {
 
         return ResponseEntity.ok(investmentService.getProductInvestor(projectId));
     }

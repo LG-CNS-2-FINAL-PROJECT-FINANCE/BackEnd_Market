@@ -1,6 +1,6 @@
-package com.ddiring.backend_market.dto;
+package com.ddiring.backend_market.trade.dto;
 
-import com.ddiring.backend_market.entity.Trade;
+import com.ddiring.backend_market.trade.entity.Trade;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 

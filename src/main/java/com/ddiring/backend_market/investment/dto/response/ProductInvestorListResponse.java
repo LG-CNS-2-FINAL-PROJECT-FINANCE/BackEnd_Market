@@ -14,7 +14,7 @@ import java.util.List;
 @Builder
 public class ProductInvestorListResponse {
 
-    private Integer projectId;
+    private String projectId;
     private Integer totalInvestment; // 총 투자 금액
     private Integer totalInvestors;
     private List<InvestorInfo> investors;
