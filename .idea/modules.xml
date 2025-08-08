@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend_market.iml" filepath="$PROJECT_DIR$/.idea/modules/backend_market.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend_market.main.iml" filepath="$PROJECT_DIR$/.idea/modules/backend_market.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/backend_market.test.iml" filepath="$PROJECT_DIR$/.idea/modules/backend_market.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/com.ddiring.backend_market.main.iml" filepath="$PROJECT_DIR$/.idea/modules/com.ddiring.backend_market.main.iml" />
     </modules>
   </component>
 </project>

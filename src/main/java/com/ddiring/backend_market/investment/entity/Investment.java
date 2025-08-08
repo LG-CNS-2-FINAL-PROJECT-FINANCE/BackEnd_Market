@@ -21,7 +21,7 @@ public class Investment {
     private Integer userSeq;
 
     @Column(name = "project_id", nullable = false)
-    private Integer projectId;
+    private String projectId;
 
     @Column(name = "invested_price", nullable = false)
     private Integer investedPrice;

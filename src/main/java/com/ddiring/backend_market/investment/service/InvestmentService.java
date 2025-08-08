@@ -65,7 +65,7 @@ public class InvestmentService {
     }
 
     // 상품별 투자자 조회
-    public List<ProductInvestorListResponse> getProductInvestor(Integer projectId) {
+    public List<ProductInvestorListResponse> getProductInvestor(String projectId) {
 
         return investmentRepository.findByProjectId(projectId).stream()
                 .map(investment -> {
@@ -89,7 +89,7 @@ public class InvestmentService {
         // 기본 값 유효성 검사
         validateBuyRequest(request, dto);
 
-        ProductDTO product = productClient.getProduct(request.getProductId());
+        ProductDTO product = productClient.getProduct(request.getProjectId());
 
         if (!"승인 완료".equals(product.getStatus())) {
             throw new BadParameter("해당 상품은 현재 모집 중이 아닙니다.");
@@ -101,7 +101,7 @@ public class InvestmentService {
         LocalDate now = LocalDate.now();
         Investment investment = Investment.builder()
                 .userSeq(request.getUserSeq())
-                .projectId(request.getProductId())
+                .projectId(request.getProjectId())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedPrice(investedPrice)
                 .investedAt(now)
@@ -115,7 +115,7 @@ public class InvestmentService {
 
         AssetDTO assetDTO = AssetDTO.builder()
                 .userSeq(request.getUserSeq())
-                .productId(request.getProductId())
+                .projectId(request.getProjectId())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedPrice(investedPrice)
                 .build();
@@ -163,7 +163,7 @@ public class InvestmentService {
             throw new BadParameter("유효하지 않은 사용자입니다.");
         }
 
-        if (request.getProductId() == null || request.getProductId() <= 0) {
+        if (request.getProjectId() == null) {
             throw new BadParameter("유효하지 않은 상품입니다.");
         }
 
