@@ -1,5 +1,6 @@
 package com.ddiring.backend_market.investment.controller;
 
+import com.ddiring.backend_market.api.client.ProductClient;
 import com.ddiring.backend_market.api.dto.ProductDTO;
 import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
@@ -22,9 +23,8 @@ public class InvestmentController {
 
     // 투자 상품 전체 조회
     @GetMapping("/list")
-    public ResponseEntity<List<AllProductListResponse>> getListInvestment() {
-
-        return ResponseEntity.ok(investmentService.getAllProducts());
+    public List<ProductDTO> getAllProduct() {
+        return investmentService.getAllProduct();
     }
 
     // 개인 투자 내역 조회

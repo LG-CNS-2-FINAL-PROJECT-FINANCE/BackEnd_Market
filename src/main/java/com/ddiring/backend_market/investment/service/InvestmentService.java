@@ -14,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,23 +28,8 @@ public class InvestmentService {
     private final AssetClient assetClient;
 
     // 투자 상품 전체 조회
-    public List<AllProductListResponse> getAllProducts() {
-
-        List<Investment> investments = investmentRepository.findAll();
-
-        return investments.stream()
-                .map(investment -> {
-                    ProductDTO product = productClient.getProduct(investment.getProjectId());
-                    return AllProductListResponse.builder()
-                            .projectId(investment.getProjectId())
-                            .title(product.getTitle())
-                            .currentAmount(investment.getCurrentAmount())
-                            .achievementRate(investment.getAchievementRate())
-                            .startDate(product.getStartDate())
-                            .endDate(product.getEndDate())
-                            .build();
-                })
-                .toList();
+    public List<ProductDTO> getAllProduct() {
+        return productClient.getAllProduct();
     }
 
     // 개인 투자 내역 조회

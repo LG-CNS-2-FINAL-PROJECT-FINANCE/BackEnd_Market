@@ -5,10 +5,12 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
-// TODO: 실제 주소로 변경
-@FeignClient(name = "product-service", url = "${service.product.url}")
+import java.util.List;
+
+// TODO: 병합 시 주소 맞춰야함
+@FeignClient(name = "product")
 public interface ProductClient {
 
-    @GetMapping("/api/product/{productId}")
-    ProductDTO getProduct(@PathVariable("projectId") Integer projectId);
+    @GetMapping("/api/product")
+    List<ProductDTO> getAllProduct();
 }

@@ -12,10 +12,7 @@ import java.time.LocalDate;
 @Builder
 public class ProductDTO {
 
-    private String title;
-    private Integer goalAmount;
-    private LocalDate startDate;
-    private LocalDate endDate;
-    private String status;
-    private Integer minInvestment;
+    private String title; // 제목
+    private Integer amount; // 모금액
+    private Integer deadline; // 마감 기한
 }
