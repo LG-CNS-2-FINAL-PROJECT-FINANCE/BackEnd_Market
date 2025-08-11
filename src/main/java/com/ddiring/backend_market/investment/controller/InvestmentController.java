@@ -1,9 +1,9 @@
 package com.ddiring.backend_market.investment.controller;
 
-import com.ddiring.backend_market.api.client.ProductClient;
-import com.ddiring.backend_market.api.dto.ProductDTO;
+import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
+import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.service.InvestmentService;
 import lombok.RequiredArgsConstructor;
@@ -40,25 +40,19 @@ public class InvestmentController {
     }
 
     // 주문
-    @PostMapping("/buy")
-    public ResponseEntity<Map<String, Integer>> buyInvestment(
-            @RequestBody BuyInvestmentRequest request,
-            ProductDTO dto
-    ) {
-
-        investmentService.buyInvestment(request, dto);
-
-        Map<String, Integer> response = Map.of("tokenQuantity", request.getTokenQuantity());
+    @PostMapping
+    public ResponseEntity<InvestmentResponse> buyInvestment(@RequestBody InvestmentRequest request) {
+        InvestmentResponse response = investmentService.buyInvestment(request);
         return ResponseEntity.ok(response);
     }
 
     // 주문 취소
     @PostMapping("/cancel")
     public ResponseEntity<InvestmentResponse> cancelInvestment(
-            @RequestBody CancelInvestmentRequest request
-            ) {
-
-        InvestmentResponse response = investmentService.cancelInvestment(request);
+            @RequestBody CancelInvestmentRequest request,
+            @PathVariable Integer investmentSeq
+    ) {
+        InvestmentResponse response = investmentService.cancelInvestment(request, investmentSeq);
         return ResponseEntity.ok(response);
     }
 }

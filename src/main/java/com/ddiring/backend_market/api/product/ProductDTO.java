@@ -1,10 +1,9 @@
-package com.ddiring.backend_market.api.dto;
+package com.ddiring.backend_market.api.product;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
 
 @Getter
 @NoArgsConstructor

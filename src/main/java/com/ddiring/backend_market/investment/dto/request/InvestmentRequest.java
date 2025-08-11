@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.api.dto;
+package com.ddiring.backend_market.investment.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,9 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserDTO {
+public class InvestmentRequest {
 
     private Integer userSeq;
-    private String userName;
-    private String nickname;
+    private String projectId;
+    private Integer investedPrice;
+    private Integer tokenQuantity;
 }

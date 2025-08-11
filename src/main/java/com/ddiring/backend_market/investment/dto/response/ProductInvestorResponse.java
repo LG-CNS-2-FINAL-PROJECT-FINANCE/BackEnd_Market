@@ -1,13 +1,12 @@
 package com.ddiring.backend_market.investment.dto.response;
 
-import com.ddiring.backend_market.api.dto.UserDTO;
+import com.ddiring.backend_market.api.user.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 // 프로젝트별 투자자 조회
 @Getter

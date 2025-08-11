@@ -39,6 +39,7 @@ public class Investment {
     private LocalDateTime investedAt;
 
     // 투자 상태
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "inv_status", nullable = false)
     private InvestmentStatus invStatus;
@@ -68,6 +69,7 @@ public class Investment {
     @Column(name = "updated_id", nullable = false)
     private Integer updatedId;
 
+    @Setter
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 

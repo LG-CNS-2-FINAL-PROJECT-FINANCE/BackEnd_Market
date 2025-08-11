@@ -1,6 +1,6 @@
 package com.ddiring.backend_market.investment.dto.response;
 
-import com.ddiring.backend_market.api.dto.ProductDTO;
+import com.ddiring.backend_market.api.product.ProductDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;

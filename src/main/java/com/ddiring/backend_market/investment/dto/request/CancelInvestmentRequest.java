@@ -11,7 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CancelInvestmentRequest {
 
-    private Integer userSeq;        // 주문자 ID
-    private Integer productId;      // 프로젝트 번호
-    private Integer investmentSeq;  // 주문번호
+    private Integer userSeq;
 }

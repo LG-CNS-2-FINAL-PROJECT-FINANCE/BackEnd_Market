@@ -1,6 +1,5 @@
-package com.ddiring.backend_market.api.client;
+package com.ddiring.backend_market.api.product;
 
-import com.ddiring.backend_market.api.dto.ProductDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

@@ -1,14 +1,18 @@
 package com.ddiring.backend_market.investment.service;
 
-import com.ddiring.backend_market.api.client.AssetClient;
-import com.ddiring.backend_market.api.client.ProductClient;
-import com.ddiring.backend_market.api.client.UserClient;
-import com.ddiring.backend_market.api.dto.AssetDTO;
-import com.ddiring.backend_market.api.dto.ProductDTO;
-import com.ddiring.backend_market.api.dto.UserDTO;
-import com.ddiring.backend_market.common.exception.BadParameter;
-import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
+import com.ddiring.backend_market.api.asset.AssetClient;
+import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
+import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
+import com.ddiring.backend_market.api.asset.dto.request.AssetTokenRequest;
+import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
+import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
+import com.ddiring.backend_market.api.asset.dto.response.AssetTokenResponse;
+import com.ddiring.backend_market.api.product.ProductClient;
+import com.ddiring.backend_market.api.user.UserClient;
+import com.ddiring.backend_market.api.product.ProductDTO;
+import com.ddiring.backend_market.api.user.UserDTO;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
+import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
@@ -16,8 +20,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -80,98 +85,142 @@ public class InvestmentService {
 
     // 주문
     @Transactional
-    public void buyInvestment(BuyInvestmentRequest request, ProductDTO dto) {
-
-        Investment order = investmentRepository.findById(request.getInvestmentSeq())
-                .orElseThrow(() -> new BadParameter("존재하지 않는 주문입니다."));
-
-        // 기본 값 유효성 검사
-        validateBuyRequest(request, dto);
-
-        ProductDTO product = productClient.getProduct(request.getProductId());
-
-        if (!"승인 완료".equals(product.getStatus())) {
-            throw new BadParameter("해당 상품은 현재 모집 중이 아닙니다.");
-        }
-
-        // 투자 금액 계산 (토큰 1개의 가격 * 토큰수량)
-        Integer investedPrice = dto.getMinInvestment() * request.getTokenQuantity();
-
-        LocalDate now = LocalDate.now();
+    public InvestmentResponse buyInvestment(InvestmentRequest request) {
         Investment investment = Investment.builder()
                 .userSeq(request.getUserSeq())
-                .projectId(request.getProductId())
+                .projectId(request.getProjectId())
+                .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(request.getTokenQuantity())
-                .investedPrice(investedPrice)
-                .investedAt(now)
+                .investedAt(LocalDateTime.now())
+                .invStatus(Investment.InvestmentStatus.PENDING)
                 .createdId(request.getUserSeq())
-                .createdAt(now)
+                .createdAt(LocalDateTime.now())
                 .updatedId(request.getUserSeq())
-                .updatedAt(now)
+                .updatedAt(LocalDateTime.now())
                 .build();
 
-        investmentRepository.save(investment);
+        Investment saved = investmentRepository.save(investment);
 
-        AssetDTO assetDTO = AssetDTO.builder()
-                .userSeq(request.getUserSeq())
-                .productId(request.getProductId())
-                .tokenQuantity(request.getTokenQuantity())
-                .investedPrice(investedPrice)
-                .build();
+        // Asset 투자금 예치 요청
+        AssetDepositRequest depositRequest = new AssetDepositRequest();
+        depositRequest.userSeq = request.getUserSeq();
+        depositRequest.projectId = request.getProjectId();
+        depositRequest.investedPrice = request.getInvestedPrice();
 
-        assetClient.updateAsset(assetDTO);
+        AssetDepositResponse depositResponse;
+        try {
+            depositResponse = assetClient.requestDeposit(depositRequest);
+        } catch (Exception e) {
+            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            saved.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(saved);
 
-        InvestmentResponse.builder()
-                .tokenQuantity(order.getTokenQuantity())
-                .build();
+            return toResponse(saved);
+        }
+
+        if (!depositResponse.success) {
+            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            saved.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(saved);
+
+            return toResponse(saved);
+        }
+
+        // BC Connector 토큰 발행 요청
+        AssetTokenRequest tokenRequest = new AssetTokenRequest();
+        tokenRequest.userSeq = request.getUserSeq();
+        tokenRequest.projectId = request.getProjectId();
+        tokenRequest.investedPrice = request.getInvestedPrice();
+        tokenRequest.tokenQuantity = request.getTokenQuantity();
+
+        // 토큰 발행 실패 시
+        AssetTokenResponse tokenResponse;
+        try {
+            tokenResponse = assetClient.requestToken(tokenRequest);
+        } catch (Exception e1) {
+            // 보상 트랜잭션
+            AssetRefundRequest refundRequest = new AssetRefundRequest();
+            refundRequest.userSeq = request.getUserSeq();
+            refundRequest.projectId = request.getProjectId();
+            refundRequest.investedPrice = request.getInvestedPrice();
+
+            try {
+                AssetRefundResponse refundResponse = assetClient.requestRefund(refundRequest);
+            } catch (Exception e2) {
+                // TODO: 예외 처리
+            }
+
+            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            saved.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(saved);
+
+            return toResponse(saved);
+        }
+
+        // 토큰 발행 성공
+        saved.setInvStatus(Investment.InvestmentStatus.COMPLETED);
+        saved.setUpdatedAt(LocalDateTime.now());
+        investmentRepository.save(saved);
+
+        return toResponse(saved);
     }
 
     // 주문 취소
-    public InvestmentResponse cancelInvestment(CancelInvestmentRequest request) {
-
-        Investment order = investmentRepository.findById(request.getInvestmentSeq())
-                .orElseThrow(() -> new BadParameter("존재하지 않는 주문입니다."));
-
-        if (!order.getUserSeq().equals(request.getUserSeq()) || !order.getProjectId().equals(request.getProductId())) {
-            throw new BadParameter("주문 정보가 일치하지 않습니다.");
+    public InvestmentResponse cancelInvestment(
+            CancelInvestmentRequest request,
+            Integer investmentSeq
+            ) {
+        Optional<Investment> opt = investmentRepository.findById(investmentSeq);
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("없는 주문입니다: " + investmentSeq);
         }
 
-        if (order.isCancelled()) {
-            throw new BadParameter("이미 취소된 주문입니다.");
+        Investment investment = opt.get();
+
+        if (investment.isPending()) {
+            investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            investment.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(investment);
+
+            return toResponse(investment);
+        } else if (investment.isCompleted()) {
+            // TODO: 토큰 회수 로직 협의
+            AssetRefundRequest refundRequest = new AssetRefundRequest();
+            refundRequest.userSeq = investment.getUserSeq();
+            refundRequest.projectId = investment.getProjectId();
+            refundRequest.investedPrice = investment.getInvestedPrice();
+
+            try {
+                AssetRefundResponse refundResponse = assetClient.requestRefund(refundRequest);
+                if (refundResponse.success) {
+                    investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+                    investment.setUpdatedAt(LocalDateTime.now());
+                    investmentRepository.save(investment);
+
+                    return toResponse(investment);
+                } else {
+                    // TODO: 보상 트랜잭션 + 모니터링 + 알람
+                    // 환불 실패 시 상태 유지
+                    throw new IllegalStateException("환불 실패");
+                }
+            } catch (Exception e) {
+                throw new IllegalStateException("환불 요청 실패");
+            }
+        } else {
+            // 취소 완료
+            return toResponse(investment);
         }
-
-        order.isCancelled();
-
-        // TODO: 환불 처리
-
-        investmentRepository.save(order);
-
-        return InvestmentResponse.builder()
-                .tokenQuantity(order.getTokenQuantity())
-                .build();
     }
 
-    // 유효성 검사
-    private void validateBuyRequest(BuyInvestmentRequest request, ProductDTO dto) {
-
-        if (request == null) {
-            throw new BadParameter("요청 데이터가 없습니다.");
-        }
-
-        if (request.getUserSeq() == null || request.getUserSeq() <= 0) {
-            throw new BadParameter("유효하지 않은 사용자입니다.");
-        }
-
-        if (request.getProductId() == null || request.getProductId() <= 0) {
-            throw new BadParameter("유효하지 않은 상품입니다.");
-        }
-
-        if (request.getTokenQuantity() == null || request.getTokenQuantity() <= 0) {
-            throw new BadParameter("토큰 수량은 1개 이상이어야 합니다.");
-        }
-
-        if (dto.getMinInvestment() == null || dto.getMinInvestment() <= 0) {
-            throw new BadParameter("최소 투자 금액이 설정되지 않았습니다.");
-        }
+    private InvestmentResponse toResponse(Investment inv) {
+        return InvestmentResponse.builder()
+                .investmentSeq(inv.getInvestmentSeq())
+                .userSeq(inv.getUserSeq())
+                .projectId(inv.getProjectId())
+                .investedPrice(inv.getInvestedPrice())
+                .tokenQuantity(inv.getTokenQuantity())
+                .invStatus(inv.getInvStatus().name())
+                .investedAt(inv.getInvestedAt())
+                .build();
     }
 }

@@ -1,15 +1,14 @@
-package com.ddiring.backend_market.api.client;
+package com.ddiring.backend_market.api.user;
 
-import com.ddiring.backend_market.api.dto.UserDTO;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-
 import java.util.List;
 
+// TODO: 병합 시 주소 맞춰야함
 @FeignClient(name = "user")
 public interface UserClient {
 
-    @PostMapping("/api/user/list")
+    @PostMapping("/api/user")
     List<UserDTO> getUser(@RequestBody List<Integer> userSeq);
 }
