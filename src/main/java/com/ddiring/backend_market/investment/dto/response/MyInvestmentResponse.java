@@ -1,5 +1,6 @@
 package com.ddiring.backend_market.investment.dto.response;
 
+import com.ddiring.backend_market.api.dto.ProductDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,11 +11,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserInvestmentListResponse {
+public class MyInvestmentResponse {
 
-    private Integer userSeq;
-    private Integer projectId;
-    private String title;
-    private Integer investedPrice;
+    private ProductDTO product;
     private Integer tokenQuantity;
 }

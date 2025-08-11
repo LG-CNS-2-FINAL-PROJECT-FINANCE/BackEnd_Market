@@ -33,19 +33,17 @@ public class InvestmentService {
     }
 
     // 개인 투자 내역 조회
-    public List<UserInvestmentListResponse> getUserInvestments(Integer userSeq) {
+    public List<MyInvestmentResponse> getMyInvestment(Integer userSeq) {
+        List<Investment> myList = investmentRepository.findByUserSeq(userSeq);
 
-        return investmentRepository.findByUserSeq(userSeq).stream()
+        return myList.stream()
                 .map(investment -> {
                     ProductDTO product = productClient.getProduct(investment.getProjectId());
-                    return UserInvestmentListResponse.builder()
-                            .userSeq(investment.getUserSeq())
-                            .projectId(investment.getProjectId())
-                            .title(product.getTitle())
-                            .investedPrice(investment.getInvestedPrice())
+                    return MyInvestmentResponse.builder()
+                            .product(product)
                             .tokenQuantity(investment.getTokenQuantity())
                             .build();
-                }).collect(Collectors.toList());
+                }).toList();
     }
 
     // 상품별 투자자 조회

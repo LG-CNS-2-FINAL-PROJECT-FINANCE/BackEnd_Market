@@ -29,9 +29,8 @@ public class InvestmentController {
 
     // 개인 투자 내역 조회
     @GetMapping("/{userSeq}/list")
-    public ResponseEntity<List<UserInvestmentListResponse>> getListByUserSeq(@PathVariable Integer userSeq) {
-
-        return ResponseEntity.ok(investmentService.getUserInvestments(userSeq));
+    public List<MyInvestmentResponse> getMyInvestment(@PathVariable("userSeq") Integer userSeq) {
+        return investmentService.getMyInvestment(userSeq);
     }
 
     // 상품별 투자자 조회

@@ -13,4 +13,7 @@ public interface ProductClient {
 
     @GetMapping("/api/product")
     List<ProductDTO> getAllProduct();
+
+    @GetMapping("/api/product/{productId}")
+    ProductDTO getProduct(@PathVariable("productID") String productId);
 }
