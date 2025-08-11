@@ -24,7 +24,7 @@ public class Investment {
 
     // 프로젝트 번호
     @Column(name = "project_id", nullable = false)
-    private Integer projectId;
+    private String projectId;
 
     // 투자 금액
     @Column(name = "invested_price", nullable = false)
