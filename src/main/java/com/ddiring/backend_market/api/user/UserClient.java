@@ -9,6 +9,6 @@ import java.util.List;
 @FeignClient(name = "user")
 public interface UserClient {
 
-    @PostMapping("/api/user")
+    @PostMapping("/api/user/detail")
     List<UserDTO> getUser(@RequestBody List<Integer> userSeq);
 }
