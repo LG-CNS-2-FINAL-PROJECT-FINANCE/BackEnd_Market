@@ -2,8 +2,10 @@ package com.ddiring.backend_market.investment.service;
 
 import com.ddiring.backend_market.api.client.AssetClient;
 import com.ddiring.backend_market.api.client.ProductClient;
+import com.ddiring.backend_market.api.client.UserClient;
 import com.ddiring.backend_market.api.dto.AssetDTO;
 import com.ddiring.backend_market.api.dto.ProductDTO;
+import com.ddiring.backend_market.api.dto.UserDTO;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
@@ -16,7 +18,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 public class InvestmentService {
 
     private final InvestmentRepository investmentRepository;
+    private final UserClient userClient;
     private final ProductClient productClient;
     private final AssetClient assetClient;
 
@@ -48,17 +50,31 @@ public class InvestmentService {
     }
 
     // 상품별 투자자 조회
-    public List<ProductInvestorListResponse> getProductInvestor(Integer projectId) {
+    public List<ProductInvestorResponse> getInvestorByProduct(String projectId) {
+        List<Investment> investments = investmentRepository.findByProjectId(projectId);
 
-        return investmentRepository.findByProjectId(projectId).stream()
-                .map(investment -> {
-                    ProductDTO product = productClient.getProduct(investment.getProjectId());
-                    return ProductInvestorListResponse.builder()
-                            .projectId(investment.getProjectId())
-                            .totalInvestment(investment.getTotalInvestment())
-                            .totalInvestors(investment.getTotalInvestor())
+        List<Integer> investorList = investments.stream()
+                .map(Investment::getUserSeq)
+                .distinct()
+                .toList();
+
+        List<UserDTO> dto = userClient.getUser(investorList);
+
+        return investments.stream()
+                .map(i -> {
+                    UserDTO user = dto.stream()
+                            .filter(u -> u.getUserSeq().equals(i.getUserSeq()))
+                            .findFirst()
+                            .orElse(null);
+
+                    return ProductInvestorResponse.builder()
+                            .user(user)
+                            .investedPrice(i.getInvestedPrice())
+                            .tokenQuantity(i.getTokenQuantity())
+                            .investedAt(i.getInvestedAt())
                             .build();
-                }).collect(Collectors.toList());
+                })
+                .toList();
     }
 
 

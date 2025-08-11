@@ -1,10 +1,12 @@
 package com.ddiring.backend_market.investment.dto.response;
 
+import com.ddiring.backend_market.api.dto.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 // 프로젝트별 투자자 조회
@@ -14,17 +16,8 @@ import java.util.List;
 @Builder
 public class ProductInvestorResponse {
 
-    private String projectId;
-    private Integer totalInvestors;
-    private List<InvestorInfo> investors;
-
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @Builder
-    public static class InvestorInfo {
-        private Integer userSeq;
-        private Integer investedPrice;
-        private Integer tokenQuantity;
-    }
+    private UserDTO user;
+    private Integer investedPrice;
+    private Integer tokenQuantity;
+    private LocalDateTime investedAt;
 }
