@@ -41,6 +41,7 @@ public class InvestmentService {
                     ProductDTO product = productClient.getProduct(investment.getProjectId());
                     return MyInvestmentResponse.builder()
                             .product(product)
+                            .investedPrice(investment.getInvestedPrice())
                             .tokenQuantity(investment.getTokenQuantity())
                             .build();
                 }).toList();

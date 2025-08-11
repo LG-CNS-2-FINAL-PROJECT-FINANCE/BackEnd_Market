@@ -12,10 +12,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ProductInvestorListResponse {
+public class ProductInvestorResponse {
 
-    private Integer projectId;
-    private Integer totalInvestment; // 총 투자 금액
+    private String projectId;
     private Integer totalInvestors;
     private List<InvestorInfo> investors;
 
