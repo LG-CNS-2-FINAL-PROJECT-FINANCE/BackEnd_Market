@@ -1,7 +1,6 @@
 package com.ddiring.backend_market.investment.controller;
 
 import com.ddiring.backend_market.api.product.ProductDTO;
-import com.ddiring.backend_market.investment.dto.request.BuyInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -11,7 +10,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
