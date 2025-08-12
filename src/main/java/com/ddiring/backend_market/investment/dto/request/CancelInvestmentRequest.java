@@ -11,7 +11,5 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CancelInvestmentRequest {
 
-    private Integer investmentSeq;
     private Integer userSeq;
-    private String productId;
 }
