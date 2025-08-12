@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.entity;
+package com.ddiring.backend_market.trade.entity;
 
 import jakarta.persistence.*;
 import lombok.*;

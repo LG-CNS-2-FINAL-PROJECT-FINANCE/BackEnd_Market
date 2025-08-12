@@ -17,3 +17,9 @@ spring:
     generate-ddl: true # 오직 테스트 환경에서만 (spring.jpa.generate-ddl)
     show-sql: true
     open-in-view: false
+
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092 # 카프카 브로커 주소
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # JSON 직렬화 사용

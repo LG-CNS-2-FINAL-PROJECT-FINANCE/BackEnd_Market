@@ -1,14 +1,14 @@
-package com.ddiring.backend_market.service;
+package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
-import com.ddiring.backend_market.dto.OrdersResponseDto;
-import com.ddiring.backend_market.dto.TradeHistoryResponseDto;
-import com.ddiring.backend_market.dto.TradeSearchResponseDto;
-import com.ddiring.backend_market.entity.Orders;
-import com.ddiring.backend_market.entity.Trade;
-import com.ddiring.backend_market.repository.OrdersRepository;
-import com.ddiring.backend_market.repository.TradeRepository;
+import com.ddiring.backend_market.trade.dto.OrdersResponseDto;
+import com.ddiring.backend_market.trade.dto.TradeHistoryResponseDto;
+import com.ddiring.backend_market.trade.dto.TradeSearchResponseDto;
+import com.ddiring.backend_market.trade.entity.Orders;
+import com.ddiring.backend_market.trade.entity.Trade;
+import com.ddiring.backend_market.trade.repository.OrdersRepository;
+import com.ddiring.backend_market.trade.repository.TradeRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
