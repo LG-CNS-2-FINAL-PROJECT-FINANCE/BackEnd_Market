@@ -1,0 +1,11 @@
+spring:
+  application:
+    name: backend_market
+
+service:
+  product:
+    url: http://localhost:8081  # TODO: Product 서비스 URL 수정
+  asset:
+    url: http://localhost:8082  # TODO: Asset 서비스 URL 수정
+  escrow:
+    url: http://localhost:8084  # TODO: Asset 서비스 URL 수정

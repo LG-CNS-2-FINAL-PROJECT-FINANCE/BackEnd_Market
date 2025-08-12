@@ -1,9 +1,9 @@
 server:
-  port: 8080
+  port: 8086
 
 spring:
   datasource:
-    url: jdbc:mariadb://localhost:3306/company?serverTimezone=UTC&characterEncoding=UTF-8
+    url: jdbc:mariadb://localhost:3306/market?serverTimezone=UTC&characterEncoding=UTF-8
     username: root
     password: 1234
     driver-class-name: org.mariadb.jdbc.Driver
@@ -16,3 +16,8 @@ spring:
     generate-ddl: true # 오직 테스트 환경에서만 (spring.jpa.generate-ddl)
     show-sql: true
     open-in-view: false
+  kafka:
+    producer:
+      bootstrap-servers: localhost:9092 # 카프카 브로커 주소
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # JSON 직렬화 사용
