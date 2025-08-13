@@ -11,7 +11,10 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductDTO {
 
+    private String projectId; // 상품 번호
     private String title; // 제목
+    private String content; // 본문
+    private String summary; // 요약
     private Integer amount; // 모금액
     private Integer deadline; // 마감 기한
 }

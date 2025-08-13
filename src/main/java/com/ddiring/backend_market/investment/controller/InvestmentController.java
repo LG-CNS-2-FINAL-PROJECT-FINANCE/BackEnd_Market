@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/market/invest")
+@RequestMapping("/api/market/invest")
 @RequiredArgsConstructor
 public class InvestmentController {
 
