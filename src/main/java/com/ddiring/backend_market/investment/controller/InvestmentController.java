@@ -13,7 +13,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping("/market/invest")
+@RequestMapping("/api/market/invest")
 @RequiredArgsConstructor
 public class InvestmentController {
 
@@ -38,7 +38,7 @@ public class InvestmentController {
     }
 
     // 주문
-    @PostMapping
+    @PostMapping("/buy")
     public ResponseEntity<InvestmentResponse> buyInvestment(@RequestBody InvestmentRequest request) {
         InvestmentResponse response = investmentService.buyInvestment(request);
         return ResponseEntity.ok(response);
