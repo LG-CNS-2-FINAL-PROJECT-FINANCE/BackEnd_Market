@@ -1,26 +1,22 @@
 package com.ddiring.backend_market.investment.dto.response;
 
+import com.ddiring.backend_market.api.user.UserDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
-// 주문 및 주문 취소
+import java.time.LocalDateTime;
+
+// 프로젝트별 투자자 조회
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class InvestmentResponse {
+public class ProductInvestorResponse {
 
-    private Integer investmentSeq;
-    private Integer userSeq;
-    private String projectId;
+    private UserDTO user;
     private Integer investedPrice;
     private Integer tokenQuantity;
-    private String invStatus;
     private LocalDateTime investedAt;
 }
-

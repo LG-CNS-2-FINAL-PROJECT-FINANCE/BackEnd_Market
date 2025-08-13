@@ -88,5 +88,4 @@ public class Investment {
     public boolean isCancelled() {
         return this.invStatus == InvestmentStatus.CANCELLED;
     }
-
 }
