@@ -10,7 +10,6 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-// TODO: 병합 시 주소 맞춰야함
 @FeignClient(name = "asset")
 public interface AssetClient {
 

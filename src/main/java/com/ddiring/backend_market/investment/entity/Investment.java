@@ -20,7 +20,7 @@ public class Investment {
 
     // 사용자 번호
     @Column(name = "user_seq", nullable = false)
-    private Integer userSeq;
+    private String userSeq;
 
     // 프로젝트 번호
     @Column(name = "project_id", nullable = false)

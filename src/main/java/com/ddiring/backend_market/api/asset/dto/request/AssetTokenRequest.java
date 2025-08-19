@@ -5,5 +5,4 @@ public class AssetTokenRequest {
     public Integer userSeq;
     public Integer tokenQuantity;
     public Integer investedPrice;
-    public String reference;
 }
