@@ -1,24 +1,29 @@
 package com.ddiring.backend_market.trade.dto;
 
-import com.ddiring.backend_market.trade.entity.Trade;
+
+import com.ddiring.backend_market.trade.entity.History;
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
-//1. 체결 금액
-//2. 토큰 수량
-//3. 체결 일자
 @Getter
 @NoArgsConstructor
 public class TradeHistoryResponseDto {
+    private String projectId;
+    private String userSeq;
+    private Integer tradeType;
     private Integer tradePrice;
-    private Integer TokenQuantity;
+    private Integer tokenQuantity;
     private LocalDate tradedAt;
 
-    public TradeHistoryResponseDto(Trade trade) {
-        this.tradePrice = trade.getTradePrice();
-        this.TokenQuantity = trade.getTokenQuantity();
-        this.tradedAt = trade.getTradedAt();
+    public TradeHistoryResponseDto(History history) {
+        this.projectId = history.getProjectId();
+        this.userSeq = history.getUserSeq();
+        this.tradeType = history.getTradeType();
+        this.tradePrice = history.getTradePrice();
+        this.tokenQuantity = history.getTokenQuantity();
+        this.tradedAt = history.getTradedAt();
     }
 }

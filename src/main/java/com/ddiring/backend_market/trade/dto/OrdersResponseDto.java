@@ -14,7 +14,7 @@ import java.time.LocalDate;
 @Getter
 @NoArgsConstructor
 public class OrdersResponseDto {
-    private Integer userSeq;
+    private String userSeq;
     private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;

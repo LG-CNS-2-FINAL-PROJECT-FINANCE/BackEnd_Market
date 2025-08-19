@@ -3,10 +3,13 @@ package com.ddiring.backend_market.trade.service;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.trade.dto.OrdersResponseDto;
+import com.ddiring.backend_market.trade.dto.OrderHistoryResponseDto;
 import com.ddiring.backend_market.trade.dto.TradeHistoryResponseDto;
 import com.ddiring.backend_market.trade.dto.TradeSearchResponseDto;
+import com.ddiring.backend_market.trade.entity.History;
 import com.ddiring.backend_market.trade.entity.Orders;
 import com.ddiring.backend_market.trade.entity.Trade;
+import com.ddiring.backend_market.trade.repository.HistoryRepository;
 import com.ddiring.backend_market.trade.repository.OrdersRepository;
 import com.ddiring.backend_market.trade.repository.TradeRepository;
 import jakarta.transaction.Transactional;
@@ -24,6 +27,7 @@ import java.util.stream.Collectors;
 public class TradeService {
     private final OrdersRepository ordersRepository;
     private final TradeRepository tradeRepository;
+    private final HistoryRepository historyRepository;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
@@ -47,7 +51,28 @@ public class TradeService {
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDate.now())
                         .build();
+
                 tradeRepository.save(trade);
+
+                History purchaseHistory = History.builder()
+                        .projectId(order.getProjectId())
+                        .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
+                        .tradeType(1)
+                        .tradePrice(tradePrice)
+                        .tokenQuantity(tradedQuantity)
+                        .tradedAt(LocalDate.now())
+                        .build();
+                historyRepository.save(purchaseHistory);
+
+                History sellHistory = History.builder()
+                        .projectId(order.getProjectId())
+                        .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
+                        .tradeType(0)
+                        .tradePrice(tradePrice)
+                        .tokenQuantity(tradedQuantity)
+                        .tradedAt(LocalDate.now())
+                        .build();
+                historyRepository.save(sellHistory);
 
                 order.updateOrder(null, order.getTokenQuantity() - tradedQuantity);
                 oldOrder.updateOrder(null, oldOrder.getTokenQuantity() - tradedQuantity);
@@ -72,7 +97,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void OrderReception(Integer userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+    public void OrderReception(String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
         if (userSeq == null || projectId == null || purchasePrice == null || tokenQuantity < 0) {
             throw new BadParameter("값 없음 넣으셈");
         }
@@ -98,7 +123,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void updateOrder(Integer ordersId, Integer userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+    public Orders updateOrder(Integer ordersId, String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
         if (ordersId == null || userSeq == null || projectId == null || (purchasePrice == null && tokenQuantity == null)) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
@@ -112,17 +137,17 @@ public class TradeService {
 
         // 구매자의 구매 입찰 수정, 판매자의 판매 입찰 수정
         order.updateOrder(purchasePrice, tokenQuantity);
-        ordersRepository.save(order);
+        return ordersRepository.save(order);
     }
 
     @Transactional
-    public List<TradeHistoryResponseDto> getTradeHistory(String projectId) {
+    public List<OrderHistoryResponseDto> getTradeHistory(String projectId) {
         if (projectId == null) {
             throw new BadParameter("번호 내놔");
         }
         List<Trade> trades = tradeRepository.findTop20ByProjectIdOrderByTradedAtDesc(projectId);
         return trades.stream()
-                .map(TradeHistoryResponseDto::new)
+                .map(OrderHistoryResponseDto::new)
                 .collect(Collectors.toList());
     }
 
@@ -149,12 +174,13 @@ public class TradeService {
                 .map(OrdersResponseDto::new)
                 .collect(Collectors.toList());
     }
+
     @Transactional
-    public List<TradeSearchResponseDto> getUserInfo(Integer userId) {
-        if (userId == null) {
+    public List<TradeSearchResponseDto> getUserInfo(String userSeq) {
+        if (userSeq == null) {
             throw new BadParameter("넌 누구냐");
         }
-        List<Orders> ordersHistory = ordersRepository.findByUserSeq(userId);
+        List<Orders> ordersHistory = ordersRepository.findByUserSeq(userSeq);
 
         return ordersHistory.stream()
                 .flatMap(orders -> {
@@ -167,6 +193,38 @@ public class TradeService {
                             });
                 })
                 .sorted((a, b) -> b.getTradedAt().compareTo(a.getTradedAt()))
+                .collect(Collectors.toList());
+    }
+    @Transactional
+    public List<TradeHistoryResponseDto> getTradeHistory(String userSeq, Integer tradeType) {
+        if (userSeq == null || tradeType == null) {
+            throw new BadParameter("이제 그만");
+        }
+        List<History> tradeHistory = historyRepository.findByUserSeqAndTradeTypeOrderByTradedAtDesc(userSeq, tradeType);
+
+        return tradeHistory.stream()
+                .map(TradeHistoryResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<TradeHistoryResponseDto> getTradeAllHistory(String userSeq) {
+        if (userSeq == null) {
+            throw new BadParameter("이제 그만");
+        }
+        List<History> tradeAllHistory = historyRepository.findByUserSeqOrderByTradedAtDesc(userSeq);
+
+        return tradeAllHistory.stream()
+                .map(TradeHistoryResponseDto::new)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<TradeHistoryResponseDto> getAdminHistory() {
+        List<History> tradeAllHistory = historyRepository.findAllByOrderByTradedAtDesc();
+
+        return tradeAllHistory.stream()
+                .map(TradeHistoryResponseDto::new)
                 .collect(Collectors.toList());
     }
 }

@@ -5,3 +5,4 @@ public class AssetRefundRequest {
     public String projectId;
     public Integer investedPrice;
 }
+

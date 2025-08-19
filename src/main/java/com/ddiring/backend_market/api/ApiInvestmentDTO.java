@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.investment.dto.request;
+package com.ddiring.backend_market.api;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CancelInvestmentRequest {
+public class ApiInvestmentDTO {
+
     private Integer userSeq;
+    private Integer investedPrice;
 }
