@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class OrdersRequestDto {
-    private Integer userSeq;
+    private String userSeq;
     private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;

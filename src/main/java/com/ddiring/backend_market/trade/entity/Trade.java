@@ -1,5 +1,6 @@
 package com.ddiring.backend_market.trade.entity;
 
+import com.ddiring.backend_market.investment.entity.Investment;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -15,37 +16,41 @@ public class Trade {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "trade_seq", nullable = false)
-    private Integer tradeSeq;           // 체결 번호 (PK, auto)
+    private Integer tradeSeq;
 
     @Column(name = "project_id", nullable = false)
-    private String projectId;           // 프로젝트 번호 (FK)
+    private String projectId;
 
     @Column(name = "purchase_id", nullable = false)
-    private Integer purchaseId;          // 구매 주문 번호 (FK)
+    private Integer purchaseId;
 
     @Column(name = "sell_id", nullable = false)
-    private Integer sellId;              // 판매 주문 번호 (FK)
+    private Integer sellId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "inv_status", nullable = false)
+    private TradeStatus invStatus;
 
     @Column(name = "trade_price", nullable = false)
-    private Integer tradePrice;          // 체결 금액
+    private Integer tradePrice;
 
     @Column(name = "token_quantity", nullable = false)
-    private Integer tokenQuantity;       // 토큰 수량
+    private Integer tokenQuantity;
 
     @Column(name = "traded_at", nullable = false)
-    private LocalDate tradedAt;          // 체결일자
+    private LocalDate tradedAt;
 
     @Column(name = "created_id")
-    private Integer createdId;           // 생성자
+    private Integer createdId;
 
     @Column(name = "created_at")
-    private LocalDate createdAt;         // 생성일자
+    private LocalDate createdAt;
 
     @Column(name = "updated_id")
-    private Integer updatedId;           // 수정자
+    private Integer updatedId;
 
     @Column(name = "updated_at")
-    private LocalDate updatedAt;         // 수정일자
+    private LocalDate updatedAt;
 
     @Builder
     public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDate tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
@@ -60,4 +65,27 @@ public class Trade {
         this.updatedId = updatedId;
         this.updatedAt = updatedAt;
     }
+
+    @Getter
+    public enum TradeStatus {
+        PENDING("대기"),
+        COMPLETED("체결"),
+        CANCELLED("취소");
+
+        private final String description;
+
+        TradeStatus(String description) {
+            this.description = description;
+        }
+
+    }
+
+    public boolean isPending() {
+        return this.invStatus == Trade.TradeStatus.PENDING;
+    }
+
+    public boolean isCompleted() {
+        return this.invStatus == Trade.TradeStatus.COMPLETED;
+    }
+
 }

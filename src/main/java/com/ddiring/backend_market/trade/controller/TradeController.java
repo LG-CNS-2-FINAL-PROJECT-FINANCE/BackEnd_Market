@@ -2,8 +2,8 @@ package com.ddiring.backend_market.trade.controller;
 
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.trade.dto.*;
+import com.ddiring.backend_market.trade.entity.Orders;
 import com.ddiring.backend_market.trade.service.TradeService;
-import com.ddiring.backend_market.trade.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -23,15 +23,14 @@ public class TradeController {
         tradeService.OrderReception(ordersRequestDto.getUserSeq(), ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 0);
         return ApiResponseDto.defaultOk();
     }
-
     @PostMapping("/purchase")
     public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
         tradeService.OrderReception(ordersRequestDto.getUserSeq(), ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 1);
         return ApiResponseDto.defaultOk();
     }
     @GetMapping("/{projectId}/history")
-    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistory(@PathVariable String projectId) {
-        List<TradeHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
+    public ApiResponseDto<List<OrderHistoryResponseDto>> tradeHistory(@PathVariable String projectId) {
+        List<OrderHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
         return ApiResponseDto.createOk(tradeHistory);
     }
     @GetMapping("/{projectId}/purchase")
@@ -45,19 +44,34 @@ public class TradeController {
         return ApiResponseDto.createOk(historyResponseDtos);
     }
     @PostMapping("/edit/purchase")
-    public ApiResponseDto<String> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
-        tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
-        return ApiResponseDto.defaultOk();
+    public ApiResponseDto<Orders> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+        return ApiResponseDto.createOk(orders);
     }
     @PostMapping("/edit/sell")
-    public ApiResponseDto<String> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
-        tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
-        return ApiResponseDto.defaultOk();
+    public ApiResponseDto<Orders> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
+        return ApiResponseDto.createOk(orders);
     }
-    @GetMapping("/{userId}/list")
-    public ApiResponseDto<List<TradeSearchResponseDto>> tradeSearch(@PathVariable Integer userId) {
-        List<TradeSearchResponseDto> tradeSearchResponseDto = tradeService.getUserInfo(userId);
+    @GetMapping("/{userSeq}/list")
+    public ApiResponseDto<List<TradeSearchResponseDto>> tradeSearch(@RequestHeader("userSeq") String userSeq) {
+        List<TradeSearchResponseDto> tradeSearchResponseDto = tradeService.getUserInfo(userSeq);
         return ApiResponseDto.createOk(tradeSearchResponseDto);
+    }
+    @GetMapping("/history/{tradeType}")
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@RequestHeader("userSeq") String userSeq, @PathVariable Integer tradeType) {
+        List<TradeHistoryResponseDto> tradeHistroy = tradeService.getTradeHistory(userSeq, tradeType);
+        return ApiResponseDto.createOk(tradeHistroy);
+    }
+    @GetMapping("/history")
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeAllHistroy(@RequestHeader("userSeq") String userSeq) {
+        List<TradeHistoryResponseDto> tradeAllHistroy = tradeService.getTradeAllHistory(userSeq);
+        return ApiResponseDto.createOk(tradeAllHistroy);
+    }
+    @GetMapping("/admin/history")
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeAdminHistroy() {
+        List<TradeHistoryResponseDto> tradeAdminHistroy = tradeService.getAdminHistory();
+        return ApiResponseDto.createOk(tradeAdminHistroy);
     }
 
 }

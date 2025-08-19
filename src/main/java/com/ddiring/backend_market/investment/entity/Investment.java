@@ -3,6 +3,7 @@ package com.ddiring.backend_market.investment.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "investment")
@@ -33,8 +34,9 @@ public class Investment {
     private Integer tokenQuantity;
 
     @Column(name = "invested_at", nullable = false)
-    private LocalDate investedAt;
+    private LocalDateTime investedAt;
 
+    @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "inv_status", nullable = false)
     private InvestmentStatus invStatus;
@@ -55,13 +57,14 @@ public class Investment {
     private Integer createdId;
 
     @Column(name = "created_at", nullable = false)
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_id", nullable = false)
     private Integer updatedId;
 
+    @Setter
     @Column(name = "updated_at", nullable = false)
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
 
     @Getter
     public enum InvestmentStatus {
