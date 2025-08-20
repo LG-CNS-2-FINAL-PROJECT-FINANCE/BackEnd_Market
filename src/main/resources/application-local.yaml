@@ -10,18 +10,16 @@ spring:
     hikari:
       connection-test-query: SELECT 1 # HikariCP 유효성 검사 추가
       validation-timeout: 5000
+
   jpa:
     hibernate:
       ddl-auto: none # 오직 테스트 환경에서만
     generate-ddl: true # 오직 테스트 환경에서만 (spring.jpa.generate-ddl)
     show-sql: true
     open-in-view: false
+
   kafka:
-    bootstrap-servers: localhost:9092
     producer:
+      bootstrap-servers: localhost:9092 # 카프카 브로커 주소
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-    consumer:
-      group-id: market-service-group
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # JSON 직렬화 사용

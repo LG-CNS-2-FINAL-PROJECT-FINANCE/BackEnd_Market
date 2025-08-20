@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import java.util.List;
 
-// TODO: 병합 시 주소 맞춰야함
 @FeignClient(name = "user")
 public interface UserClient {
 
