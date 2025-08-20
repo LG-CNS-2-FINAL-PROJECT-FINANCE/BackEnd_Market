@@ -19,7 +19,7 @@ public class Investment {
     private Integer investmentSeq;
 
     @Column(name = "user_seq", nullable = false)
-    private Integer userSeq;
+    private String userSeq;
 
     @Column(name = "project_id")
     private String projectId;
@@ -54,13 +54,13 @@ public class Investment {
     private Integer achievementRate;
 
     @Column(name = "created_id", nullable = false)
-    private Integer createdId;
+    private String createdId;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_id", nullable = false)
-    private Integer updatedId;
+    private String updatedId;
 
     @Setter
     @Column(name = "updated_at", nullable = false)

@@ -10,5 +10,5 @@ import java.util.List;
 public interface UserClient {
 
     @PostMapping("/api/user/detail")
-    List<UserDTO> getUser(@RequestBody List<Integer> userSeq);
+    List<UserDTO> getUser(@RequestBody List<String> userSeq);
 }

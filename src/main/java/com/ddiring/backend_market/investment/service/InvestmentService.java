@@ -40,7 +40,7 @@ public class InvestmentService {
     }
 
     // 개인 투자 내역 조회
-    public List<MyInvestmentResponse> getMyInvestment(Integer userSeq) {
+    public List<MyInvestmentResponse> getMyInvestment(String userSeq) {
         List<Investment> myList = investmentRepository.findByUserSeq(userSeq);
 
         return myList.stream()
@@ -58,7 +58,7 @@ public class InvestmentService {
     public List<ProductInvestorResponse> getInvestorByProduct(String projectId) {
         List<Investment> investments = investmentRepository.findByProjectId(projectId);
 
-        List<Integer> investorList = investments.stream()
+        List<String> investorList = investments.stream()
                 .map(Investment::getUserSeq)
                 .distinct()
                 .toList();

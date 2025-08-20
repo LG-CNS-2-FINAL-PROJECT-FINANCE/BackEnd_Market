@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class InvestmentRequest {
 
-    private Integer userSeq;
+    private String userSeq;
     private String projectId;
     private Integer investedPrice;
     private Integer tokenQuantity;

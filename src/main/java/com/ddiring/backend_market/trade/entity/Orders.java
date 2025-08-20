@@ -25,6 +25,9 @@ public class Orders {
     @Column(name = "user_seq", nullable = false)
     private String userSeq;             // 사용자 번호 (FK, 구매자)
 
+    @Column(name = "role", nullable = false)
+    private String role;
+
     @Column(name = "orders_type", nullable = false)
     private Integer ordersType;           // 구매||판매
 
@@ -50,9 +53,10 @@ public class Orders {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(String projectId, String userSeq, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDate registedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Orders(String projectId, String userSeq, String role, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDate registedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
+        this.role = role;
         this.ordersType = ordersType;
         this.purchasePrice = purchasePrice;
         this.tokenQuantity = tokenQuantity;

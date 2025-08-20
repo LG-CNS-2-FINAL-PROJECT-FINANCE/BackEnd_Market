@@ -1,5 +1,8 @@
 package com.ddiring.backend_market.trade.service;
 
+import com.ddiring.backend_market.api.asset.AssetClient;
+import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
+import com.ddiring.backend_market.api.asset.dto.request.BankSearchDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.trade.dto.OrdersResponseDto;
@@ -28,6 +31,7 @@ public class TradeService {
     private final OrdersRepository ordersRepository;
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
+    private final AssetClient assetClient;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
@@ -97,19 +101,36 @@ public class TradeService {
     }
 
     @Transactional
-    public void OrderReception(String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
-        if (userSeq == null || projectId == null || purchasePrice == null || tokenQuantity < 0) {
+    public void OrderReception(String userSeq, String projectId, String role, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+        if (userSeq == null || projectId == null || purchasePrice == null || tokenQuantity < 0 || role == null) {
             throw new BadParameter("값 없음 넣으셈");
         }
+
+        BankSearchDto bankBalance = assetClient.getBankBalance(userSeq, role);
+
+        if (bankBalance.getDeposit() < purchasePrice) {
+            throw new BadParameter("잔액이 부족합니다.");
+        }
+
         Orders order = Orders.builder()
                 .userSeq(userSeq)
                 .projectId(projectId)
+                .role(role)
                 .ordersType(ordersType)
                 .purchasePrice(purchasePrice)
                 .tokenQuantity(tokenQuantity)
                 .registedAt(LocalDate.now())
+                .createdAt(LocalDate.now())
                 .build();
+
         Orders savedOrder = ordersRepository.save(order);
+
+        AssetDepositRequest depositRequest = new AssetDepositRequest();
+        depositRequest.userSeq = userSeq;
+        depositRequest.projectId = projectId;
+        depositRequest.role = role;
+        depositRequest.investedPrice = purchasePrice;
+        assetClient.requestDeposit(depositRequest);
 
         if(ordersType == 1) {
             List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(projectId, 0);

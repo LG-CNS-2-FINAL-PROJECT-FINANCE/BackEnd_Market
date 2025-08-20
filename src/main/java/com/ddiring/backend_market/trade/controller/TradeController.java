@@ -19,13 +19,14 @@ public class TradeController {
     private final TradeService tradeService;
 
     @PostMapping("/sell")
-    public ApiResponseDto<String> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-        tradeService.OrderReception(ordersRequestDto.getUserSeq(), ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 0);
+    public ApiResponseDto<String> sellOrder(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
+        tradeService.OrderReception(userSeq, ordersRequestDto.getProjectId(), role, ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 0);
         return ApiResponseDto.defaultOk();
     }
+
     @PostMapping("/purchase")
-    public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-        tradeService.OrderReception(ordersRequestDto.getUserSeq(), ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 1);
+    public ApiResponseDto<String> purchaseOrder(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
+        tradeService.OrderReception(userSeq, ordersRequestDto.getProjectId(), role, ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 1);
         return ApiResponseDto.defaultOk();
     }
     @GetMapping("/{projectId}/history")
@@ -44,13 +45,13 @@ public class TradeController {
         return ApiResponseDto.createOk(historyResponseDtos);
     }
     @PostMapping("/edit/purchase")
-    public ApiResponseDto<Orders> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
-        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+    public ApiResponseDto<Orders> editPurchase(@RequestHeader("userSeq") String userSeq, @RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
         return ApiResponseDto.createOk(orders);
     }
     @PostMapping("/edit/sell")
-    public ApiResponseDto<Orders> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
-        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getUserSeq(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
+    public ApiResponseDto<Orders> editSell(@RequestHeader("userSeq") String userSeq, @RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
         return ApiResponseDto.createOk(orders);
     }
     @GetMapping("/{userSeq}/list")
@@ -73,5 +74,6 @@ public class TradeController {
         List<TradeHistoryResponseDto> tradeAdminHistroy = tradeService.getAdminHistory();
         return ApiResponseDto.createOk(tradeAdminHistroy);
     }
+
 
 }

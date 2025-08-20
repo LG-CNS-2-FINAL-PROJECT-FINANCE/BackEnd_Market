@@ -16,7 +16,7 @@ import java.util.List;
 public class InvestmentResponse {
 
     private Integer investmentSeq;
-    private Integer userSeq;
+    private String userSeq;
     private String projectId;
     private Integer investedPrice;
     private Integer tokenQuantity;
