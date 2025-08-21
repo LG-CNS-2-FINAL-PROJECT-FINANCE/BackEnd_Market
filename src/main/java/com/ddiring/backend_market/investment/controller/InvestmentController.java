@@ -27,7 +27,7 @@ public class InvestmentController {
 
     // 개인 투자 내역 조회
     @GetMapping("/{userSeq}/list")
-    public List<MyInvestmentResponse> getMyInvestment(@PathVariable("userSeq") Integer userSeq) {
+    public List<MyInvestmentResponse> getMyInvestment(@PathVariable("userSeq") String userSeq) {
         return investmentService.getMyInvestment(userSeq);
     }
 
