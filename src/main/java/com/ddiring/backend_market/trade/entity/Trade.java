@@ -27,9 +27,8 @@ public class Trade {
     @Column(name = "sell_id", nullable = false)
     private Integer sellId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "inv_status", nullable = false)
-    private TradeStatus invStatus;
+    @Column(name = "trade_status", nullable = false)
+    private String tradeStatus;
 
     @Column(name = "trade_price", nullable = false)
     private Integer tradePrice;
@@ -66,26 +65,5 @@ public class Trade {
         this.updatedAt = updatedAt;
     }
 
-    @Getter
-    public enum TradeStatus {
-        PENDING("대기"),
-        COMPLETED("체결"),
-        CANCELLED("취소");
-
-        private final String description;
-
-        TradeStatus(String description) {
-            this.description = description;
-        }
-
-    }
-
-    public boolean isPending() {
-        return this.invStatus == Trade.TradeStatus.PENDING;
-    }
-
-    public boolean isCompleted() {
-        return this.invStatus == Trade.TradeStatus.COMPLETED;
-    }
 
 }

@@ -5,6 +5,7 @@ import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.BankSearchDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
+import com.ddiring.backend_market.event.dto.*;
 import com.ddiring.backend_market.trade.dto.OrdersResponseDto;
 import com.ddiring.backend_market.trade.dto.OrderHistoryResponseDto;
 import com.ddiring.backend_market.trade.dto.TradeHistoryResponseDto;
@@ -106,11 +107,6 @@ public class TradeService {
             throw new BadParameter("값 없음 넣으셈");
         }
 
-        BankSearchDto bankBalance = assetClient.getBankBalance(userSeq, role);
-
-        if (bankBalance.getDeposit() < purchasePrice) {
-            throw new BadParameter("잔액이 부족합니다.");
-        }
 
         Orders order = Orders.builder()
                 .userSeq(userSeq)
@@ -247,5 +243,57 @@ public class TradeService {
         return tradeAllHistory.stream()
                 .map(TradeHistoryResponseDto::new)
                 .collect(Collectors.toList());
+    }
+    @Transactional
+    public void handleDepositSucceeded(DepositSucceededPayloadDto payload) {
+        Orders sellOrder = ordersRepository.findByOrdersId(payload.getSellId())
+                .orElseThrow(() -> new NotFound("판매 주문을 찾을 수 없습니다."));
+        sellOrder.setOrdersStatus("WAITING");
+        ordersRepository.save(sellOrder);
+    }
+
+    @Transactional
+    public void handleDepositFailed(DepositFailedPayloadDto payload) {
+        Orders sellOrder = ordersRepository.findByOrdersId(payload.getSellId())
+                .orElseThrow(() -> new NotFound("판매 주문을 찾을 수 없습니다."));
+        sellOrder.setOrdersStatus("REJECTED");
+        ordersRepository.save(sellOrder);
+    }
+
+    @Transactional
+    public void handleTradeRequestAccepted(TradeRequestAcceptedPayloadDto payload) {
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
+                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeSeq(), "PENDING"); // PENDING 상태로 업데이트
+    }
+
+    @Transactional
+    public void handleTradeRequestRejected(TradeRequestRejectedPayloadDto payload) {
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
+                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeSeq(), "PENDING"); // PENDING 상태로 업데이트
+    }
+    @Transactional
+    public void handleTradeSucceeded(TradeSucceededPayloadDto payload) {
+        // Trade 엔티티에 tradeStatus 필드가 있다고 가정
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
+                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
+        trade.setTradeStatus("SUCCEEDED");
+        tradeRepository.save(trade);
+
+        // 주문 상태 업데이트
+        ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "SUCCEEDED");
+        ordersRepository.updateStatusByOrdersId(trade.getSellId(), "SUCCEEDED");
+    }
+
+    @Transactional
+    public void handleTradeFailed(TradeFailedPayloadDto payload) {
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
+                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
+        trade.setTradeStatus("FAILED");
+        tradeRepository.save(trade);
+
+        ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "FAILED");
+        ordersRepository.updateStatusByOrdersId(trade.getSellId(), "FAILED");
     }
 }
