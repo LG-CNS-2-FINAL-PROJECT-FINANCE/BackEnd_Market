@@ -9,8 +9,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class DepositFailedPayloadDto {
     private Long sellId;
-    private String status;
     private String sellerAddress;
-    private Long sellerTokenAmount;
-    private String errorMessage;
+    private Long tokenAmount;
 }

@@ -9,7 +9,6 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TradeSucceededPayloadDto {
     private Long tradeId;
-    private String status;
     private String buyerAddress;
     private Long buyerTokenAmount;
     private String sellerAddress;

@@ -93,7 +93,7 @@ public class InvestmentService {
         List<String> investorList = investments.stream()
                 .map(Investment::getUserSeq)
                 .map(u -> {
-                    try { return Integer.parseInt(u); } catch (Exception e) { return null; }
+                    try { return u; } catch (Exception e) { return null; }
                 })
                 .filter(java.util.Objects::nonNull)
                 .distinct()
@@ -129,9 +129,9 @@ public class InvestmentService {
                 .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
                 .invStatus(Investment.InvestmentStatus.PENDING)
-                .createdId(safeParseInt(request.getUserSeq()))
+                .createdId(request.getUserSeq())
                 .createdAt(LocalDateTime.now())
-                .updatedId(safeParseInt(request.getUserSeq()))
+                .updatedId(request.getUserSeq())
                 .updatedAt(LocalDateTime.now())
                 .build();
 
@@ -139,7 +139,7 @@ public class InvestmentService {
 
         // Asset 투자금 예치 요청
         AssetDepositRequest depositRequest = new AssetDepositRequest();
-    depositRequest.userSeq = safeParseInt(request.getUserSeq());
+        depositRequest.userSeq = request.getUserSeq();
         depositRequest.projectId = request.getProjectId();
         depositRequest.investedPrice = request.getInvestedPrice();
 
@@ -164,7 +164,7 @@ public class InvestmentService {
 
         // TODO: BC Connector 토큰 발행 요청, 임시 로직
         AssetTokenRequest tokenRequest = new AssetTokenRequest();
-    tokenRequest.userSeq = safeParseInt(request.getUserSeq());
+        tokenRequest.userSeq = request.getUserSeq();
         tokenRequest.projectId = request.getProjectId();
         tokenRequest.investedPrice = request.getInvestedPrice();
         tokenRequest.tokenQuantity = request.getTokenQuantity();
@@ -175,7 +175,7 @@ public class InvestmentService {
         } catch (Exception e1) {
             // 보상 트랜잭션
             AssetRefundRequest refundRequest = new AssetRefundRequest();
-            refundRequest.userSeq = safeParseInt(request.getUserSeq());
+            refundRequest.userSeq = request.getUserSeq();
             refundRequest.projectId = request.getProjectId();
             refundRequest.investedPrice = request.getInvestedPrice();
 
@@ -221,7 +221,7 @@ public class InvestmentService {
         } else if (investment.isCompleted()) {
             // TODO: 토큰 회수 로직 협의
             AssetRefundRequest refundRequest = new AssetRefundRequest();
-            refundRequest.userSeq = safeParseInt(investment.getUserSeq());
+            refundRequest.userSeq = investment.getUserSeq();
             refundRequest.projectId = investment.getProjectId();
             refundRequest.investedPrice = investment.getInvestedPrice();
 

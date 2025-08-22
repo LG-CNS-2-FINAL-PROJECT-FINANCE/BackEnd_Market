@@ -9,6 +9,5 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TradeRequestRejectedPayloadDto {
     private Long tradeId;
-    private String status;
     private String errorMessage;
 }

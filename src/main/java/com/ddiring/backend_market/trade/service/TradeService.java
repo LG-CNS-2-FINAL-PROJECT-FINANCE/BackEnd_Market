@@ -3,13 +3,11 @@ package com.ddiring.backend_market.trade.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.BankSearchDto;
+import com.ddiring.backend_market.api.asset.dto.response.BankBalanceResponse;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.*;
-import com.ddiring.backend_market.trade.dto.OrdersResponseDto;
-import com.ddiring.backend_market.trade.dto.OrderHistoryResponseDto;
-import com.ddiring.backend_market.trade.dto.TradeHistoryResponseDto;
-import com.ddiring.backend_market.trade.dto.TradeSearchResponseDto;
+import com.ddiring.backend_market.trade.dto.*;
 import com.ddiring.backend_market.trade.entity.History;
 import com.ddiring.backend_market.trade.entity.Orders;
 import com.ddiring.backend_market.trade.entity.Trade;
@@ -102,19 +100,18 @@ public class TradeService {
     }
 
     @Transactional
-    public void OrderReception(String userSeq, String projectId, String role, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
-        if (userSeq == null || projectId == null || purchasePrice == null || tokenQuantity < 0 || role == null) {
+    public void OrderReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("값 없음 넣으셈");
         }
 
-
         Orders order = Orders.builder()
                 .userSeq(userSeq)
-                .projectId(projectId)
+                .projectId(ordersRequestDto.getProjectId())
                 .role(role)
-                .ordersType(ordersType)
-                .purchasePrice(purchasePrice)
-                .tokenQuantity(tokenQuantity)
+                .ordersType(ordersRequestDto.getOrdersType())
+                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDate.now())
                 .createdAt(LocalDate.now())
                 .build();
@@ -123,17 +120,17 @@ public class TradeService {
 
         AssetDepositRequest depositRequest = new AssetDepositRequest();
         depositRequest.userSeq = userSeq;
-        depositRequest.projectId = projectId;
+        depositRequest.projectId = ordersRequestDto.getProjectId();
+        depositRequest.investedPrice = ordersRequestDto.getPurchasePrice();
         depositRequest.role = role;
-        depositRequest.investedPrice = purchasePrice;
-        assetClient.requestDeposit(depositRequest);
 
-        if(ordersType == 1) {
-            List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(projectId, 0);
+
+        if(ordersRequestDto.getOrdersType() == 1) {
+            List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
             matchAndExecuteTrade(savedOrder, sellOrder); // 저장된 객체를 전달
         }
         else {
-            List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(projectId, 1);
+            List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
             matchAndExecuteTrade(savedOrder, purchaseOrder);
         }
 
@@ -244,55 +241,49 @@ public class TradeService {
                 .map(TradeHistoryResponseDto::new)
                 .collect(Collectors.toList());
     }
+
     @Transactional
-    public void handleDepositSucceeded(DepositSucceededPayloadDto payload) {
-        Orders sellOrder = ordersRepository.findByOrdersId(payload.getSellId())
-                .orElseThrow(() -> new NotFound("판매 주문을 찾을 수 없습니다."));
-        sellOrder.setOrdersStatus("WAITING");
-        ordersRepository.save(sellOrder);
+    public void handleDepositSucceeded(DepositSucceededPayloadDto event) {
+        Orders sellOrder = ordersRepository.findByOrdersId(event.getSellId())
+                .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
+        ordersRepository.updateStatusByOrdersId(sellOrder.getOrdersId(), "WAITING");
     }
 
     @Transactional
-    public void handleDepositFailed(DepositFailedPayloadDto payload) {
-        Orders sellOrder = ordersRepository.findByOrdersId(payload.getSellId())
-                .orElseThrow(() -> new NotFound("판매 주문을 찾을 수 없습니다."));
-        sellOrder.setOrdersStatus("REJECTED");
-        ordersRepository.save(sellOrder);
+    public void handleDepositFailed(DepositFailedPayloadDto event) {
+        Orders sellOrder = ordersRepository.findByOrdersId(event.getSellId())
+                .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
+        ordersRepository.updateStatusByOrdersId(sellOrder.getOrdersId(), "REJECTED");
     }
 
     @Transactional
-    public void handleTradeRequestAccepted(TradeRequestAcceptedPayloadDto payload) {
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeSeq(), "PENDING"); // PENDING 상태로 업데이트
+    public void handleTradeRequestAccepted(TradeRequestAcceptedPayloadDto event) {
+        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeId(), "PENDING");
     }
 
     @Transactional
-    public void handleTradeRequestRejected(TradeRequestRejectedPayloadDto payload) {
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeSeq(), "PENDING"); // PENDING 상태로 업데이트
+    public void handleTradeRequestRejected(TradeRequestRejectedPayloadDto event) {
+        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeId(), "PENDING");
     }
-    @Transactional
-    public void handleTradeSucceeded(TradeSucceededPayloadDto payload) {
-        // Trade 엔티티에 tradeStatus 필드가 있다고 가정
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
-        trade.setTradeStatus("SUCCEEDED");
-        tradeRepository.save(trade);
 
-        // 주문 상태 업데이트
+    @Transactional
+    public void handleTradeSucceeded(TradeSucceededPayloadDto event) {
+        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeId(), "SUCCEEDED");
         ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "SUCCEEDED");
         ordersRepository.updateStatusByOrdersId(trade.getSellId(), "SUCCEEDED");
     }
 
     @Transactional
-    public void handleTradeFailed(TradeFailedPayloadDto payload) {
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new NotFound("거래를 찾을 수 없습니다."));
-        trade.setTradeStatus("FAILED");
-        tradeRepository.save(trade);
-
+    public void handleTradeFailed(TradeFailedPayloadDto event) {
+        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
+        tradeRepository.updateTradeStatus(trade.getTradeId(), "FAILED");
         ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "FAILED");
         ordersRepository.updateStatusByOrdersId(trade.getSellId(), "FAILED");
     }

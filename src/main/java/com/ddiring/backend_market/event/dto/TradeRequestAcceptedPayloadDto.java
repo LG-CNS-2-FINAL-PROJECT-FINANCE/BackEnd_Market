@@ -10,5 +10,4 @@ import lombok.Setter;
 @NoArgsConstructor
 public class TradeRequestAcceptedPayloadDto {
     private Long tradeId;
-    private String status;
 }

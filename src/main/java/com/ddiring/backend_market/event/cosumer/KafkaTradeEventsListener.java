@@ -14,47 +14,39 @@ import org.springframework.stereotype.Component;
 public class KafkaTradeEventsListener {
 
     private final TradeService tradeService;
-    private final ObjectMapper objectMapper;
+    @KafkaListener(topics = "trade-deposit-succeeded", groupId = "market-service-group")
+    public void listenDepositSucceededEvent(DepositSucceededPayloadDto event) {
+        log.info("DepositSucceededEvent 수신: sellId={}", event.getSellId());
+        tradeService.handleDepositSucceeded(event);
+    }
 
-    @KafkaListener(topics = "trade-events-topic", groupId = "market-service-group")
-    public void listenTradeEvents(String message) {
-        log.info("Kafka로부터 거래 이벤트 수신: {}", message);
+    @KafkaListener(topics = "trade-deposit-failed", groupId = "market-service-group")
+    public void listenDepositFailedEvent(DepositFailedPayloadDto event) {
+        log.info("DepositFailedEvent 수신: sellId={}", event.getSellId());
+        tradeService.handleDepositFailed(event);
+    }
 
-        try {
-            BaseEventDto<?> event = objectMapper.readValue(message, BaseEventDto.class);
-            String eventType = event.getEventType();
+    @KafkaListener(topics = "trade-request-accepted", groupId = "market-service-group")
+    public void listenTradeRequestAcceptedEvent(TradeRequestAcceptedPayloadDto event) {
+        log.info("TradeRequestAcceptedEvent 수신: tradeId={}", event.getTradeId());
+        tradeService.handleTradeRequestAccepted(event);
+    }
 
-            switch (eventType) {
-                case "DepositSucceeded":
-                    BaseEventDto<DepositSucceededPayloadDto> successEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<DepositSucceededPayloadDto>>() {});
-                    tradeService.handleDepositSucceeded(successEvent.getPayload());
-                    break;
-                case "DepositFailed":
-                    BaseEventDto<DepositFailedPayloadDto> failedEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<DepositFailedPayloadDto>>() {});
-                    tradeService.handleDepositFailed(failedEvent.getPayload());
-                    break;
-                case "TradeRequestAccepted":
-                    BaseEventDto<TradeRequestAcceptedPayloadDto> acceptedEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<TradeRequestAcceptedPayloadDto>>() {});
-                    tradeService.handleTradeRequestAccepted(acceptedEvent.getPayload());
-                    break;
-                case "TradeRequestRejected":
-                    BaseEventDto<TradeRequestRejectedPayloadDto> rejectedEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<TradeRequestRejectedPayloadDto>>() {});
-                    tradeService.handleTradeRequestRejected(rejectedEvent.getPayload());
-                    break;
-                case "TradeSucceeded":
-                    BaseEventDto<TradeSucceededPayloadDto> tradeSuccessEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<TradeSucceededPayloadDto>>() {});
-                    tradeService.handleTradeSucceeded(tradeSuccessEvent.getPayload());
-                    break;
-                case "TradeFailed":
-                    BaseEventDto<TradeFailedPayloadDto> tradeFailedEvent = objectMapper.readValue(message, new com.fasterxml.jackson.core.type.TypeReference<BaseEventDto<TradeFailedPayloadDto>>() {});
-                    tradeService.handleTradeFailed(tradeFailedEvent.getPayload());
-                    break;
-                default:
-                    log.warn("알 수 없는 이벤트 타입 수신: {}", eventType);
-                    break;
-            }
-        } catch (JsonProcessingException e) {
-            log.error("이벤트 메시지 파싱 실패", e);
-        }
+    @KafkaListener(topics = "trade-request-rejected", groupId = "market-service-group")
+    public void listenTradeRequestRejectedEvent(TradeRequestRejectedPayloadDto event) {
+        log.info("TradeRequestRejectedEvent 수신: tradeId={}", event.getTradeId());
+        tradeService.handleTradeRequestRejected(event);
+    }
+
+    @KafkaListener(topics = "trade-succeeded", groupId = "market-service-group")
+    public void listenTradeSucceededEvent(TradeSucceededPayloadDto event) {
+        log.info("TradeSucceededEvent 수신: tradeId={}", event.getTradeId());
+        tradeService.handleTradeSucceeded(event);
+    }
+
+    @KafkaListener(topics = "trade-failed", groupId = "market-service-group")
+    public void listenTradeFailedEvent(TradeFailedPayloadDto event) {
+        log.info("TradeFailedEvent 수신: tradeId={}", event.getTradeId());
+        tradeService.handleTradeFailed(event);
     }
 }

@@ -19,14 +19,14 @@ public class TradeController {
     private final TradeService tradeService;
 
     @PostMapping("/sell")
-    public ApiResponseDto<String> sellOrder(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
-        tradeService.OrderReception(userSeq, ordersRequestDto.getProjectId(), role, ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 0);
+    public ApiResponseDto<String> sellOrder(@RequestParam("userSeq") String userSeq, @RequestParam("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
+        tradeService.OrderReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
 
     @PostMapping("/purchase")
-    public ApiResponseDto<String> purchaseOrder(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
-        tradeService.OrderReception(userSeq, ordersRequestDto.getProjectId(), role, ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), 1);
+    public ApiResponseDto<String> purchaseOrder(@RequestParam("userSeq") String userSeq, @RequestParam("role") String role, @RequestBody OrdersRequestDto ordersRequestDto) {
+        tradeService.OrderReception(userSeq,role, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
 
