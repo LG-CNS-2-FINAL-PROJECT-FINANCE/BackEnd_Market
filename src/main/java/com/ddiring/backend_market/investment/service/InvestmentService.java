@@ -139,7 +139,7 @@ public class InvestmentService {
         AssetDepositRequest depositRequest = new AssetDepositRequest();
         depositRequest.userSeq = request.getUserSeq();
         depositRequest.projectId = request.getProjectId();
-        depositRequest.investedPrice = request.getInvestedPrice();
+        depositRequest.price = request.getInvestedPrice();
 
         AssetDepositResponse depositResponse;
         try {
@@ -164,7 +164,7 @@ public class InvestmentService {
         AssetTokenRequest tokenRequest = new AssetTokenRequest();
         tokenRequest.userSeq = request.getUserSeq();
         tokenRequest.projectId = request.getProjectId();
-        tokenRequest.investedPrice = request.getInvestedPrice();
+        tokenRequest.price = request.getInvestedPrice();
         tokenRequest.tokenQuantity = request.getTokenQuantity();
 
         // 토큰 발행 실패 시
@@ -175,7 +175,7 @@ public class InvestmentService {
             AssetRefundRequest refundRequest = new AssetRefundRequest();
             refundRequest.userSeq = request.getUserSeq();
             refundRequest.projectId = request.getProjectId();
-            refundRequest.investedPrice = request.getInvestedPrice();
+            refundRequest.price = request.getInvestedPrice();
 
             try {
                 assetClient.requestRefund(refundRequest);
@@ -220,7 +220,7 @@ public class InvestmentService {
             AssetRefundRequest refundRequest = new AssetRefundRequest();
             refundRequest.userSeq = investment.getUserSeq();
             refundRequest.projectId = investment.getProjectId();
-            refundRequest.investedPrice = investment.getInvestedPrice();
+            refundRequest.price = investment.getInvestedPrice();
 
             try {
                 AssetRefundResponse refundResponse = assetClient.requestRefund(refundRequest);

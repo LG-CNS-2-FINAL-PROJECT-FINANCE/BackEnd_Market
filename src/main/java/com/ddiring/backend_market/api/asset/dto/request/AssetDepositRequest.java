@@ -4,5 +4,5 @@ public class AssetDepositRequest {
     public String userSeq;
     public String projectId;
     public String role;
-    public Long investedPrice;
+    public Integer price;
 }

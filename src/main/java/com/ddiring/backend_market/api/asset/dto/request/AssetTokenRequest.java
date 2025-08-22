@@ -4,5 +4,5 @@ public class AssetTokenRequest {
     public String projectId;
     public String userSeq;
     public Integer tokenQuantity;
-    public Long investedPrice;
+    public Integer price;
 }

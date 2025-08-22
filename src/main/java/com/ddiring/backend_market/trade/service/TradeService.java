@@ -2,8 +2,7 @@ package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
-import com.ddiring.backend_market.api.asset.dto.request.BankSearchDto;
-import com.ddiring.backend_market.api.asset.dto.response.BankBalanceResponse;
+import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.*;
@@ -102,7 +101,7 @@ public class TradeService {
     @Transactional
     public void OrderReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
-            throw new BadParameter("값 없음 넣으셈");
+            throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
 
         Orders order = Orders.builder()
@@ -118,22 +117,48 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
-        AssetDepositRequest depositRequest = new AssetDepositRequest();
-        depositRequest.userSeq = userSeq;
-        depositRequest.projectId = ordersRequestDto.getProjectId();
-        depositRequest.investedPrice = ordersRequestDto.getPurchasePrice();
-        depositRequest.role = role;
+        // ✅ 주문 유형에 따라 분기 처리
+        if(ordersRequestDto.getOrdersType() == 1) { // 구매 주문
+            // 🚨 누락되었던 Asset 서비스 API 호출 로직 추가
+            AssetDepositRequest depositRequest = new AssetDepositRequest();
+            depositRequest.userSeq = userSeq;
+            depositRequest.projectId = ordersRequestDto.getProjectId();
+            // 🚨 총 구매 대금을 계산하여 설정
+            depositRequest.price = ordersRequestDto.getPurchasePrice();
+            depositRequest.role = role;
 
+            try {
+                assetClient.requestDeposit(depositRequest);
+                log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
+            } catch (Exception e) {
+                log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
+                // 필요 시 주문 상태를 '실패'로 처리하고 사용자에게 알림을 보내는 등의 예외 처리 로직 추가
+                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
+            }
 
-        if(ordersRequestDto.getOrdersType() == 1) {
             List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
-            matchAndExecuteTrade(savedOrder, sellOrder); // 저장된 객체를 전달
-        }
-        else {
+            matchAndExecuteTrade(savedOrder, sellOrder);
+
+        } else { // 판매 주문
+            // ✅ Asset 서비스에서 지갑 주소를 조회하는 로직 추가
+            try {
+                ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
+                String walletAddress = response.getData(); // ApiResponseDto 구조에 따라 변경될 수 있음
+                log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
+
+                // ✅ 조회한 지갑 주소를 포함하여 다른 서비스로 Kafka 이벤트 발행 (예시)
+                // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
+                // kafkaTemplate.send("sell-order-topic", eventPayload);
+
+            } catch (Exception e) {
+                log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
+                // 필요 시 주문 상태를 '실패'로 처리하고 사용자에게 알림을 보내는 등의 예외 처리 로직 추가
+                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
+            }
+
             List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
             matchAndExecuteTrade(savedOrder, purchaseOrder);
         }
-
     }
 
     @Transactional
