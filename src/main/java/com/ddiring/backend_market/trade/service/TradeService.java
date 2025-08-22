@@ -2,6 +2,7 @@ package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
+import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
@@ -117,13 +118,10 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
-        // ✅ 주문 유형에 따라 분기 처리
-        if(ordersRequestDto.getOrdersType() == 1) { // 구매 주문
-            // 🚨 누락되었던 Asset 서비스 API 호출 로직 추가
+        if(ordersRequestDto.getOrdersType() == 1) {
             AssetDepositRequest depositRequest = new AssetDepositRequest();
             depositRequest.userSeq = userSeq;
             depositRequest.projectId = ordersRequestDto.getProjectId();
-            // 🚨 총 구매 대금을 계산하여 설정
             depositRequest.price = ordersRequestDto.getPurchasePrice();
             depositRequest.role = role;
 
@@ -132,15 +130,13 @@ public class TradeService {
                 log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
             } catch (Exception e) {
                 log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
-                // 필요 시 주문 상태를 '실패'로 처리하고 사용자에게 알림을 보내는 등의 예외 처리 로직 추가
                 throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
             }
 
             List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
             matchAndExecuteTrade(savedOrder, sellOrder);
 
-        } else { // 판매 주문
-            // ✅ Asset 서비스에서 지갑 주소를 조회하는 로직 추가
+        } else {
             try {
                 ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
                 String walletAddress = response.getData(); // ApiResponseDto 구조에 따라 변경될 수 있음
@@ -149,6 +145,9 @@ public class TradeService {
                 // ✅ 조회한 지갑 주소를 포함하여 다른 서비스로 Kafka 이벤트 발행 (예시)
                 // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
                 // kafkaTemplate.send("sell-order-topic", eventPayload);
+
+                order.setWalletAddress(walletAddress); // 엔티티에 Setter를 추가하거나 빌더 패턴 수정
+                ordersRepository.save(order);
 
             } catch (Exception e) {
                 log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
@@ -268,48 +267,124 @@ public class TradeService {
     }
 
     @Transactional
-    public void handleDepositSucceeded(DepositSucceededPayloadDto event) {
-        Orders sellOrder = ordersRepository.findByOrdersId(event.getSellId())
+    public void handleDepositSucceeded(DepositSucceededEvent event) {
+        DepositSucceededEvent.DepositSucceededPayload payload = event.getPayload();
+        log.info("DepositSucceededEvent 처리: sellId={}", payload.getSellId());
+
+        Orders sellOrder = ordersRepository.findById(payload.getSellId().intValue())
                 .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
-        ordersRepository.updateStatusByOrdersId(sellOrder.getOrdersId(), "WAITING");
+
+        // ✅ 소유자 검증
+        if (!sellOrder.getWalletAddress().equals(payload.getSellerAddress())) {
+            throw new SecurityException("주문 소유자(지갑 주소)가 일치하지 않습니다.");
+        }
+
+        // ✅ 상태를 WAITING으로 변경
+        sellOrder.setOrdersStatus("WAITING");
+        // 토큰 개수는 이미 예치 시점에 확정되었으므로 여기서는 상태만 변경
+        ordersRepository.save(sellOrder);
     }
 
     @Transactional
-    public void handleDepositFailed(DepositFailedPayloadDto event) {
-        Orders sellOrder = ordersRepository.findByOrdersId(event.getSellId())
+    public void handleDepositFailed(DepositFailedEvent event) {
+        DepositFailedEvent.DepositFailedPayload payload = event.getPayload();
+        log.info("DepositFailedEvent 처리: sellId={}", payload.getSellId());
+
+        Orders sellOrder = ordersRepository.findById(payload.getSellId().intValue())
                 .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
-        ordersRepository.updateStatusByOrdersId(sellOrder.getOrdersId(), "REJECTED");
+
+        // ✅ 상태를 REJECTED로 변경
+        sellOrder.setOrdersStatus("REJECTED");
+        ordersRepository.save(sellOrder);
     }
 
     @Transactional
-    public void handleTradeRequestAccepted(TradeRequestAcceptedPayloadDto event) {
-        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+    public void handleTradeRequestAccepted(TradeRequestAcceptedEvent event) {
+        TradeRequestAcceptedEvent.TradeRequestAcceptedPayload payload = event.getPayload();
+        log.info("TradeRequestAcceptedEvent 처리: tradeId={}", payload.getTradeId());
+
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeId(), "PENDING");
+
+        // ✅ 상태를 PENDING으로 변경
+        trade.setTradeStatus("PENDING");
+        tradeRepository.save(trade);
     }
 
     @Transactional
-    public void handleTradeRequestRejected(TradeRequestRejectedPayloadDto event) {
-        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+    public void handleTradeRequestRejected(TradeRequestRejectedEvent event) {
+        TradeRequestRejectedEvent.TradeRequestRejectedPayload payload = event.getPayload();
+        log.info("TradeRequestRejectedEvent 처리: tradeId={}", payload.getTradeId());
+
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeId(), "PENDING");
+
+        // ✅ 명세에 따라 상태를 PENDING으로 변경
+        // (참고: 일반적으로 REJECTED나 FAILED로 변경하는 것이 더 자연스러울 수 있습니다.)
+        trade.setTradeStatus("PENDING");
+        tradeRepository.save(trade);
     }
 
     @Transactional
-    public void handleTradeSucceeded(TradeSucceededPayloadDto event) {
-        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+    public void handleTradeSucceeded(TradeSucceededEvent event) {
+        TradeSucceededEvent.TradeSucceededPayload payload = event.getPayload();
+        log.info("TradeSucceededEvent 처리: tradeId={}", payload.getTradeId());
+
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeId(), "SUCCEEDED");
-        ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "SUCCEEDED");
-        ordersRepository.updateStatusByOrdersId(trade.getSellId(), "SUCCEEDED");
+
+        // 마켓 서비스 DB 상태 업데이트
+        trade.setTradeStatus("SUCCEEDED");
+        tradeRepository.save(trade);
+
+        Orders purchaseOrder = ordersRepository.findById(trade.getPurchaseId().intValue()).orElseThrow();
+        purchaseOrder.setOrdersStatus("SUCCEEDED");
+        ordersRepository.save(purchaseOrder);
+
+        Orders sellOrder = ordersRepository.findById(trade.getSellId().intValue()).orElseThrow();
+        sellOrder.setOrdersStatus("SUCCEEDED");
+        ordersRepository.save(sellOrder);
+
+        // ✅ Asset 서비스 API 호출: 판매자에게 예치금 전송
+        try {
+            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
+            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), sellOrder.getUserSeq(), amount);
+            assetClient.releaseEscrowToSeller(request);
+            log.info("Asset 서비스에 판매대금({}) 전송 요청 완료. tradeId={}", amount, trade.getTradeId());
+        } catch (Exception e) {
+            log.error("Asset 서비스 호출(판매대금 전송) 실패. tradeId={}", trade.getTradeId(), e);
+            // TODO: 재시도 로직 또는 관리자 알림 등 예외 처리 정책 필요
+        }
     }
 
     @Transactional
-    public void handleTradeFailed(TradeFailedPayloadDto event) {
-        Trade trade = tradeRepository.findByTradeId(event.getTradeId())
+    public void handleTradeFailed(TradeFailedEvent event) {
+        TradeFailedEvent.TradeFailedPayload payload = event.getPayload();
+        log.info("TradeFailedEvent 처리: tradeId={}", payload.getTradeId());
+
+        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-        tradeRepository.updateTradeStatus(trade.getTradeId(), "FAILED");
-        ordersRepository.updateStatusByOrdersId(trade.getPurchaseId(), "FAILED");
-        ordersRepository.updateStatusByOrdersId(trade.getSellId(), "FAILED");
+
+        // 마켓 서비스 DB 상태 업데이트
+        trade.setTradeStatus("FAILED");
+        tradeRepository.save(trade);
+
+        Orders purchaseOrder = ordersRepository.findById(trade.getPurchaseId().intValue()).orElseThrow();
+        purchaseOrder.setOrdersStatus("FAILED");
+        ordersRepository.save(purchaseOrder);
+
+        Orders sellOrder = ordersRepository.findById(trade.getSellId().intValue()).orElseThrow();
+        sellOrder.setOrdersStatus("FAILED");
+        ordersRepository.save(sellOrder);
+
+        // ✅ Asset 서비스 API 호출: 구매자에게 예치금 환불
+        try {
+            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
+            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), purchaseOrder.getUserSeq(), amount);
+            assetClient.refundEscrowToBuyer(request);
+            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
+        } catch (Exception e) {
+            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
+        }
     }
 }

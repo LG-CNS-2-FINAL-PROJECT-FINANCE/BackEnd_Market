@@ -36,7 +36,10 @@ public class Orders {
     private Integer tokenQuantity;       // 주문수량
 
     @Column(name = "registed_at", nullable = false)
-    private LocalDate registedAt;        // 등록일시
+    private LocalDate registedAt;// 등록일시
+
+    @Column(name = "wallet_address")
+    private String walletAddress;
 
     @Column(name = "orders_status")
     private String ordersStatus;
