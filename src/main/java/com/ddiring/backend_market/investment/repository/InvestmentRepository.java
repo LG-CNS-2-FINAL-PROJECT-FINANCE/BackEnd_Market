@@ -12,7 +12,4 @@ public interface InvestmentRepository extends JpaRepository<Investment, Integer>
 
     // 프로젝트별 투자자 조회
     List<Investment> findByProjectId(String projectId);
-
-    // 상품 상태 조회
-    List<Investment> findByInvStatus(Investment.InvestmentStatus investmentStatus);
 }
