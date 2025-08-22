@@ -25,10 +25,10 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # JSON 직렬화 사용
 
 user:
-  base-url: "http://localhost:8081"
+  base-url: http://localhost:8081
 
 asset:
-  base-url: "http://localhost:8082"
-  
+  base-url: http://localhost:8082
+
 product:
-  base-url: "http://localhost:8083"
+  base-url: http://localhost:8083
