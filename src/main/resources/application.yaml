@@ -1,5 +1,3 @@
 spring:
   application:
     name: backend_market
-  profiles:
-    active: local
