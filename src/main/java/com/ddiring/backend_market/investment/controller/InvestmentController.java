@@ -45,11 +45,10 @@ public class InvestmentController {
     }
 
     // 주문 취소
-    @PostMapping("/cancel")
+    @PostMapping("/{investmentSeq}/cancel")
     public ResponseEntity<InvestmentResponse> cancelInvestment(
             @RequestBody CancelInvestmentRequest request,
-            @PathVariable Integer investmentSeq
-    ) {
+            @PathVariable Integer investmentSeq) {
         InvestmentResponse response = investmentService.cancelInvestment(request, investmentSeq);
         return ResponseEntity.ok(response);
     }

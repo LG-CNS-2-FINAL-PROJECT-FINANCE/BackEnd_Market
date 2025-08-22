@@ -129,9 +129,9 @@ public class InvestmentService {
                 .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
                 .invStatus(Investment.InvestmentStatus.PENDING)
-                .createdId(request.getUserSeq())
+                .createdId(safeParseInt(request.getUserSeq()))
                 .createdAt(LocalDateTime.now())
-                .updatedId(request.getUserSeq())
+                .updatedId(safeParseInt(request.getUserSeq()))
                 .updatedAt(LocalDateTime.now())
                 .build();
 
@@ -139,7 +139,7 @@ public class InvestmentService {
 
         // Asset 투자금 예치 요청
         AssetDepositRequest depositRequest = new AssetDepositRequest();
-        depositRequest.userSeq = request.getUserSeq();
+    depositRequest.userSeq = request.getUserSeq();
         depositRequest.projectId = request.getProjectId();
         depositRequest.investedPrice = request.getInvestedPrice();
 
