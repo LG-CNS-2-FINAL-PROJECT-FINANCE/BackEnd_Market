@@ -2,7 +2,6 @@ package com.ddiring.backend_market.investment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -15,55 +14,55 @@ public class Investment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "investment_seq", nullable = false)
+    @Column(name = "investment_seq")
     private Integer investmentSeq;
 
-    @Column(name = "user_seq", nullable = false)
+    @Column(name = "user_seq")
     private String userSeq;
 
     @Column(name = "project_id")
     private String projectId;
 
-    @Column(name = "account", nullable = false)
+    @Column(name = "account")
     private String account;
 
-    @Column(name = "invested_price", nullable = false)
+    @Column(name = "invested_price")
     private Integer investedPrice;
 
-    @Column(name = "token_quantity", nullable = false)
+    @Column(name = "token_quantity")
     private Integer tokenQuantity;
 
-    @Column(name = "invested_at", nullable = false)
+    @Column(name = "invested_at")
     private LocalDateTime investedAt;
 
     @Setter
     @Enumerated(EnumType.STRING)
-    @Column(name = "inv_status", nullable = false)
+    @Column(name = "inv_status")
     private InvestmentStatus invStatus;
 
-    @Column(name = "current_amount", nullable = false)
+    @Column(name = "current_amount")
     private Integer currentAmount;
 
-    @Column(name = "total_investment", nullable = false)
+    @Column(name = "total_investment")
     private Integer totalInvestment;
 
-    @Column(name = "total_investor", nullable = false)
+    @Column(name = "total_investor")
     private Integer totalInvestor;
 
-    @Column(name = "achievement_rate", nullable = false)
+    @Column(name = "achievement_rate")
     private Integer achievementRate;
 
-    @Column(name = "created_id", nullable = false)
+    @Column(name = "created_id")
     private Integer createdId;
 
-    @Column(name = "created_at", nullable = false)
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_id", nullable = false)
+    @Column(name = "updated_id")
     private Integer updatedId;
 
     @Setter
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @Getter

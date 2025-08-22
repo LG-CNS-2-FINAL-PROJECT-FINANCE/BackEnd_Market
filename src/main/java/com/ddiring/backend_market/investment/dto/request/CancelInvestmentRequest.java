@@ -10,5 +10,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CancelInvestmentRequest {
-    private Integer userSeq;
+    private String userSeq;
 }
