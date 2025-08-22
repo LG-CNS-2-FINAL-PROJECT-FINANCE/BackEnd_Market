@@ -9,7 +9,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "asset", url = "${asset.base-url}")
+@FeignClient(name = "assetClient", url = "${asset.base-url}")
 public interface AssetClient {
 
     @PostMapping("/api/asset/deposit")
