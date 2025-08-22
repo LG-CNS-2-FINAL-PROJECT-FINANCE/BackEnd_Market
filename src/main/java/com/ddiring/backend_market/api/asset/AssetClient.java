@@ -3,15 +3,16 @@ package com.ddiring.backend_market.api.asset;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetTokenRequest;
-import com.ddiring.backend_market.api.asset.dto.request.WelletSearchDto;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
-import com.ddiring.backend_market.api.asset.dto.response.AssetTokenResponse;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 
-@FeignClient(name = "asset", url = "http://localhost:8082")
+@FeignClient(name = "assetClient", url = "${asset.base-url}")
 public interface AssetClient {
 
 
@@ -22,7 +23,7 @@ public interface AssetClient {
     AssetDepositResponse requestDeposit(@RequestBody AssetDepositRequest request);
 
     @PostMapping("api/asset/token")
-    AssetTokenResponse requestToken(@RequestBody AssetTokenRequest request);
+    void requestToken(@RequestBody AssetTokenRequest request);
 
     @PostMapping("/api/asset/refund")
     AssetRefundResponse requestRefund(@RequestBody AssetRefundRequest request);

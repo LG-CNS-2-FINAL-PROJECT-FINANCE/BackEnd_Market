@@ -5,12 +5,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import java.util.List;
 
-@FeignClient(name = "product", url = "http://localhost:8083")
+@FeignClient(name = "productClient", url = "${product.base-url}")
 public interface ProductClient {
 
     @GetMapping("/api/product")
     List<ProductDTO> getAllProduct();
 
-    @GetMapping("/api/product/{productId}")
-    ProductDTO getProduct(@PathVariable("productId") String productId);
+    @GetMapping("/api/product/{projectId}")
+    ProductDTO getProduct(@PathVariable("projectId") String projectId);
 }

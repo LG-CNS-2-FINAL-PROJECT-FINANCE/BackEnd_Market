@@ -54,36 +54,35 @@ public class InvestmentService {
         } catch (Exception e) {
             log.warn("상품 불러오기 실패. reason={}", e.getMessage());
             return myList.stream()
-                .map(investment -> MyInvestmentResponse.builder()
-                    .product(null)
-                    .investedPrice(investment.getInvestedPrice())
-                    .tokenQuantity(investment.getTokenQuantity())
-                    .build())
-                .toList();
+                    .map(investment -> MyInvestmentResponse.builder()
+                            .product(null)
+                            .investedPrice(investment.getInvestedPrice())
+                            .tokenQuantity(investment.getTokenQuantity())
+                            .build())
+                    .toList();
         }
 
         Set<String> neededIds = myList.stream()
-            .map(Investment::getProjectId)
-            .collect(java.util.stream.Collectors.toSet());
+                .map(Investment::getProjectId)
+                .collect(java.util.stream.Collectors.toSet());
 
         Map<String, ProductDTO> productMap = allProducts.stream()
-            .filter(p -> p != null && p.getProjectId() != null && neededIds.contains(p.getProjectId()))
-            .collect(java.util.stream.Collectors.toMap(
-                ProductDTO::getProjectId,
-                java.util.function.Function.identity(),
-                (a, b) -> a
-            ));
+                .filter(p -> p != null && p.getProjectId() != null && neededIds.contains(p.getProjectId()))
+                .collect(java.util.stream.Collectors.toMap(
+                        ProductDTO::getProjectId,
+                        java.util.function.Function.identity(),
+                        (a, b) -> a));
 
         return myList.stream()
-            .map(investment -> {
-                ProductDTO product = productMap.get(investment.getProjectId());
-                return MyInvestmentResponse.builder()
-                    .product(product)
-                    .investedPrice(investment.getInvestedPrice())
-                    .tokenQuantity(investment.getTokenQuantity())
-                    .build();
-            })
-            .toList();
+                .map(investment -> {
+                    ProductDTO product = productMap.get(investment.getProjectId());
+                    return MyInvestmentResponse.builder()
+                            .product(product)
+                            .investedPrice(investment.getInvestedPrice())
+                            .tokenQuantity(investment.getTokenQuantity())
+                            .build();
+                })
+                .toList();
     }
 
     // 상품별 투자자 조회
@@ -93,7 +92,11 @@ public class InvestmentService {
         List<String> investorList = investments.stream()
                 .map(Investment::getUserSeq)
                 .map(u -> {
-                    try { return u; } catch (Exception e) { return null; }
+                    try {
+                        return u;
+                    } catch (Exception e) {
+                        return null;
+                    }
                 })
                 .filter(java.util.Objects::nonNull)
                 .distinct()
@@ -118,7 +121,6 @@ public class InvestmentService {
                 .toList();
     }
 
-
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(InvestmentRequest request) {
@@ -139,7 +141,7 @@ public class InvestmentService {
 
         // Asset 투자금 예치 요청
         AssetDepositRequest depositRequest = new AssetDepositRequest();
-    depositRequest.userSeq = request.getUserSeq();
+        depositRequest.userSeq = request.getUserSeq();
         depositRequest.projectId = request.getProjectId();
         depositRequest.price = request.getInvestedPrice();
 
@@ -203,8 +205,7 @@ public class InvestmentService {
     // 주문 취소
     public InvestmentResponse cancelInvestment(
             CancelInvestmentRequest request,
-            Integer investmentSeq
-            ) {
+            Integer investmentSeq) {
         Optional<Investment> opt = investmentRepository.findById(investmentSeq);
         if (opt.isEmpty()) {
             throw new IllegalArgumentException("없는 주문입니다: " + investmentSeq);
@@ -260,7 +261,8 @@ public class InvestmentService {
     }
 
     private Integer safeParseInt(String value) {
-        if (value == null) return null;
+        if (value == null)
+            return null;
         try {
             return Integer.valueOf(value);
         } catch (NumberFormatException e) {
