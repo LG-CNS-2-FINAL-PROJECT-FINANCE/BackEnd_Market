@@ -14,6 +14,6 @@ import lombok.NoArgsConstructor;
 public class MyInvestmentResponse {
 
     private ProductDTO product;
-    private Integer investedPrice;
+    private Long investedPrice;
     private Integer tokenQuantity;
 }

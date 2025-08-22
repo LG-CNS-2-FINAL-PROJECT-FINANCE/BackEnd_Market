@@ -16,7 +16,7 @@ public class InvestmentResponse {
     private Integer investmentSeq;
     private String userSeq;
     private String projectId;
-    private Integer investedPrice;
+    private Long investedPrice;
     private Integer tokenQuantity;
     private String invStatus;
     private LocalDateTime investedAt;

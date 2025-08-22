@@ -2,10 +2,15 @@ package com.ddiring.backend_market.investment.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.time.LocalDate;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import java.time.LocalDateTime;
 
 @Entity
+@EntityListeners(AuditingEntityListener.class)
 @Table(name = "investment")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -28,7 +33,7 @@ public class Investment {
     private String account;
 
     @Column(name = "invested_price")
-    private Integer investedPrice;
+    private Long investedPrice;
 
     @Column(name = "token_quantity")
     private Integer tokenQuantity;
@@ -54,16 +59,20 @@ public class Investment {
     private Integer achievementRate;
 
     @Column(name = "created_id")
-    private Integer createdId;
+    @CreatedBy
+    private String createdId;
 
     @Column(name = "created_at")
+    @CreatedDate
     private LocalDateTime createdAt;
 
     @Column(name = "updated_id")
-    private Integer updatedId;
+    @LastModifiedBy
+    private String updatedId;
 
     @Setter
     @Column(name = "updated_at")
+    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     @Getter
