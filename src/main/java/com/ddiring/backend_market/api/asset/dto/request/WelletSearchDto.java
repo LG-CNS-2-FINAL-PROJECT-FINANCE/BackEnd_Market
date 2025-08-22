@@ -5,7 +5,6 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class BankSearchDto {
-    public String bankNumber;
-    public Integer deposit;
+public class WelletSearchDto {
+    public String walletAddress;
 }

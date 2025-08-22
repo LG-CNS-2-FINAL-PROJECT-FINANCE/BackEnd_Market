@@ -1,6 +1,5 @@
 package com.ddiring.backend_market.common.util;
 
-
 import com.ddiring.backend_market.common.exception.CustomException;
 import com.ddiring.backend_market.common.exception.ErrorCode;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -13,28 +12,20 @@ public class GatewayRequestHeaderUtils {
         return requestAttributes.getRequest().getHeader(key);
     }
 
-    public static Long getUserId() {
-        Long userId = Long.parseLong(getRequestHeaderParamAsString("X-Auth-UserId"));
-        if (userId == null) {
+    public static String getUserSeq() {
+        String userSeq = (getRequestHeaderParamAsString("userSeq"));
+        if (userSeq == null) {
             throw new CustomException(ErrorCode.USER_NOT_FOUND);
         }
-        return userId;
+        return userSeq;
     }
 
-    public static String getClientDevice() {
-        String clientDevice = getRequestHeaderParamAsString("X-Client-Device");
-        if (clientDevice == null) {
+    public static String getRole() {
+        String role = getRequestHeaderParamAsString("role");
+        if (role == null) {
             return null;
         }
-        return clientDevice;
-    }
-
-    public static String getClientAddress() {
-        String clientAddress = getRequestHeaderParamAsString("X-Client-Address");
-        if (clientAddress == null) {
-            return null;
-        }
-        return clientAddress;
+        return role;
     }
 
 }
