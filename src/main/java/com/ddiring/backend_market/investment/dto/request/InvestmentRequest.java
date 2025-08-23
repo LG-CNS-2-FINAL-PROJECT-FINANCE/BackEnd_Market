@@ -13,6 +13,6 @@ public class InvestmentRequest {
 
     private String userSeq;
     private String projectId;
-    private Long investedPrice;
+    private Integer investedPrice;
     private Integer tokenQuantity;
 }

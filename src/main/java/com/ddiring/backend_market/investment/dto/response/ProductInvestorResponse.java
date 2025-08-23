@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 public class ProductInvestorResponse {
 
     private UserDTO user;
-    private Long investedPrice;
+    private Integer investedPrice;
     private Integer tokenQuantity;
     private LocalDateTime investedAt;
 }

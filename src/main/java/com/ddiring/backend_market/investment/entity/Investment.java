@@ -33,7 +33,7 @@ public class Investment {
     private String account;
 
     @Column(name = "invested_price")
-    private Long investedPrice;
+    private Integer investedPrice;
 
     @Column(name = "token_quantity")
     private Integer tokenQuantity;
