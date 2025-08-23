@@ -113,7 +113,6 @@ public class TradeService {
                 .purchasePrice(ordersRequestDto.getPurchasePrice())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
-                .createdAt(LocalDateTime.now())
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);

@@ -4,6 +4,7 @@ import com.ddiring.backend_market.investment.entity.Investment;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -43,16 +44,16 @@ public class Trade {
     private Integer createdId;
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 
     @Column(name = "updated_id")
     private Integer updatedId;
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    private LocalDate updatedAt;
 
     @Builder
-    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDateTime createdAt, Integer updatedId, LocalDateTime updatedAt) {
+    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.purchaseId = purchaseId;
         this.sellId = sellId;

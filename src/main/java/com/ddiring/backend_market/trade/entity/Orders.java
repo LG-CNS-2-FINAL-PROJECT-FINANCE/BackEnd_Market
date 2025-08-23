@@ -3,6 +3,7 @@ package com.ddiring.backend_market.trade.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -48,16 +49,16 @@ public class Orders {
     private Integer createdId;           // 생성자
 
     @Column(name = "created_at")
-    private LocalDateTime createdAt;         // 생성일자
+    private LocalDate createdAt;         // 생성일자
 
     @Column(name = "updated_id")
     private Integer updatedId;           // 수정자
 
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;         // 수정일자
+    private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(String projectId, String userSeq, String role, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDateTime createdAt, Integer updatedId, LocalDateTime updatedAt) {
+    public Orders(String projectId, String userSeq, String role, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.role = role;
