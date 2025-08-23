@@ -1,6 +1,7 @@
 package com.ddiring.backend_market.api.asset;
 
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
+import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetTokenRequest;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
@@ -27,4 +28,11 @@ public interface AssetClient {
 
     @PostMapping("/api/asset/refund")
     AssetRefundResponse requestRefund(@RequestBody AssetRefundRequest request);
+
+    @PostMapping("/api/asset/escrow/release")
+    ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);
+
+    // ✅ 거래 실패 시 구매자에게 예치금을 환불하는 API
+    @PostMapping("/api/asset/escrow/refund")
+    ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 }

@@ -1,7 +1,8 @@
-package com.ddiring.backend_market.event.cosumer;// KafkaTradeEventsListener.java
+package com.ddiring.backend_market.event.cosumer;
+
 import com.ddiring.backend_market.event.dto.*;
 import com.ddiring.backend_market.trade.service.TradeService;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -14,39 +15,46 @@ import org.springframework.stereotype.Component;
 public class KafkaTradeEventsListener {
 
     private final TradeService tradeService;
-    @KafkaListener(topics = "trade-deposit-succeeded", groupId = "market-service-group")
-    public void listenDepositSucceededEvent(DepositSucceededPayloadDto event) {
-        log.info("DepositSucceededEvent 수신: sellId={}", event.getSellId());
-        tradeService.handleDepositSucceeded(event);
-    }
+    private final ObjectMapper objectMapper; // JSON 파싱을 위해 ObjectMapper 주입
 
-    @KafkaListener(topics = "trade-deposit-failed", groupId = "market-service-group")
-    public void listenDepositFailedEvent(DepositFailedPayloadDto event) {
-        log.info("DepositFailedEvent 수신: sellId={}", event.getSellId());
-        tradeService.handleDepositFailed(event);
-    }
+    @KafkaListener(topics = "TRADE", groupId = "market-service-group")
+    public void listenTradeEvents(String message) {
+        try {
+            JsonNode jsonNode = objectMapper.readTree(message);
+            String eventType = jsonNode.get("eventType").asText();
+            log.info("수신된 이벤트 타입: {}", eventType);
 
-    @KafkaListener(topics = "trade-request-accepted", groupId = "market-service-group")
-    public void listenTradeRequestAcceptedEvent(TradeRequestAcceptedPayloadDto event) {
-        log.info("TradeRequestAcceptedEvent 수신: tradeId={}", event.getTradeId());
-        tradeService.handleTradeRequestAccepted(event);
-    }
-
-    @KafkaListener(topics = "trade-request-rejected", groupId = "market-service-group")
-    public void listenTradeRequestRejectedEvent(TradeRequestRejectedPayloadDto event) {
-        log.info("TradeRequestRejectedEvent 수신: tradeId={}", event.getTradeId());
-        tradeService.handleTradeRequestRejected(event);
-    }
-
-    @KafkaListener(topics = "trade-succeeded", groupId = "market-service-group")
-    public void listenTradeSucceededEvent(TradeSucceededPayloadDto event) {
-        log.info("TradeSucceededEvent 수신: tradeId={}", event.getTradeId());
-        tradeService.handleTradeSucceeded(event);
-    }
-
-    @KafkaListener(topics = "trade-failed", groupId = "market-service-group")
-    public void listenTradeFailedEvent(TradeFailedPayloadDto event) {
-        log.info("TradeFailedEvent 수신: tradeId={}", event.getTradeId());
-        tradeService.handleTradeFailed(event);
+            switch (eventType) {
+                case "TRADE.DEPOSIT.SUCCEEDED":
+                    DepositSucceededEvent depositSucceededEvent = objectMapper.readValue(message, DepositSucceededEvent.class);
+                    tradeService.handleDepositSucceeded(depositSucceededEvent);
+                    break;
+                case "TRADE.DEPOSIT.FAILED":
+                    DepositFailedEvent depositFailedEvent = objectMapper.readValue(message, DepositFailedEvent.class);
+                    tradeService.handleDepositFailed(depositFailedEvent);
+                    break;
+                case "TRADE.REQUEST.ACCEPTED":
+                    TradeRequestAcceptedEvent tradeRequestAcceptedEvent = objectMapper.readValue(message, TradeRequestAcceptedEvent.class);
+                    tradeService.handleTradeRequestAccepted(tradeRequestAcceptedEvent);
+                    break;
+                case "TRADE.REQUEST.REJECTED":
+                    TradeRequestRejectedEvent tradeRequestRejectedEvent = objectMapper.readValue(message, TradeRequestRejectedEvent.class);
+                    tradeService.handleTradeRequestRejected(tradeRequestRejectedEvent);
+                    break;
+                case "TRADE.SUCCEEDED":
+                    TradeSucceededEvent tradeSucceededEvent = objectMapper.readValue(message, TradeSucceededEvent.class);
+                    tradeService.handleTradeSucceeded(tradeSucceededEvent);
+                    break;
+                case "TRADE.FAILED":
+                    TradeFailedEvent tradeFailedEvent = objectMapper.readValue(message, TradeFailedEvent.class);
+                    tradeService.handleTradeFailed(tradeFailedEvent);
+                    break;
+                default:
+                    log.warn("알 수 없는 이벤트 타입입니다: {}", eventType);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("Kafka 메시지 처리 중 오류 발생: {}", message, e);
+        }
     }
 }
