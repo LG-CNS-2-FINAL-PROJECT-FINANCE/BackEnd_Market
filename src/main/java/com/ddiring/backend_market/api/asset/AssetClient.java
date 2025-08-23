@@ -20,7 +20,7 @@ public interface AssetClient {
     @GetMapping("/api/asset/wallet/search")
     ApiResponseDto<String> getWalletAddress(@RequestHeader("userSeq") String userSeq);
 
-    @PostMapping("/api/asset/account/deposit")
+    @PostMapping("/api/asset/deposit")
     AssetDepositResponse requestDeposit(@RequestBody AssetDepositRequest request);
 
     @PostMapping("/api/asset/account/withdrawal")
