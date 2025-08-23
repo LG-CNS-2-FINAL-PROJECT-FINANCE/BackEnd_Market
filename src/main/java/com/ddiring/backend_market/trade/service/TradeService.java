@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -52,7 +52,7 @@ public class TradeService {
                         .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
                         .tradePrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDate.now())
+                        .tradedAt(LocalDateTime.now())
                         .build();
 
                 tradeRepository.save(trade);
@@ -63,7 +63,7 @@ public class TradeService {
                         .tradeType(1)
                         .tradePrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDate.now())
+                        .tradedAt(LocalDateTime.now())
                         .build();
                 historyRepository.save(purchaseHistory);
 
@@ -73,7 +73,7 @@ public class TradeService {
                         .tradeType(0)
                         .tradePrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDate.now())
+                        .tradedAt(LocalDateTime.now())
                         .build();
                 historyRepository.save(sellHistory);
 
@@ -112,13 +112,14 @@ public class TradeService {
                 .ordersType(ordersRequestDto.getOrdersType())
                 .purchasePrice(ordersRequestDto.getPurchasePrice())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
-                .registedAt(LocalDate.now())
-                .createdAt(LocalDate.now())
+                .registedAt(LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
 
         if(ordersRequestDto.getOrdersType() == 1) {
+
             AssetDepositRequest depositRequest = new AssetDepositRequest();
             depositRequest.userSeq = userSeq;
             depositRequest.projectId = ordersRequestDto.getProjectId();
@@ -139,19 +140,17 @@ public class TradeService {
         } else {
             try {
                 ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
-                String walletAddress = response.getData(); // ApiResponseDto 구조에 따라 변경될 수 있음
+                String walletAddress = response.getData();
                 log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
 
-                // ✅ 조회한 지갑 주소를 포함하여 다른 서비스로 Kafka 이벤트 발행 (예시)
                 // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
                 // kafkaTemplate.send("sell-order-topic", eventPayload);
 
-                order.setWalletAddress(walletAddress); // 엔티티에 Setter를 추가하거나 빌더 패턴 수정
+                order.setWalletAddress(walletAddress);
                 ordersRepository.save(order);
 
             } catch (Exception e) {
                 log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
-                // 필요 시 주문 상태를 '실패'로 처리하고 사용자에게 알림을 보내는 등의 예외 처리 로직 추가
                 throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
             }
 
@@ -377,7 +376,6 @@ public class TradeService {
         sellOrder.setOrdersStatus("FAILED");
         ordersRepository.save(sellOrder);
 
-        // ✅ Asset 서비스 API 호출: 구매자에게 예치금 환불
         try {
             long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
             AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), purchaseOrder.getUserSeq(), amount);

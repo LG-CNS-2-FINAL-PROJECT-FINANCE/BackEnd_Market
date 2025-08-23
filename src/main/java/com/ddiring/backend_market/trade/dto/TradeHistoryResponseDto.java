@@ -6,7 +6,7 @@ import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor
@@ -16,7 +16,7 @@ public class TradeHistoryResponseDto {
     private Integer tradeType;
     private Integer tradePrice;
     private Integer tokenQuantity;
-    private LocalDate tradedAt;
+    private LocalDateTime tradedAt;
 
     public TradeHistoryResponseDto(History history) {
         this.projectId = history.getProjectId();

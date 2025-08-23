@@ -31,7 +31,7 @@ public class TradeController {
     public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.OrderReception(userSeq,role, ordersRequestDto);
+        tradeService.OrderReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
 

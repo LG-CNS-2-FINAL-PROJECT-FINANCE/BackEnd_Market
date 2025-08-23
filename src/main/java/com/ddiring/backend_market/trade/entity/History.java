@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -36,22 +36,22 @@ public class History {
     private Integer tokenQuantity;
 
     @Column(name = "traded_at", nullable = false)
-    private LocalDate tradedAt;
+    private LocalDateTime tradedAt;
 
     @Column(name = "created_id")
     private Integer createdId;
 
     @Column(name = "created_at")
-    private LocalDate createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_id")
     private Integer updatedId;
 
     @Column(name = "updated_at")
-    private LocalDate updatedAt;
+    private LocalDateTime updatedAt;
 
     @Builder
-    public History(String projectId, String userSeq, Integer tradeType, Integer tradePrice, Integer tokenQuantity, LocalDate tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public History(String projectId, String userSeq, Integer tradeType, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDateTime createdAt, Integer updatedId, LocalDateTime updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.tradeType = tradeType;

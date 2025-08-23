@@ -4,7 +4,7 @@ import com.ddiring.backend_market.trade.entity.Trade;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 //1. 체결 금액
 //2. 토큰 수량
@@ -14,7 +14,7 @@ import java.time.LocalDate;
 public class OrderHistoryResponseDto {
     private Integer tradePrice;
     private Integer TokenQuantity;
-    private LocalDate tradedAt;
+    private LocalDateTime tradedAt;
 
     public OrderHistoryResponseDto(Trade trade) {
         this.tradePrice = trade.getTradePrice();

@@ -4,7 +4,7 @@ import com.ddiring.backend_market.trade.entity.Orders;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 //1. 구매자ID
 //2. 프로젝트 번호
@@ -18,7 +18,7 @@ public class OrdersResponseDto {
     private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;
-    private LocalDate registedAt;
+    private LocalDateTime registedAt;
 
     public OrdersResponseDto(Orders orders) {
         this.userSeq = orders.getUserSeq();

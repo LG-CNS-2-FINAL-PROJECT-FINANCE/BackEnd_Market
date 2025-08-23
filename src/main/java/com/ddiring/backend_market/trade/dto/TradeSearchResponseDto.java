@@ -4,7 +4,7 @@ import com.ddiring.backend_market.trade.entity.Trade;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 //1. 프로젝트 번호
 //2. 주문 번호
@@ -20,7 +20,7 @@ public class TradeSearchResponseDto {
     private Integer orderType; // 주문 유형 (0: 판매, 1: 구매)
     private Integer tradePrice; // 체결 금액
     private Integer tokenQuantity; // 토큰 수량
-    private LocalDate tradedAt; // 체결 일자
+    private LocalDateTime tradedAt; // 체결 일자
 
     public TradeSearchResponseDto(Trade trade, Integer orderType) {
         this.projectId = trade.getProjectId();
