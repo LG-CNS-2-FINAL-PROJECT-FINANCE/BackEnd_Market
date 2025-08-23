@@ -23,9 +23,6 @@ public interface AssetClient {
     @PostMapping("/api/asset/deposit")
     AssetDepositResponse requestDeposit(@RequestBody AssetDepositRequest request);
 
-    @PostMapping("/api/asset/account/withdrawal")
-    AssetDepositResponse requestWithdrawal(@RequestBody AssetDepositRequest request);
-
     @PostMapping("api/asset/token")
     void requestToken(@RequestBody AssetTokenRequest request);
 
