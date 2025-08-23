@@ -20,10 +20,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -48,11 +47,13 @@ public class InvestmentService {
             return List.of();
         }
 
-        List<ProductDTO> allProducts;
+        List<ProductDTO> myProducts;
         try {
-            allProducts = productClient.getAllProduct();
+            myProducts = productClient.getProducts(myList.stream()
+                    .map(Investment::getProjectId)
+                    .distinct()
+                    .toList());
         } catch (Exception e) {
-            log.warn("상품 불러오기 실패. reason={}", e.getMessage());
             return myList.stream()
                     .map(investment -> MyInvestmentResponse.builder()
                             .product(null)
@@ -64,13 +65,13 @@ public class InvestmentService {
 
         Set<String> neededIds = myList.stream()
                 .map(Investment::getProjectId)
-                .collect(java.util.stream.Collectors.toSet());
+                .collect(Collectors.toSet());
 
-        Map<String, ProductDTO> productMap = allProducts.stream()
+        Map<String, ProductDTO> productMap = myProducts.stream()
                 .filter(p -> p != null && p.getProjectId() != null && neededIds.contains(p.getProjectId()))
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         ProductDTO::getProjectId,
-                        java.util.function.Function.identity(),
+                        Function.identity(),
                         (a, b) -> a));
 
         return myList.stream()
@@ -98,7 +99,7 @@ public class InvestmentService {
                         return null;
                     }
                 })
-                .filter(java.util.Objects::nonNull)
+                .filter(Objects::nonNull)
                 .distinct()
                 .toList();
 

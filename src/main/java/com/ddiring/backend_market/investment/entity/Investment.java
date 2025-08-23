@@ -29,9 +29,6 @@ public class Investment {
     @Column(name = "project_id")
     private String projectId;
 
-    @Column(name = "account")
-    private String account;
-
     @Column(name = "invested_price")
     private Integer investedPrice;
 
@@ -45,18 +42,6 @@ public class Investment {
     @Enumerated(EnumType.STRING)
     @Column(name = "inv_status")
     private InvestmentStatus invStatus;
-
-    @Column(name = "current_amount")
-    private Integer currentAmount;
-
-    @Column(name = "total_investment")
-    private Integer totalInvestment;
-
-    @Column(name = "total_investor")
-    private Integer totalInvestor;
-
-    @Column(name = "achievement_rate")
-    private Integer achievementRate;
 
     @Column(name = "created_id")
     @CreatedBy
