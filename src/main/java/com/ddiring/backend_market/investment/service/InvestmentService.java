@@ -131,10 +131,6 @@ public class InvestmentService {
                 .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
                 .invStatus(Investment.InvestmentStatus.PENDING)
-                .createdId(safeParseInt(request.getUserSeq()))
-                .createdAt(LocalDateTime.now())
-                .updatedId(safeParseInt(request.getUserSeq()))
-                .updatedAt(LocalDateTime.now())
                 .build();
 
         Investment saved = investmentRepository.save(investment);
@@ -258,15 +254,5 @@ public class InvestmentService {
                 .invStatus(inv.getInvStatus().name())
                 .investedAt(inv.getInvestedAt())
                 .build();
-    }
-
-    private Integer safeParseInt(String value) {
-        if (value == null)
-            return null;
-        try {
-            return Integer.valueOf(value);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("userSeq must be numeric. value=" + value);
-        }
     }
 }
