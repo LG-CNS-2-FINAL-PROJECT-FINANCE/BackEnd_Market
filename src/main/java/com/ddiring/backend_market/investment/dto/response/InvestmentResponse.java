@@ -20,5 +20,6 @@ public class InvestmentResponse {
     private Integer tokenQuantity;
     private String invStatus;
     private LocalDateTime investedAt;
+    private String txHash;
+    private String failureReason;
 }
-

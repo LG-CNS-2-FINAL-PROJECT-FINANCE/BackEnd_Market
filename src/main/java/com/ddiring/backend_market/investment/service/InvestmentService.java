@@ -3,13 +3,14 @@ package com.ddiring.backend_market.investment.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetTokenRequest;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
+import com.ddiring.backend_market.event.dto.InvestRequestEvent;
+import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -19,6 +20,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
@@ -29,6 +32,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class InvestmentService {
 
+    private final InvestmentEventProducer investmentEventProducer;
     private final InvestmentRepository investmentRepository;
     private final UserClient userClient;
     private final ProductClient productClient;
@@ -47,13 +51,11 @@ public class InvestmentService {
             return List.of();
         }
 
-        List<ProductDTO> myProducts;
+        List<ProductDTO> allProducts;
         try {
-            myProducts = productClient.getProducts(myList.stream()
-                    .map(Investment::getProjectId)
-                    .distinct()
-                    .toList());
+            allProducts = productClient.getAllProduct();
         } catch (Exception e) {
+            log.warn("상품 불러오기 실패. reason={}", e.getMessage());
             return myList.stream()
                     .map(investment -> MyInvestmentResponse.builder()
                             .product(null)
@@ -67,7 +69,7 @@ public class InvestmentService {
                 .map(Investment::getProjectId)
                 .collect(Collectors.toSet());
 
-        Map<String, ProductDTO> productMap = myProducts.stream()
+        Map<String, ProductDTO> productMap = allProducts.stream()
                 .filter(p -> p != null && p.getProjectId() != null && neededIds.contains(p.getProjectId()))
                 .collect(Collectors.toMap(
                         ProductDTO::getProjectId,
@@ -157,45 +159,13 @@ public class InvestmentService {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(saved);
-
             return toResponse(saved);
         }
 
-        // TODO: BC Connector 토큰 발행 요청, 임시 로직
-        AssetTokenRequest tokenRequest = new AssetTokenRequest();
-        tokenRequest.userSeq = request.getUserSeq();
-        tokenRequest.projectId = request.getProjectId();
-        tokenRequest.price = request.getInvestedPrice();
-        tokenRequest.tokenQuantity = request.getTokenQuantity();
-
-        // 토큰 발행 실패 시
-        try {
-            assetClient.requestToken(tokenRequest);
-        } catch (Exception e1) {
-            // 보상 트랜잭션
-            AssetRefundRequest refundRequest = new AssetRefundRequest();
-            refundRequest.userSeq = request.getUserSeq();
-            refundRequest.projectId = request.getProjectId();
-            refundRequest.price = request.getInvestedPrice();
-
-            try {
-                assetClient.requestRefund(refundRequest);
-            } catch (Exception e2) {
-                // TODO: 예외 처리
-            }
-
-            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
-            saved.setUpdatedAt(LocalDateTime.now());
-            investmentRepository.save(saved);
-
-            return toResponse(saved);
-        }
-
-        // 토큰 발행 성공
-        saved.setInvStatus(Investment.InvestmentStatus.COMPLETED);
+        // 입금 성공 => 펀딩 진행 상태로 변경
+        saved.setInvStatus(Investment.InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
-
         return toResponse(saved);
     }
 
@@ -217,7 +187,7 @@ public class InvestmentService {
 
             return toResponse(investment);
         } else if (investment.isCompleted()) {
-            // TODO: 토큰 회수 로직 협의
+            // TODO: 토큰 회수 로직 협의 (DB 삭제 ?)
             AssetRefundRequest refundRequest = new AssetRefundRequest();
             refundRequest.userSeq = investment.getUserSeq();
             refundRequest.projectId = investment.getProjectId();
@@ -233,7 +203,7 @@ public class InvestmentService {
                     return toResponse(investment);
                 } else {
                     // TODO: 보상 트랜잭션 + 모니터링 + 알람
-                    // 환불 실패 시 상태 유지
+                    // 환불 실패 시 상태 유지 - 협의 필요
                     throw new IllegalStateException("환불 실패");
                 }
             } catch (Exception e) {
@@ -245,6 +215,62 @@ public class InvestmentService {
         }
     }
 
+    // 투자 할당 요청 트리거
+    @Transactional
+    public boolean triggerAllocationIfEligible(String projectId) {
+        ProductDTO product = productClient.getProduct(projectId);
+        if (product == null) {
+            log.warn("프로젝트 없음 projectId={}", projectId);
+            return false;
+        }
+
+        Integer percent = product.getPercent();
+        if (percent == null) {
+            log.warn("percent 정보 없음 projectId={}", projectId);
+            return false;
+        }
+
+        LocalDate endDate = product.getEndDate();
+        if (endDate == null || LocalDate.now().isBefore(endDate)) {
+            log.info("아직 종료일 이전 projectId={} today={} endDate={}", projectId, LocalDate.now(), endDate);
+            return false;
+        }
+
+        if (percent < 80) {
+            log.info("달성률 미달 projectId={} percent={}", projectId, percent);
+            return false;
+        }
+
+        // FUNDING 상태 투자 조회
+        List<Investment> funding = investmentRepository.findByProjectId(projectId).stream()
+                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.FUNDING)
+                .collect(Collectors.toList());
+
+        if (funding.isEmpty()) {
+            log.info("FUNDING 투자 없음 projectId={}", projectId);
+            return false;
+        }
+
+        // 상태 전환 ALLOC_REQUESTED
+        funding.forEach(inv -> inv.setInvStatus(Investment.InvestmentStatus.ALLOC_REQUESTED));
+        investmentRepository.saveAll(funding);
+
+        // 이벤트 생성 및 발행
+        List<InvestRequestEvent.InvestmentItem> items = funding.stream()
+                .map(inv -> InvestRequestEvent.InvestmentItem.builder()
+                        .investmentSeq(inv.getInvestmentSeq())
+                        .userSeq(inv.getUserSeq())
+                        .investedPrice(inv.getInvestedPrice())
+                        .tokenQuantity(inv.getTokenQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
+        InvestRequestEvent event = InvestRequestEvent.of(projectId, items);
+        investmentEventProducer.send("INVEST", event);
+        log.info("투자 요청 이벤트 발행 projectId={} investments={}", projectId, items.size());
+        return true;
+    }
+
     private InvestmentResponse toResponse(Investment inv) {
         return InvestmentResponse.builder()
                 .investmentSeq(inv.getInvestmentSeq())
@@ -254,6 +280,8 @@ public class InvestmentService {
                 .tokenQuantity(inv.getTokenQuantity())
                 .invStatus(inv.getInvStatus().name())
                 .investedAt(inv.getInvestedAt())
+                .txHash(inv.getTxHash())
+                .failureReason(inv.getFailureReason())
                 .build();
     }
 }

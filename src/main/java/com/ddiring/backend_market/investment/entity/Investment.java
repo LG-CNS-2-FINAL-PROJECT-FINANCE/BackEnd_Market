@@ -38,6 +38,15 @@ public class Investment {
     @Column(name = "invested_at")
     private LocalDateTime investedAt;
 
+    // 블록체인 식별자
+    @Setter
+    @Column(name = "tx_hash")
+    private String txHash;
+
+    @Setter
+    @Column(name = "failure_reason")
+    private String failureReason;
+
     @Setter
     @Enumerated(EnumType.STRING)
     @Column(name = "inv_status")
@@ -62,8 +71,11 @@ public class Investment {
 
     @Getter
     public enum InvestmentStatus {
-        PENDING("대기"),
+        PENDING("입금요청중"),
+        FUNDING("예치완료_모집중"),
+        ALLOC_REQUESTED("할당요청"),
         COMPLETED("체결"),
+        FAILED("실패"),
         CANCELLED("취소");
 
         private final String description;
