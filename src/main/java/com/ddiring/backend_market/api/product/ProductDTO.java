@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Getter
 @NoArgsConstructor
 @AllArgsConstructor
@@ -16,5 +18,7 @@ public class ProductDTO {
     private String content; // 본문
     private String summary; // 요약
     private Integer amount; // 모금액
+    private LocalDate endDate; // 종료일
     private Integer deadline; // 마감 기한
+    private Integer percent; // 달성률
 }

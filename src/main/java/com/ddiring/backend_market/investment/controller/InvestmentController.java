@@ -27,8 +27,8 @@ public class InvestmentController {
 
     // 개인 투자 내역 조회
     @GetMapping("/{userSeq}/list")
-    public List<MyInvestmentResponse> getMyInvestment(@PathVariable("userSeq") String userSeq) {
-        return investmentService.getMyInvestment(userSeq);
+    public ResponseEntity<List<MyInvestmentResponse>> getMyInvestment(@PathVariable("userSeq") String userSeq) {
+        return ResponseEntity.ok(investmentService.getMyInvestment(userSeq));
     }
 
     // 상품별 투자자 조회
@@ -51,5 +51,12 @@ public class InvestmentController {
             @PathVariable Integer investmentSeq) {
         InvestmentResponse response = investmentService.cancelInvestment(request, investmentSeq);
         return ResponseEntity.ok(response);
+    }
+
+    // 조건 충족 시 할당(온체인 요청) 호출
+    @PostMapping("/{projectId}/allocate")
+    public ResponseEntity<String> triggerAllocation(@PathVariable String projectId) {
+        boolean sent = investmentService.triggerAllocationIfEligible(projectId);
+        return ResponseEntity.ok(sent ? "REQUEST_SENT" : "NOT_ELIGIBLE");
     }
 }
