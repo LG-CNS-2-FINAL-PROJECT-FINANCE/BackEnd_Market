@@ -53,11 +53,12 @@ public class Trade {
     private LocalDate updatedAt;
 
     @Builder
-    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity,String tradeStatus, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.purchaseId = purchaseId;
         this.sellId = sellId;
         this.tradePrice = tradePrice;
+        this.tradeStatus = tradeStatus;
         this.tokenQuantity = tokenQuantity;
         this.tradedAt = tradedAt;
         this.createdId = createdId;

@@ -1,9 +1,6 @@
 package com.ddiring.backend_market.api.asset;
 
-import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetTokenRequest;
+import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
@@ -23,9 +20,6 @@ public interface AssetClient {
     @PostMapping("/api/asset/account/deposit")
     AssetDepositResponse requestDeposit(@RequestBody AssetDepositRequest request);
 
-    @PostMapping("/api/asset/account/withdrawal")
-    AssetDepositResponse requestWithdrawal(@RequestBody AssetDepositRequest request);
-
     @PostMapping("api/asset/token")
     void requestToken(@RequestBody AssetTokenRequest request);
 
@@ -38,4 +32,10 @@ public interface AssetClient {
     // ✅ 거래 실패 시 구매자에게 예치금을 환불하는 API
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
+
+    @PostMapping("/api/asset/internal/lock-funds")
+    void lockFunds(@RequestBody LockFundsRequestDto requestDto);
+
+    @PostMapping("/api/asset/internal/unlock-funds")
+    void unlockFunds(@RequestBody UnlockFundsRequestDto requestDto);
 }

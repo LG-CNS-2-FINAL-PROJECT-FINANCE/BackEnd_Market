@@ -22,19 +22,18 @@ public class TradeController {
     @PostMapping("/sell")
     public ApiResponseDto<String> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.OrderReception(userSeq, role, ordersRequestDto);
+        // ⭐️ 새로운 서비스 메소드 호출
+        tradeService.receiveSellOrder(userSeq, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
 
     @PostMapping("/purchase")
     public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.OrderReception(userSeq, role, ordersRequestDto);
+        // ⭐️ 새로운 서비스 메소드 호출
+        tradeService.receivePurchaseOrder(userSeq, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
-
     @GetMapping("/{projectId}/history")
     public ApiResponseDto<List<OrderHistoryResponseDto>> tradeHistory(@PathVariable String projectId) {
         List<OrderHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
@@ -93,4 +92,12 @@ public class TradeController {
         List<TradeHistoryResponseDto> tradeAdminHistroy = tradeService.getAdminHistory();
         return ApiResponseDto.createOk(tradeAdminHistroy);
     }
+
+    @DeleteMapping("/order/{orderId}")
+    public ApiResponseDto cancelOrder(@PathVariable Integer orderId) {
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        tradeService.cancelOrder(userSeq, orderId);
+        return ApiResponseDto.defaultOk();
+    }
+
 }

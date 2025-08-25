@@ -1,9 +1,11 @@
 package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
-import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
-import com.ddiring.backend_market.common.dto.ApiResponseDto;
+import com.ddiring.backend_market.api.asset.dto.request.LockFundsRequestDto;
+import com.ddiring.backend_market.api.asset.dto.request.UnlockFundsRequestDto;
+import com.ddiring.backend_market.api.escrow.EscrowClient;
+import com.ddiring.backend_market.api.escrow.dto.SettleTradeRequestDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.*;
@@ -31,131 +33,120 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
+    private final EscrowClient escrowClient;
 
-    private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
-        for (Orders oldOrder : oldOrders) {
-            boolean tradePossible = false;
-            if (order.getOrdersType() == 1 && order.getPurchasePrice() >= oldOrder.getPurchasePrice()) {
-                tradePossible = true;
-            }
-            else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
-                tradePossible = true;
-            }
-
-            if (tradePossible) {
-                int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
-                int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
-
-                Trade trade = Trade.builder()
-                        .projectId(order.getProjectId())
-                        .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
-                        .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
-                        .tradePrice(tradePrice)
-                        .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDateTime.now())
-                        .build();
-
-                tradeRepository.save(trade);
-
-                History purchaseHistory = History.builder()
-                        .projectId(order.getProjectId())
-                        .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
-                        .tradeType(1)
-                        .tradePrice(tradePrice)
-                        .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDateTime.now())
-                        .build();
-                historyRepository.save(purchaseHistory);
-
-                History sellHistory = History.builder()
-                        .projectId(order.getProjectId())
-                        .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
-                        .tradeType(0)
-                        .tradePrice(tradePrice)
-                        .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDateTime.now())
-                        .build();
-                historyRepository.save(sellHistory);
-
-                order.updateOrder(null, order.getTokenQuantity() - tradedQuantity);
-                oldOrder.updateOrder(null, oldOrder.getTokenQuantity() - tradedQuantity);
-
-                if (order.getTokenQuantity() == 0) {
-                    ordersRepository.delete(order);
-                } else {
-                    ordersRepository.save(order);
-                }
-
-                if (oldOrder.getTokenQuantity() == 0) {
-                    ordersRepository.delete(oldOrder);
-                } else {
-                    ordersRepository.save(oldOrder);
-                }
-
-                if (order.getTokenQuantity() == 0) {
-                    break;
-                }
-            }
+    @Transactional
+    public void receivePurchaseOrder(String userSeq, OrdersRequestDto dto) {
+        Orders order = saveNewOrder(userSeq, dto, 1, "PENDING");
+        try {
+            int totalAmount = dto.getPurchasePrice() * dto.getTokenQuantity();
+            LockFundsRequestDto lockRequest = new LockFundsRequestDto(userSeq, String.valueOf(order.getOrdersId()), totalAmount);
+            assetClient.lockFunds(lockRequest);
+            order.setOrdersStatus("ACTIVE");
+            ordersRepository.save(order);
+            log.info("구매 주문 활성화 완료. orderId: {}", order.getOrdersId());
+            matchAndExecuteTrade(order);
+        } catch (Exception e) {
+            handleOrderFailure(order, "자금 동결 실패", e);
         }
     }
 
     @Transactional
-    public void OrderReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
-        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
-            throw new BadParameter("필수 파라미터가 누락되었습니다.");
-        }
+    public void receiveSellOrder(String userSeq, OrdersRequestDto dto) {
+        Orders order = saveNewOrder(userSeq, dto, 0, "ACTIVE");
+        log.info("판매 주문 접수 및 활성화 완료. orderId: {}", order.getOrdersId());
+        matchAndExecuteTrade(order);
+    }
 
-        Orders order = Orders.builder()
-                .userSeq(userSeq)
-                .projectId(ordersRequestDto.getProjectId())
-                .role(role)
-                .ordersType(ordersRequestDto.getOrdersType())
-                .purchasePrice(ordersRequestDto.getPurchasePrice())
-                .tokenQuantity(ordersRequestDto.getTokenQuantity())
-                .registedAt(LocalDateTime.now())
-                .build();
-
-        Orders savedOrder = ordersRepository.save(order);
-
-        if(ordersRequestDto.getOrdersType() == 1) {
-
-            AssetDepositRequest depositRequest = new AssetDepositRequest();
-            depositRequest.userSeq = userSeq;
-            depositRequest.projectId = ordersRequestDto.getProjectId();
-            depositRequest.price = ordersRequestDto.getPurchasePrice();
-            depositRequest.role = role;
-
-            try {
-                assetClient.requestDeposit(depositRequest);
-                log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
-            } catch (Exception e) {
-                log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
-                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-            }
-
-            List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
-            matchAndExecuteTrade(savedOrder, sellOrder);
-
+    @Transactional
+    public void cancelOrder(String userSeq, Integer orderId) {
+        Orders order = ordersRepository.findByOrdersIdAndUserSeq(orderId, userSeq)
+                .orElseThrow(() -> new NotFound("주문을 찾을 수 없거나 권한이 없습니다."));
+        if (order.getOrdersType() == 1) {
+            UnlockFundsRequestDto unlockRequest = new UnlockFundsRequestDto(String.valueOf(orderId), userSeq);
+            assetClient.unlockFunds(unlockRequest);
         } else {
-            try {
-                ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
-                String walletAddress = response.getData();
-                log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-
-                // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
-                // kafkaTemplate.send("sell-order-topic", eventPayload);
-
-                order.setWalletAddress(walletAddress);
-                ordersRepository.save(order);
-
-            } catch (Exception e) {
-                log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
-                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-            }
-
-            List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
-            matchAndExecuteTrade(savedOrder, purchaseOrder);
+            // Kafka로 토큰 동결 해제 명령 발행 로직
         }
+        ordersRepository.delete(order);
+        log.info("주문 취소 완료. orderId: {}", orderId);
+    }
+
+    // =================================================================
+    // == 2. 거래 매칭 및 정산 (내부 로직) ==
+    // =================================================================
+
+    private void matchAndExecuteTrade(Orders newOrder) {
+        if (!"ACTIVE".equals(newOrder.getOrdersStatus())) return;
+
+        int counterOrderType = newOrder.getOrdersType() == 1 ? 0 : 1;
+        List<Orders> counterOrders = (counterOrderType == 0)
+                ? ordersRepository.findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceAscRegistedAtAsc(newOrder.getProjectId(), 0, "ACTIVE")
+                : ordersRepository.findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceDescRegistedAtAsc(newOrder.getProjectId(), 1, "ACTIVE");
+
+        for (Orders oldOrder : counterOrders) {
+            boolean tradePossible = (newOrder.getOrdersType() == 1 && newOrder.getPurchasePrice() >= oldOrder.getPurchasePrice()) ||
+                    (newOrder.getOrdersType() == 0 && newOrder.getPurchasePrice() <= oldOrder.getPurchasePrice());
+            if (tradePossible) {
+                int tradedQuantity = Math.min(newOrder.getTokenQuantity(), oldOrder.getTokenQuantity());
+                int tradePrice = newOrder.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : newOrder.getPurchasePrice();
+                Orders purchaseOrder = newOrder.getOrdersType() == 1 ? newOrder : oldOrder;
+                Orders sellOrder = newOrder.getOrdersType() == 0 ? newOrder : oldOrder;
+
+                Trade trade = createPendingTrade(purchaseOrder, sellOrder, tradePrice, tradedQuantity);
+                try {
+                    SettleTradeRequestDto settleRequest = new SettleTradeRequestDto(String.valueOf(trade.getTradeId()), purchaseOrder.getUserSeq(), sellOrder.getUserSeq(), tradePrice * tradedQuantity, tradedQuantity);
+                    escrowClient.settleTrade(settleRequest);
+                    log.info("Escrow 서비스에 정산 요청 완료. tradeId: {}", trade.getTradeId());
+                } catch (Exception e) {
+                    log.error("Escrow 서비스 정산 요청 실패. tradeId={}", trade.getTradeId(), e);
+                    trade.setTradeStatus("ERROR");
+                    tradeRepository.save(trade);
+                    // TODO: 복구 로직
+                }
+
+                newOrder.setTokenQuantity(newOrder.getTokenQuantity() - tradedQuantity);
+                oldOrder.setTokenQuantity(oldOrder.getTokenQuantity() - tradedQuantity);
+                if (newOrder.getTokenQuantity() == 0) ordersRepository.delete(newOrder); else ordersRepository.save(newOrder);
+                if (oldOrder.getTokenQuantity() == 0) ordersRepository.delete(oldOrder); else ordersRepository.save(oldOrder);
+
+                if (newOrder.getTokenQuantity() == 0) break;
+            }
+        }
+    }
+    // =================================================================
+    // == Helper Methods (새로 추가되거나 수정된 지원 메소드) ==
+    // =================================================================
+
+    private Orders saveNewOrder(String userSeq, OrdersRequestDto dto, int orderType, String status) {
+        return ordersRepository.save(Orders.builder()
+                .userSeq(userSeq)
+                .projectId(dto.getProjectId())
+                .ordersType(orderType)
+                .purchasePrice(dto.getPurchasePrice())
+                .tokenQuantity(dto.getTokenQuantity())
+                .ordersStatus(status)
+                .registedAt(LocalDateTime.now())
+                .build());
+    }
+
+    private void handleOrderFailure(Orders order, String message, Exception e) {
+        log.error("{} orderId={}", message, order.getOrdersId(), e);
+        order.setOrdersStatus("FAILED");
+        ordersRepository.save(order);
+        throw new RuntimeException("주문 처리 중 오류 발생", e);
+    }
+
+    private Trade createPendingTrade(Orders purchaseOrder, Orders sellOrder, int price, int quantity) {
+        return tradeRepository.save(Trade.builder()
+                .purchaseId(purchaseOrder.getOrdersId())
+                .sellId(sellOrder.getOrdersId())
+                .projectId(purchaseOrder.getProjectId())
+                .tradePrice(price)
+                .tokenQuantity(quantity)
+                .tradeStatus("PENDING")
+                .tradedAt(LocalDateTime.now())
+                .build());
     }
 
     @Transactional
@@ -331,7 +322,7 @@ public class TradeService {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        // 마켓 서비스 DB 상태 업데이트
+        // ✅ 마켓 서비스는 '결과 보고'를 받고 자신의 DB 상태만 업데이트합니다.
         trade.setTradeStatus("SUCCEEDED");
         tradeRepository.save(trade);
 
@@ -343,18 +334,15 @@ public class TradeService {
         sellOrder.setOrdersStatus("SUCCEEDED");
         ordersRepository.save(sellOrder);
 
-        // ✅ Asset 서비스 API 호출: 판매자에게 예치금 전송
-        try {
-            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
-            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), sellOrder.getUserSeq(), amount);
-            assetClient.releaseEscrowToSeller(request);
-            log.info("Asset 서비스에 판매대금({}) 전송 요청 완료. tradeId={}", amount, trade.getTradeId());
-        } catch (Exception e) {
-            log.error("Asset 서비스 호출(판매대금 전송) 실패. tradeId={}", trade.getTradeId(), e);
-            // TODO: 재시도 로직 또는 관리자 알림 등 예외 처리 정책 필요
-        }
+        // ❌ Asset 서비스를 직접 호출하여 돈을 보내는 로직 삭제!
+        // 이 역할은 Escrow 서비스가 이미 수행 완료했습니다.
+        log.info("거래 성공 DB 상태 업데이트 완료. tradeId={}", payload.getTradeId());
     }
 
+    /**
+     * (최종 결과) 거래 실패 이벤트를 처리합니다.
+     * 실패 보고를 받고, 동결했던 구매자의 돈을 풀어주도록 Asset에 요청합니다.
+     */
     @Transactional
     public void handleTradeFailed(TradeFailedEvent event) {
         TradeFailedEvent.TradeFailedPayload payload = event.getPayload();
@@ -363,7 +351,7 @@ public class TradeService {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        // 마켓 서비스 DB 상태 업데이트
+        // ✅ 마켓 서비스는 DB 상태를 FAILED로 업데이트합니다.
         trade.setTradeStatus("FAILED");
         tradeRepository.save(trade);
 
@@ -375,13 +363,18 @@ public class TradeService {
         sellOrder.setOrdersStatus("FAILED");
         ordersRepository.save(sellOrder);
 
+        // ✅ [수정] 판매자에게 돈을 보내는 대신, '실패'했으므로
+        // 처음에 동결했던 구매자의 돈을 '동결 해제'하도록 Asset 서비스에 요청합니다.
         try {
-            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
-            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), purchaseOrder.getUserSeq(), amount);
-            assetClient.refundEscrowToBuyer(request);
-            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
+            UnlockFundsRequestDto request = new UnlockFundsRequestDto(
+                    String.valueOf(purchaseOrder.getOrdersId()),
+                    purchaseOrder.getUserSeq()
+            );
+            assetClient.unlockFunds(request);
+            log.info("거래 실패로 인한 자금 동결 해제 요청 완료. orderId={}", purchaseOrder.getOrdersId());
         } catch (Exception e) {
-            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
+            log.error("Asset 서비스 호출(자금 동결 해제) 실패. tradeId={}", trade.getTradeId(), e);
+            // TODO: 재시도 로직 또는 관리자 알림 등 복구 정책 필요
         }
     }
 }
