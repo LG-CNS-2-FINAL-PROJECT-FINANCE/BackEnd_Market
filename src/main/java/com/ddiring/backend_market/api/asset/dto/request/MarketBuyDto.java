@@ -2,12 +2,12 @@ package com.ddiring.backend_market.api.asset.dto.request;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
+@Setter
 @NoArgsConstructor
-public class AssetDepositRequest {
-    public String userSeq;
+public class MarketBuyDto {
+    public Integer buyPrice;
     public String projectId;
-    public String role;
-    public Integer price;
 }

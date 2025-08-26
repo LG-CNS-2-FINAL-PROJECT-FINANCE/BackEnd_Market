@@ -5,9 +5,7 @@ import lombok.NoArgsConstructor;
 
 @Getter
 @NoArgsConstructor
-public class AssetDepositRequest {
-    public String userSeq;
-    public String projectId;
-    public String role;
-    public Integer price;
+public class MarketSellDto {
+    private Integer sellToken;
+    private String projectId;
 }

@@ -5,10 +5,7 @@ import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.*;
 
 @FeignClient(name = "assetClient", url = "${asset.base-url}")
 public interface AssetClient {
@@ -29,8 +26,11 @@ public interface AssetClient {
     @PostMapping("/api/asset/escrow/release")
     ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);
 
-    // ✅ 거래 실패 시 구매자에게 예치금을 환불하는 API
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
+    @PostMapping("/asset/market/buy")
+    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestBody MarketBuyDto marketBuyDto);
+
 }
+

@@ -3,6 +3,8 @@ package com.ddiring.backend_market.trade.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
+import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
+import com.ddiring.backend_market.api.asset.dto.request.MarketSellDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
@@ -119,14 +121,11 @@ public class TradeService {
 
         if(ordersRequestDto.getOrdersType() == 1) {
 
-            AssetDepositRequest depositRequest = new AssetDepositRequest();
-            depositRequest.userSeq = userSeq;
-            depositRequest.projectId = ordersRequestDto.getProjectId();
-            depositRequest.price = ordersRequestDto.getPurchasePrice();
-            depositRequest.role = role;
-
+            MarketBuyDto marketBuyDto = new MarketBuyDto();
+            marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
+            marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
             try {
-                assetClient.requestDeposit(depositRequest);
+                assetClient.marketBuy(userSeq, marketBuyDto);
                 log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
             } catch (Exception e) {
                 log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
@@ -137,6 +136,7 @@ public class TradeService {
             matchAndExecuteTrade(savedOrder, sellOrder);
 
         } else {
+
             try {
                 ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
                 String walletAddress = response.getData();
