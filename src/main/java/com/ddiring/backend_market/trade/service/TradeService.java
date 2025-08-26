@@ -125,7 +125,7 @@ public class TradeService {
             marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
 
             try {
-                assetClient.marketBuy(userSeq, marketBuyDto);
+                assetClient.marketBuy(userSeq, role, marketBuyDto);
                 log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
             } catch (Exception e) {
                 log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
