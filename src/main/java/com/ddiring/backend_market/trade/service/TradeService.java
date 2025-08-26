@@ -2,6 +2,7 @@ package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
+import com.ddiring.backend_market.api.asset.dto.request.AssetRequest;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketSellDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
@@ -60,6 +61,7 @@ public class TradeService {
                         .tradePrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
+                        .tradeStatus("PENDING")
                         .build();
 
                 tradeRepository.save(trade);
@@ -103,6 +105,11 @@ public class TradeService {
                     break;
                 }
             }
+            AssetRequest requestDeposit = new AssetRequest();
+            requestDeposit.getMarketDto().setPrice(order.getPurchasePrice());
+            requestDeposit.getMarketDto().setProductId(order.getProjectId());
+
+            assetClient.requestDeposit(requestDeposit);
         }
     }
 

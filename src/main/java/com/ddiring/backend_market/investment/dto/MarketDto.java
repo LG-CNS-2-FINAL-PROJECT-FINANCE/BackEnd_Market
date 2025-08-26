@@ -1,16 +1,14 @@
 package com.ddiring.backend_market.investment.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class MarketDto {
-
+    private String productId;
     private String userSeq;
     private Integer price;
 }
