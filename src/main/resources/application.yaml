@@ -1,14 +1,3 @@
 spring:
   application:
     name: backend_market
-
-  api:
-    url: http://localhost:8080
-  product:
-    url: http://localhost:8081  # TODO: Product 서비스 URL 수정
-  asset:
-    url: http://localhost:8082
-  escrow:
-    url: http://localhost:8084  # TODO: Asset 서비스 URL 수정
-  market:
-    url: http://localhost:8086  # TODO: Asset 서비스 URL 수정

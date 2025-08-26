@@ -16,4 +16,5 @@ public class MyInvestmentResponse {
     private ProductDTO product;
     private Integer investedPrice;
     private Integer tokenQuantity;
+    private String invStatus;
 }
