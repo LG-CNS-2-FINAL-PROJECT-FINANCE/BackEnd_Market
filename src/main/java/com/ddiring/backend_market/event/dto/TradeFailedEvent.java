@@ -28,15 +28,11 @@ public class TradeFailedEvent {
     public static class TradeFailedPayload {
         private Long tradeId;
         private String status;
-        private String buyerAddress;
-        private Long buyerTokenAmount;
-        private String sellerAddress;
-        private Long sellerTokenAmount;
+        private String errorType;
         private String errorMessage;
     }
 
-    public static TradeFailedEvent of(Long tradeId, String buyerAddress, Long buyerTokenAmount,
-                                      String sellerAddress, Long sellerTokenAmount, String errorMessage) {
+    public static TradeFailedEvent of(Long tradeId, String errorType, String errorMessage) {
         String uuid = java.util.UUID.randomUUID().toString();
         String eventType = TOPIC + ".FAILED";
 
@@ -47,10 +43,7 @@ public class TradeFailedEvent {
                 .payload(TradeFailedPayload.builder()
                         .tradeId(tradeId)
                         .status("FAILED")
-                        .buyerAddress(buyerAddress)
-                        .buyerTokenAmount(buyerTokenAmount)
-                        .sellerAddress(sellerAddress)
-                        .sellerTokenAmount(sellerTokenAmount)
+                        .errorType(errorType)
                         .errorMessage(errorMessage)
                         .build()
                 )

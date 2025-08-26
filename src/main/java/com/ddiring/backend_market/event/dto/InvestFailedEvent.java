@@ -1,28 +1,54 @@
 package com.ddiring.backend_market.event.dto;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestFailedEvent {
-    public static final String EVENT_TYPE = "INVESTMENT.FAILED";
+    public static final String TOPIC = "INVESTMENT";
 
+    // --- Header ---
     private String eventId;
-    private String eventType; // INVESTMENT.FAILED
+    private String eventType;
     private Instant timestamp;
-    private Payload payload;
+
+    // --- Payload ---
+    private InvestFailedPayload payload;
 
     @Getter
     @Builder
-    @NoArgsConstructor(access = AccessLevel.PROTECTED)
+    @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
     @AllArgsConstructor
-    public static class Payload {
+    public static class InvestFailedPayload {
         private Long investmentId;
-        private String status; // FAILED
+        private String status;
         private String errorType;
         private String errorMessage;
+    }
+
+    public static InvestFailedEvent of(Long investmentId, String errorType, String errorMessage) {
+        String uuid = java.util.UUID.randomUUID().toString();
+        String eventType = TOPIC + ".FAILED";
+
+        return InvestFailedEvent.builder()
+                .eventId(uuid)
+                .eventType(eventType)
+                .timestamp(Instant.now())
+                .payload(InvestFailedPayload.builder()
+                        .investmentId(investmentId)
+                        .status("FAILED")
+                        .errorType(errorType)
+                        .errorMessage(errorMessage)
+                        .build()
+                )
+                .build();
     }
 }
