@@ -9,6 +9,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -20,42 +22,40 @@ public class KafkaTradeEventsListener {
     @KafkaListener(topics = "TRADE", groupId = "market-service-group")
     public void listenTradeEvents(Object message) {
         try {
-            String jsonMessage;
+            Map<String, Object> messageMap = (Map<String, Object>) message;
 
-            if (message instanceof String) {
-                jsonMessage = (String) message;
-            } else {
-                jsonMessage = objectMapper.writeValueAsString(message);
+            // 2. ⭐️ Map에서 직접 eventType을 꺼냅니다.
+            String eventType = (String) messageMap.get("eventType");
+            if (eventType == null) {
+                log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
+                return;
             }
-
-            JsonNode jsonNode = objectMapper.readTree(jsonMessage);
-            String eventType = jsonNode.get("eventType").asText();
             log.info("수신된 이벤트 타입: {}", eventType);
 
-
+            // 3. ⭐️ objectMapper.convertValue를 사용해 Map을 원하는 DTO로 최종 변환합니다.
             switch (eventType) {
                 case "TRADE.DEPOSIT.SUCCEEDED":
-                    DepositSucceededEvent depositSucceededEvent = objectMapper.readValue(jsonMessage, DepositSucceededEvent.class);
+                    DepositSucceededEvent depositSucceededEvent = objectMapper.convertValue(messageMap, DepositSucceededEvent.class);
                     tradeService.handleDepositSucceeded(depositSucceededEvent);
                     break;
                 case "TRADE.DEPOSIT.FAILED":
-                    DepositFailedEvent depositFailedEvent = objectMapper.readValue(jsonMessage, DepositFailedEvent.class);
+                    DepositFailedEvent depositFailedEvent = objectMapper.convertValue(messageMap, DepositFailedEvent.class);
                     tradeService.handleDepositFailed(depositFailedEvent);
                     break;
                 case "TRADE.REQUEST.ACCEPTED":
-                    TradeRequestAcceptedEvent tradeRequestAcceptedEvent = objectMapper.readValue(jsonMessage, TradeRequestAcceptedEvent.class);
+                    TradeRequestAcceptedEvent tradeRequestAcceptedEvent = objectMapper.convertValue(messageMap, TradeRequestAcceptedEvent.class);
                     tradeService.handleTradeRequestAccepted(tradeRequestAcceptedEvent);
                     break;
                 case "TRADE.REQUEST.REJECTED":
-                    TradeRequestRejectedEvent tradeRequestRejectedEvent = objectMapper.readValue(jsonMessage, TradeRequestRejectedEvent.class);
+                    TradeRequestRejectedEvent tradeRequestRejectedEvent = objectMapper.convertValue(messageMap, TradeRequestRejectedEvent.class);
                     tradeService.handleTradeRequestRejected(tradeRequestRejectedEvent);
                     break;
                 case "TRADE.SUCCEEDED":
-                    TradeSucceededEvent tradeSucceededEvent = objectMapper.readValue(jsonMessage, TradeSucceededEvent.class);
+                    TradeSucceededEvent tradeSucceededEvent = objectMapper.convertValue(messageMap, TradeSucceededEvent.class);
                     tradeService.handleTradeSucceeded(tradeSucceededEvent);
                     break;
                 case "TRADE.FAILED":
-                    TradeFailedEvent tradeFailedEvent = objectMapper.readValue(jsonMessage, TradeFailedEvent.class);
+                    TradeFailedEvent tradeFailedEvent = objectMapper.convertValue(messageMap, TradeFailedEvent.class);
                     tradeService.handleTradeFailed(tradeFailedEvent);
                     break;
                 default:
