@@ -247,7 +247,7 @@ public class InvestmentService {
         return toResponse(investment);
     }
 
-    // 투자 할당 요청 트리거
+    // 토큰 할당 요청 트리거
     @Transactional
     public boolean triggerAllocationIfEligible(String projectId) {
         ProductDTO product = productClient.getProduct(projectId);
