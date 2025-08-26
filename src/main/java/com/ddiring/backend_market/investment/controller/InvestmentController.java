@@ -56,7 +56,7 @@ public class InvestmentController {
         return ResponseEntity.ok(response);
     }
 
-    // 조건 충족 시 할당(온체인 요청) 호출
+    // 조건 충족 시 토큰 할당(온체인 요청) 호출
     @PostMapping("/{projectId}/allocate")
     public ResponseEntity<String> triggerAllocation(@PathVariable String projectId) {
         boolean sent = investmentService.triggerAllocationIfEligible(projectId);
