@@ -133,7 +133,7 @@ public class TradeService {
             ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
             String walletAddress = response.getData();
             log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-            assetClient.marketSell(userSeq, role, marketSellDto);
+            assetClient.marketSell(userSeq, marketSellDto);
             // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
             // kafkaTemplate.send("sell-order-topic", eventPayload);
 
