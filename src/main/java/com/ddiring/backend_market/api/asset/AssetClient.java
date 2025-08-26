@@ -1,8 +1,6 @@
 package com.ddiring.backend_market.api.asset;
 
 import com.ddiring.backend_market.api.asset.dto.request.*;
-import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
-import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
@@ -13,11 +11,11 @@ public interface AssetClient {
     @GetMapping("/api/asset/wallet/search")
     ApiResponseDto<String> getWalletAddress(@RequestHeader("userSeq") String userSeq);
 
-    @PostMapping("/api/asset/account/deposit")
-    ApiResponseDto<AssetDepositResponse> requestDeposit(@RequestBody AssetDepositRequest request);
+    @PostMapping("/api/asset/escrow/deposit")
+    ApiResponseDto<Integer> requestDeposit(@RequestBody AssetRequest request);
 
-    @PostMapping("/api/asset/refund")
-    ApiResponseDto<AssetRefundResponse> requestRefund(@RequestBody AssetRefundRequest request);
+    @PostMapping("/api/asset/escrow/withdrawal")
+    ApiResponseDto<Integer> requestRefund(@RequestBody AssetRequest request);
 
     @PostMapping("/api/asset/escrow/release")
     ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);

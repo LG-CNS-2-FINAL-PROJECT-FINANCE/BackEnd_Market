@@ -1,10 +1,7 @@
 package com.ddiring.backend_market.investment.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
-import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
-import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
-import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
+import com.ddiring.backend_market.api.asset.dto.request.AssetRequest;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.api.product.ProductClient;
@@ -13,7 +10,7 @@ import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
-import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
+import com.ddiring.backend_market.investment.dto.MarketDto;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.entity.Investment;
@@ -130,7 +127,7 @@ public class InvestmentService {
     @Transactional
     public InvestmentResponse buyInvestment(InvestmentRequest request) {
         Investment investment = Investment.builder()
-                .userSeq(request.getUserSeq())
+                .userSeq(GatewayRequestHeaderUtils.getUserSeq())
                 .projectId(request.getProjectId())
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(request.getTokenQuantity())
@@ -140,16 +137,28 @@ public class InvestmentService {
 
         Investment saved = investmentRepository.save(investment);
 
-        // Asset 투자금 예치 요청
-        AssetDepositRequest depositRequest = new AssetDepositRequest();
-        depositRequest.userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        depositRequest.role = GatewayRequestHeaderUtils.getRole();
-        depositRequest.projectId = request.getProjectId();
-        depositRequest.price = request.getInvestedPrice();
-
-        ApiResponseDto<AssetDepositResponse> depositResponse;
+        // Asset 에스크로 예치 요청
+        ProductDTO product = null;
         try {
-            depositResponse = assetClient.requestDeposit(depositRequest);
+            product = productClient.getProduct(request.getProjectId());
+        } catch (Exception e) {
+            log.warn("상품 조회 실패 projectId={} error={}", request.getProjectId(), e.getMessage());
+        }
+
+        AssetRequest assetRequest = AssetRequest.builder()
+                .marketDto(MarketDto.builder()
+                        .userSeq(GatewayRequestHeaderUtils.getUserSeq())
+                        .price(request.getInvestedPrice())
+                        .build())
+                .productDto(product == null ? ProductDTO.builder()
+                        .projectId(request.getProjectId())
+                        .title(null)
+                        .build() : product)
+                .build();
+
+        ApiResponseDto<Integer> depositResponse;
+        try {
+            depositResponse = assetClient.requestDeposit(assetRequest);
         } catch (Exception e) {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
@@ -158,9 +167,7 @@ public class InvestmentService {
             return toResponse(saved);
         }
         boolean depositOk = depositResponse != null
-                && "OK".equalsIgnoreCase(depositResponse.getCode())
-                && depositResponse.getData() != null
-                && depositResponse.getData().success;
+                && "OK".equalsIgnoreCase(depositResponse.getCode());
         if (!depositOk) {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
@@ -177,7 +184,7 @@ public class InvestmentService {
 
     // 주문 취소
     @Transactional
-    public InvestmentResponse cancelInvestment(CancelInvestmentRequest request, Integer investmentSeq) {
+    public InvestmentResponse cancelInvestment(Integer investmentSeq) {
         Investment investment = investmentRepository.findById(investmentSeq)
                 .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + investmentSeq));
 
@@ -202,21 +209,29 @@ public class InvestmentService {
         };
 
         if (requireRefund) {
-            AssetRefundRequest refundRequest = new AssetRefundRequest();
-            refundRequest.userSeq = GatewayRequestHeaderUtils.getUserSeq();
-            refundRequest.role = GatewayRequestHeaderUtils.getRole();
-            refundRequest.projectId = investment.getProjectId();
-            refundRequest.price = investment.getInvestedPrice();
+            ProductDTO product = null;
+            try {
+                product = productClient.getProduct(investment.getProjectId());
+            } catch (Exception e) {
+                log.warn("상품 조회 실패(환불) projectId={} error={}", investment.getProjectId(), e.getMessage());
+            }
+
+            AssetRequest refundReq = AssetRequest.builder()
+                    .marketDto(MarketDto.builder()
+                            .userSeq(GatewayRequestHeaderUtils.getUserSeq())
+                            .price(investment.getInvestedPrice())
+                            .build())
+                    .productDto(product == null ? ProductDTO.builder()
+                            .projectId(investment.getProjectId())
+                            .title(null)
+                            .build() : product)
+                    .build();
 
             try {
-                // Asset 서비스에 환불 요청 -> 성공 응답 수신
-                ApiResponseDto<AssetRefundResponse> refundResponse = assetClient.requestRefund(refundRequest);
-                boolean refundOk = refundResponse != null
-                        && "OK".equalsIgnoreCase(refundResponse.getCode())
-                        && refundResponse.getData() != null
-                        && refundResponse.getData().success;
+                ApiResponseDto<Integer> refundResponse = assetClient.requestRefund(refundReq);
+                boolean refundOk = refundResponse != null && "OK".equalsIgnoreCase(refundResponse.getCode());
                 if (!refundOk) {
-                    throw new IllegalStateException("환불 실패 (success=false)");
+                    throw new IllegalStateException("환불 실패 (code!=OK)");
                 }
             } catch (Exception e) {
                 log.error("투자 환불 요청 실패 investmentSeq={} error={}", investmentSeq, e.getMessage());
