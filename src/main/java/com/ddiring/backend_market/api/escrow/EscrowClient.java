@@ -5,7 +5,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "escrow-service", url = "${escrow-service.url}")
+@FeignClient(name = "escrow-service", url = "${escrow-base.url}")
 public interface EscrowClient {
 
     @PostMapping("/api/escrow/internal/settle-trade")
