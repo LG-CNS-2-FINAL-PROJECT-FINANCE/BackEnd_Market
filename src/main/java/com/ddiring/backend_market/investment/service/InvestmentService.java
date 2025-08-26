@@ -82,6 +82,7 @@ public class InvestmentService {
                             .product(product)
                             .investedPrice(investment.getInvestedPrice())
                             .tokenQuantity(investment.getTokenQuantity())
+                            .invStatus(investment.getInvStatus() == null ? null : investment.getInvStatus().name())
                             .build();
                 })
                 .toList();
@@ -153,7 +154,7 @@ public class InvestmentService {
                 .productDto(product == null ? ProductDTO.builder()
                         .projectId(request.getProjectId())
                         .title(null)
-                        .acount(null)
+                        .account(null)
                         .build() : product)
                 .build();
 
@@ -198,9 +199,8 @@ public class InvestmentService {
         if (investment.isPending()) {
             investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             investment.setUpdatedAt(LocalDateTime.now());
-            InvestmentResponse response = toResponse(investment);
-            investmentRepository.delete(investment);
-            return response;
+            investmentRepository.save(investment); // 삭제 대신 상태만 변경하여 이력 유지
+            return toResponse(investment);
         }
 
         // 2) FUNDING / ALLOC_REQUESTED / COMPLETED 단계 -> 환불 필요
@@ -243,9 +243,8 @@ public class InvestmentService {
         // 환불 성공 -> 상태 CANCELLED 후 삭제
         investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
         investment.setUpdatedAt(LocalDateTime.now());
-        InvestmentResponse response = toResponse(investment);
-        investmentRepository.delete(investment);
-        return response;
+        investmentRepository.save(investment);
+        return toResponse(investment);
     }
 
     // 투자 할당 요청 트리거

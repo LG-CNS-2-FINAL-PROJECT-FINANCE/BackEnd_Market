@@ -24,11 +24,10 @@ public interface AssetClient {
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
     @PostMapping("/api/asset/market/buy")
-    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketBuyDto marketBuyDto);
+    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+            @RequestBody MarketBuyDto marketBuyDto);
 
     @PostMapping("/api/asset/market/sell")
     ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq, @RequestBody MarketBuyDto marketBuyDto);
 
-
 }
-
