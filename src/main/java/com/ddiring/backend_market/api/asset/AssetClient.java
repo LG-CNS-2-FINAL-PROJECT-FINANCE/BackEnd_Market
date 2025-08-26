@@ -33,9 +33,4 @@ public interface AssetClient {
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
-    @PostMapping("/api/asset/internal/lock-funds")
-    void lockFunds(@RequestBody LockFundsRequestDto requestDto);
-
-    @PostMapping("/api/asset/internal/unlock-funds")
-    void unlockFunds(@RequestBody UnlockFundsRequestDto requestDto);
 }
