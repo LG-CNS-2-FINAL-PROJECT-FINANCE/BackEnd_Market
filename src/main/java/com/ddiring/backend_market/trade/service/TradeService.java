@@ -123,6 +123,7 @@ public class TradeService {
             MarketBuyDto marketBuyDto = new MarketBuyDto();
             marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
             marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
+
             try {
                 assetClient.marketBuy(userSeq, marketBuyDto);
                 log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
