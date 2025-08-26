@@ -14,7 +14,7 @@ import java.util.List;
 
 @Slf4j
 @RestController
-@RequestMapping(value = "/api/market/trade", produces = MediaType.APPLICATION_JSON_VALUE)
+@RequestMapping(value = "/api/market/trade")
 @RequiredArgsConstructor
 public class TradeController {
     private final TradeService tradeService;
