@@ -6,6 +6,7 @@ import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
+import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
@@ -141,7 +142,8 @@ public class InvestmentService {
 
         // Asset 투자금 예치 요청
         AssetDepositRequest depositRequest = new AssetDepositRequest();
-        depositRequest.userSeq = request.getUserSeq();
+        depositRequest.userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        depositRequest.role = GatewayRequestHeaderUtils.getRole();
         depositRequest.projectId = request.getProjectId();
         depositRequest.price = request.getInvestedPrice();
 
@@ -201,7 +203,8 @@ public class InvestmentService {
 
         if (requireRefund) {
             AssetRefundRequest refundRequest = new AssetRefundRequest();
-            refundRequest.userSeq = investment.getUserSeq();
+            refundRequest.userSeq = GatewayRequestHeaderUtils.getUserSeq();
+            refundRequest.role = GatewayRequestHeaderUtils.getRole();
             refundRequest.projectId = investment.getProjectId();
             refundRequest.price = investment.getInvestedPrice();
 
