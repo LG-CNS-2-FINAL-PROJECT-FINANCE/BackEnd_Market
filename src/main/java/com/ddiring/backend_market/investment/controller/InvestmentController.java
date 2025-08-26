@@ -1,11 +1,11 @@
 package com.ddiring.backend_market.investment.controller;
 
 import com.ddiring.backend_market.api.product.ProductDTO;
-import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.service.InvestmentService;
 import lombok.RequiredArgsConstructor;
+import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,8 +26,9 @@ public class InvestmentController {
     }
 
     // 개인 투자 내역 조회
-    @GetMapping("/{userSeq}/list")
-    public ResponseEntity<List<MyInvestmentResponse>> getMyInvestment(@PathVariable("userSeq") String userSeq) {
+    @GetMapping("/mylist")
+    public ResponseEntity<List<MyInvestmentResponse>> getMyInvestment() {
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         return ResponseEntity.ok(investmentService.getMyInvestment(userSeq));
     }
 
@@ -46,10 +47,8 @@ public class InvestmentController {
 
     // 주문 취소
     @PostMapping("/{investmentSeq}/cancel")
-    public ResponseEntity<InvestmentResponse> cancelInvestment(
-            @RequestBody CancelInvestmentRequest request,
-            @PathVariable Integer investmentSeq) {
-        InvestmentResponse response = investmentService.cancelInvestment(request, investmentSeq);
+    public ResponseEntity<InvestmentResponse> cancelInvestment(@PathVariable Integer investmentSeq) {
+        InvestmentResponse response = investmentService.cancelInvestment(investmentSeq);
         return ResponseEntity.ok(response);
     }
 

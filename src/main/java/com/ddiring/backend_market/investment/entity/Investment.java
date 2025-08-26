@@ -56,6 +56,7 @@ public class Investment {
     @CreatedBy
     private String createdId;
 
+    @Setter
     @Column(name = "created_at")
     @CreatedDate
     private LocalDateTime createdAt;
