@@ -20,6 +20,8 @@ public class ApiCommonAdvice {
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     @ExceptionHandler({Exception.class})
     public ApiResponseDto<String> handleException(Exception e) {
+        log.warn(e.getMessage());
+
         return ApiResponseDto.createError("ServerError", "서버 에러입니다.");
     }
 
