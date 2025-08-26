@@ -25,8 +25,12 @@ public interface AssetClient {
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
-    @PostMapping("/asset/market/buy")
+    @PostMapping("/api/asset/market/buy")
     ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestBody MarketBuyDto marketBuyDto);
+
+    @PostMapping("/api/asset/market/sell")
+    ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq, @RequestBody MarketBuyDto marketBuyDto);
+
 
 }
 
