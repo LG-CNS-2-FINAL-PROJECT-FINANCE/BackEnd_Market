@@ -10,18 +10,14 @@ import org.springframework.web.bind.annotation.*;
 @FeignClient(name = "assetClient", url = "${asset.base-url}")
 public interface AssetClient {
 
-
     @GetMapping("/api/asset/wallet/search")
     ApiResponseDto<String> getWalletAddress(@RequestHeader("userSeq") String userSeq);
 
     @PostMapping("/api/asset/account/deposit")
-    AssetDepositResponse requestDeposit(@RequestBody AssetDepositRequest request);
-
-    @PostMapping("api/asset/token")
-    void requestToken(@RequestBody AssetTokenRequest request);
+    ApiResponseDto<AssetDepositResponse> requestDeposit(@RequestBody AssetDepositRequest request);
 
     @PostMapping("/api/asset/refund")
-    AssetRefundResponse requestRefund(@RequestBody AssetRefundRequest request);
+    ApiResponseDto<AssetRefundResponse> requestRefund(@RequestBody AssetRefundRequest request);
 
     @PostMapping("/api/asset/escrow/release")
     ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);

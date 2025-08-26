@@ -5,6 +5,7 @@ import com.ddiring.backend_market.api.asset.dto.request.AssetDepositRequest;
 import com.ddiring.backend_market.api.asset.dto.request.AssetRefundRequest;
 import com.ddiring.backend_market.api.asset.dto.response.AssetDepositResponse;
 import com.ddiring.backend_market.api.asset.dto.response.AssetRefundResponse;
+import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
@@ -144,7 +145,7 @@ public class InvestmentService {
         depositRequest.projectId = request.getProjectId();
         depositRequest.price = request.getInvestedPrice();
 
-        AssetDepositResponse depositResponse;
+        ApiResponseDto<AssetDepositResponse> depositResponse;
         try {
             depositResponse = assetClient.requestDeposit(depositRequest);
         } catch (Exception e) {
@@ -154,8 +155,11 @@ public class InvestmentService {
 
             return toResponse(saved);
         }
-
-        if (!depositResponse.success) {
+        boolean depositOk = depositResponse != null
+                && "OK".equalsIgnoreCase(depositResponse.getCode())
+                && depositResponse.getData() != null
+                && depositResponse.getData().success;
+        if (!depositOk) {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(saved);
@@ -203,8 +207,12 @@ public class InvestmentService {
 
             try {
                 // Asset 서비스에 환불 요청 -> 성공 응답 수신
-                AssetRefundResponse refundResponse = assetClient.requestRefund(refundRequest);
-                if (refundResponse == null || !refundResponse.success) {
+                ApiResponseDto<AssetRefundResponse> refundResponse = assetClient.requestRefund(refundRequest);
+                boolean refundOk = refundResponse != null
+                        && "OK".equalsIgnoreCase(refundResponse.getCode())
+                        && refundResponse.getData() != null
+                        && refundResponse.getData().success;
+                if (!refundOk) {
                     throw new IllegalStateException("환불 실패 (success=false)");
                 }
             } catch (Exception e) {
