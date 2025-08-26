@@ -170,49 +170,55 @@ public class InvestmentService {
     }
 
     // 주문 취소
-    public InvestmentResponse cancelInvestment(
-            CancelInvestmentRequest request,
-            Integer investmentSeq) {
-        Optional<Investment> opt = investmentRepository.findById(investmentSeq);
-        if (opt.isEmpty()) {
-            throw new IllegalArgumentException("없는 주문입니다: " + investmentSeq);
+    @Transactional
+    public InvestmentResponse cancelInvestment(CancelInvestmentRequest request, Integer investmentSeq) {
+        Investment investment = investmentRepository.findById(investmentSeq)
+                .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + investmentSeq));
+
+        // 이미 취소된 경우 그대로 반환
+        if (investment.isCancelled()) {
+            return toResponse(investment);
         }
 
-        Investment investment = opt.get();
-
+        // 1) PENDING -> 단순 취소
         if (investment.isPending()) {
             investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             investment.setUpdatedAt(LocalDateTime.now());
-            investmentRepository.save(investment);
+            InvestmentResponse response = toResponse(investment);
+            investmentRepository.delete(investment);
+            return response;
+        }
 
-            return toResponse(investment);
-        } else if (investment.isCompleted()) {
-            // TODO: 토큰 회수 로직 협의 (DB 삭제 ?)
+        // 2) FUNDING / ALLOC_REQUESTED / COMPLETED 단계 -> 환불 필요
+        boolean requireRefund = switch (investment.getInvStatus()) {
+            case FUNDING, ALLOC_REQUESTED, COMPLETED -> true;
+            default -> false;
+        };
+
+        if (requireRefund) {
             AssetRefundRequest refundRequest = new AssetRefundRequest();
             refundRequest.userSeq = investment.getUserSeq();
             refundRequest.projectId = investment.getProjectId();
             refundRequest.price = investment.getInvestedPrice();
 
             try {
+                // Asset 서비스에 환불 요청 -> 성공 응답 수신
                 AssetRefundResponse refundResponse = assetClient.requestRefund(refundRequest);
-                if (refundResponse.success) {
-                    investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
-                    investment.setUpdatedAt(LocalDateTime.now());
-                    investmentRepository.save(investment);
-
-                    return toResponse(investment);
-                } else {
-                    // TODO: 보상 트랜잭션 + 모니터링 + 알람
-                    // 환불 실패 시 상태 유지 - 협의 필요
-                    throw new IllegalStateException("환불 실패");
+                if (refundResponse == null || !refundResponse.success) {
+                    throw new IllegalStateException("환불 실패 (success=false)");
                 }
             } catch (Exception e) {
+                log.error("투자 환불 요청 실패 investmentSeq={} error={}", investmentSeq, e.getMessage());
                 throw new IllegalStateException("환불 요청 실패");
             }
-        } else {
-            // 취소 완료
-            return toResponse(investment);
         }
+
+        // 환불 성공 -> 상태 CANCELLED 후 삭제
+        investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+        investment.setUpdatedAt(LocalDateTime.now());
+        InvestmentResponse response = toResponse(investment);
+        investmentRepository.delete(investment);
+        return response;
     }
 
     // 투자 할당 요청 트리거
