@@ -46,7 +46,13 @@ public class TradeService {
             if (tradePossible) {
                 int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
                 int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
-
+                // ▼▼▼▼▼▼▼▼▼▼▼▼ 디버깅 로그 추가 ▼▼▼▼▼▼▼▼▼▼▼▼
+                log.info("거래 체결 시작. 신규 주문 ID: {}, 기존 주문 ID: {}", order.getOrdersId(), oldOrder.getOrdersId());
+                Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
+                Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
+                log.info("구매 주문 정보: userSeq={}, ordersId={}", purchaseOrderForLog.getUserSeq(), purchaseOrderForLog.getOrdersId());
+                log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(), sellOrderForLog.getOrdersId());
+                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
                         .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
@@ -120,11 +126,14 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
+        MarketSellDto marketSellDto = new MarketSellDto();
+        marketSellDto.setProjectId(ordersRequestDto.getProjectId());
+        marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
         try {
             ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
             String walletAddress = response.getData();
             log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-
+            assetClient.marketSell(userSeq, role, marketSellDto);
             // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
             // kafkaTemplate.send("sell-order-topic", eventPayload);
 
@@ -160,9 +169,9 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
-            MarketBuyDto marketBuyDto = new MarketBuyDto();
-            marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
-            marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
+        MarketBuyDto marketBuyDto = new MarketBuyDto();
+        marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
+        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
 
             try {
                 assetClient.marketBuy(userSeq, role, marketBuyDto);
@@ -191,7 +200,6 @@ public class TradeService {
             throw new BadParameter("같은 오더 잖아 혼난다");
         }
 
-        // 구매자의 구매 입찰 수정, 판매자의 판매 입찰 수정
         order.updateOrder(purchasePrice, tokenQuantity);
         return ordersRepository.save(order);
     }
