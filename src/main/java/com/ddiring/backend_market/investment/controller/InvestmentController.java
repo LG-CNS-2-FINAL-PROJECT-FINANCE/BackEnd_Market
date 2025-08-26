@@ -41,14 +41,18 @@ public class InvestmentController {
     // 주문
     @PostMapping("/buy")
     public ResponseEntity<InvestmentResponse> buyInvestment(@RequestBody InvestmentRequest request) {
-        InvestmentResponse response = investmentService.buyInvestment(request);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        InvestmentResponse response = investmentService.buyInvestment(userSeq, role, request);
         return ResponseEntity.ok(response);
     }
 
     // 주문 취소
     @PostMapping("/{investmentSeq}/cancel")
     public ResponseEntity<InvestmentResponse> cancelInvestment(@PathVariable Integer investmentSeq) {
-        InvestmentResponse response = investmentService.cancelInvestment(investmentSeq);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        InvestmentResponse response = investmentService.cancelInvestment(userSeq, role, investmentSeq);
         return ResponseEntity.ok(response);
     }
 

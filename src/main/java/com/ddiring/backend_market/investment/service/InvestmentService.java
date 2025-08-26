@@ -125,9 +125,9 @@ public class InvestmentService {
 
     // 주문
     @Transactional
-    public InvestmentResponse buyInvestment(InvestmentRequest request) {
+    public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
         Investment investment = Investment.builder()
-                .userSeq(GatewayRequestHeaderUtils.getUserSeq())
+                .userSeq(userSeq)
                 .projectId(request.getProjectId())
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(request.getTokenQuantity())
@@ -153,6 +153,7 @@ public class InvestmentService {
                 .productDto(product == null ? ProductDTO.builder()
                         .projectId(request.getProjectId())
                         .title(null)
+                        .acount(null)
                         .build() : product)
                 .build();
 
@@ -184,7 +185,7 @@ public class InvestmentService {
 
     // 주문 취소
     @Transactional
-    public InvestmentResponse cancelInvestment(Integer investmentSeq) {
+    public InvestmentResponse cancelInvestment(String userSeq, String role, Integer investmentSeq) {
         Investment investment = investmentRepository.findById(investmentSeq)
                 .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + investmentSeq));
 
