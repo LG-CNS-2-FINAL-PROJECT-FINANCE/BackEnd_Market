@@ -101,11 +101,13 @@ public class TradeService {
     }
 
     @Transactional
-    public void OrderReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public void sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
-
+        if(ordersRequestDto.getOrdersType() == 1) {
+            throw new BadParameter("이거 아이다 다른거 줘라");
+        }
         Orders order = Orders.builder()
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
@@ -118,7 +120,45 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
-        if(ordersRequestDto.getOrdersType() == 1) {
+        try {
+            ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
+            String walletAddress = response.getData();
+            log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
+
+            // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
+            // kafkaTemplate.send("sell-order-topic", eventPayload);
+
+            order.setWalletAddress(walletAddress);
+            ordersRepository.save(order);
+
+        } catch (Exception e) {
+            log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
+            throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
+        }
+
+        List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
+        matchAndExecuteTrade(savedOrder, purchaseOrder);
+    }
+
+    @Transactional
+    public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
+            throw new BadParameter("필수 파라미터가 누락되었습니다.");
+        }
+        if(ordersRequestDto.getOrdersType() == 0) {
+            throw new BadParameter("이거 아이다 다른거 줘라");
+        }
+        Orders order = Orders.builder()
+                .userSeq(userSeq)
+                .projectId(ordersRequestDto.getProjectId())
+                .role(role)
+                .ordersType(ordersRequestDto.getOrdersType())
+                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .tokenQuantity(ordersRequestDto.getTokenQuantity())
+                .registedAt(LocalDateTime.now())
+                .build();
+
+        Orders savedOrder = ordersRepository.save(order);
 
             MarketBuyDto marketBuyDto = new MarketBuyDto();
             marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
@@ -135,28 +175,8 @@ public class TradeService {
             List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
             matchAndExecuteTrade(savedOrder, sellOrder);
 
-        } else {
-
-            try {
-                ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
-                String walletAddress = response.getData();
-                log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-
-                // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
-                // kafkaTemplate.send("sell-order-topic", eventPayload);
-
-                order.setWalletAddress(walletAddress);
-                ordersRepository.save(order);
-
-            } catch (Exception e) {
-                log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
-                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-            }
-
-            List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
-            matchAndExecuteTrade(savedOrder, purchaseOrder);
-        }
     }
+
 
     @Transactional
     public Orders updateOrder(Integer ordersId, String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
