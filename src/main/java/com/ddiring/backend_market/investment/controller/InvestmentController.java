@@ -32,6 +32,14 @@ public class InvestmentController {
         return ResponseEntity.ok(investmentService.getMyInvestment(userSeq));
     }
 
+    // 상품 주문 확인
+    @GetMapping("/{projectId}/mylist")
+    public ResponseEntity<List<MyInvestmentByProductResponse>> getMyInvestmentByProduct(
+            @PathVariable String projectId) {
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        return ResponseEntity.ok(investmentService.getMyInvestmentByProduct(userSeq, projectId));
+    }
+
     // 상품별 투자자 조회
     @GetMapping("/{projectId}/userlist")
     public ResponseEntity<List<ProductInvestorResponse>> getInvestorByProduct(@PathVariable String projectId) {
