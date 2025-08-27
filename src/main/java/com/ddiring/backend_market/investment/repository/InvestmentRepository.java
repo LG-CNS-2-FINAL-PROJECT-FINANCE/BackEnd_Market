@@ -13,7 +13,8 @@ public interface InvestmentRepository extends JpaRepository<Investment, Integer>
     List<Investment> findByUserSeq(String userSeq);
 
     // 개인 취소 내역
-    List<Investment> findByUserSeqAndInvStatus(String userSeq, InvestmentStatus invStatus);
+    List<Investment> findByUserSeqAndProjectIdAndInvStatus(String userSeq, String projectId,
+            InvestmentStatus invStatus);
 
     // 프로젝트별 투자자 조회
     List<Investment> findByProjectId(String projectId);

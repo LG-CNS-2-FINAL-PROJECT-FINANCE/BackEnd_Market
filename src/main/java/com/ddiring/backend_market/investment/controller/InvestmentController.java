@@ -32,10 +32,10 @@ public class InvestmentController {
         return ResponseEntity.ok(investmentService.getMyInvestment(userSeq));
     }
 
-    // 투자 상품 취소 내역 조회
-    @GetMapping("/mycanceled")
-    public ResponseEntity<List<CanceledInvestmentResponse>> getCanceledInvestment() {
-        return ResponseEntity.ok(investmentService.getCanceledInvestment());
+    // 취소 내역 확인
+    @GetMapping("/{projectId}/mycanceled")
+    public ResponseEntity<List<CanceledInvestmentResponse>> getCanceledInvestment(@PathVariable String projectId) {
+        return ResponseEntity.ok(investmentService.getCanceledInvestment(projectId));
     }
 
     // 상품별 투자자 조회

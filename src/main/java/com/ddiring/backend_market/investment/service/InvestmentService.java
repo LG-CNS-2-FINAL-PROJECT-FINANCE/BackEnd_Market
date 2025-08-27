@@ -89,10 +89,10 @@ public class InvestmentService {
                 .toList();
     }
 
-    // 투자 상품 취소 내역 조회
-    public List<CanceledInvestmentResponse> getCanceledInvestment() {
+    // 취소 내역 확인
+    public List<CanceledInvestmentResponse> getCanceledInvestment(String projectId) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        List<Investment> myCanceled = investmentRepository.findByUserSeqAndInvStatus(userSeq,
+        List<Investment> myCanceled = investmentRepository.findByUserSeqAndProjectIdAndInvStatus(userSeq, projectId,
                 InvestmentStatus.CANCELLED);
 
         return myCanceled.stream()
