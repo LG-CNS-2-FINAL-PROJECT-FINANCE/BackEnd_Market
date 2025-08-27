@@ -74,7 +74,7 @@ public class TradeController {
         return ApiResponseDto.createOk(orderUserHistory);
     }
 
-    @GetMapping("/{projectId}/user/history/")
+    @GetMapping("/{projectId}/user/history")
     public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@PathVariable String projectId) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         List<TradeHistoryResponseDto> tradeHistroy = tradeService.getTradeHistory(userSeq, projectId);
