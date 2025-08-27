@@ -213,6 +213,14 @@ public class TradeService {
         if (!order.getOrdersType().equals(ordersType)) {
             throw new BadParameter("다른 오더 잖아 혼난다");
         }
+            if(ordersType == 1) {
+                MarketRefundDto  marketRefundDto = new MarketRefundDto();
+                marketRefundDto.setOrdersId(ordersId);
+                marketRefundDto.setProjectId(projectId);
+                marketRefundDto.setRefundPrice(purchasePrice);
+
+                assetClient.marketRefund(userSeq, projectId, marketRefundDto);
+            }
         ordersRepository.delete(order);
     }
 
@@ -377,7 +385,6 @@ public class TradeService {
         sellOrder.setOrdersStatus("SUCCEEDED");
         ordersRepository.save(sellOrder);
 
-        // ✅ Asset 서비스 API 호출: 판매자에게 예치금 전송
         try {
             long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
             AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), sellOrder.getUserSeq(), amount);
@@ -385,7 +392,6 @@ public class TradeService {
             log.info("Asset 서비스에 판매대금({}) 전송 요청 완료. tradeId={}", amount, trade.getTradeId());
         } catch (Exception e) {
             log.error("Asset 서비스 호출(판매대금 전송) 실패. tradeId={}", trade.getTradeId(), e);
-            // TODO: 재시도 로직 또는 관리자 알림 등 예외 처리 정책 필요
         }
     }
 
