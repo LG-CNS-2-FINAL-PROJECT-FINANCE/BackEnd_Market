@@ -35,7 +35,7 @@ public class TradeController {
         return ApiResponseDto.defaultOk();
     }
 
-    @GetMapping("/{pjectIdro}/history")
+    @GetMapping("/{projectId}/history")
     public List<OrderHistoryResponseDto> tradeHistory(@PathVariable String projectId) {
         List<OrderHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
         return tradeHistory;
