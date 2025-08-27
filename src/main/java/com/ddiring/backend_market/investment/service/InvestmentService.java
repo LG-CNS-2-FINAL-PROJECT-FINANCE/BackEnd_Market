@@ -174,7 +174,7 @@ public class InvestmentService {
             return toResponse(saved);
         }
         boolean buyOk = buyResponse != null
-                && "success".equalsIgnoreCase(buyResponse.getCode());
+                && "success".equalsIgnoreCase(buyResponse.getMessage());
         if (!buyOk) {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
