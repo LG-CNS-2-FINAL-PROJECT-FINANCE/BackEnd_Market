@@ -35,10 +35,10 @@ public class TradeController {
         return ApiResponseDto.defaultOk();
     }
 
-    @GetMapping("/{projectId}/history")
-    public ApiResponseDto<List<OrderHistoryResponseDto>> tradeHistory(@PathVariable String projectId) {
+    @GetMapping("/{pjectIdro}/history")
+    public List<OrderHistoryResponseDto> tradeHistory(@PathVariable String projectId) {
         List<OrderHistoryResponseDto> tradeHistory = tradeService.getTradeHistory(projectId);
-        return ApiResponseDto.createOk(tradeHistory);
+        return tradeHistory;
     }
 
     @GetMapping("/{projectId}/purchase")
