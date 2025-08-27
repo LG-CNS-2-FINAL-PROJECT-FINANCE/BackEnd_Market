@@ -152,7 +152,7 @@ public class InvestmentService {
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
-                .invStatus(Investment.InvestmentStatus.PENDING)
+                .invStatus(InvestmentStatus.PENDING)
                 .build();
 
         Investment saved = investmentRepository.save(investment);
@@ -173,17 +173,9 @@ public class InvestmentService {
 
             return toResponse(saved);
         }
-        boolean buyOk = buyResponse != null
-                && "success".equalsIgnoreCase(buyResponse.getMessage());
-        if (!buyOk) {
-            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
-            saved.setUpdatedAt(LocalDateTime.now());
-            investmentRepository.save(saved);
-            return toResponse(saved);
-        }
 
         // 입금 성공 => 펀딩 진행 상태로 변경
-        saved.setInvStatus(Investment.InvestmentStatus.FUNDING);
+        saved.setInvStatus(InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
         return toResponse(saved);
