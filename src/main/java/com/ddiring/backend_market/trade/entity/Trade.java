@@ -28,7 +28,7 @@ public class Trade {
     @Column(name = "sell_id", nullable = false)
     private Integer sellId;
 
-    @Column(name = "trade_status", nullable = false)
+    @Column(name = "trade_status")
     private String tradeStatus;
 
     @Column(name = "trade_price", nullable = false)

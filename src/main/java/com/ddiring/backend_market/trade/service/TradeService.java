@@ -105,11 +105,6 @@ public class TradeService {
                     break;
                 }
             }
-            AssetRequest requestDeposit = new AssetRequest();
-            requestDeposit.getMarketDto().setPrice(order.getPurchasePrice());
-            requestDeposit.getMarketDto().setProductId(order.getProjectId());
-
-            assetClient.requestDeposit(requestDeposit);
         }
     }
 
@@ -122,6 +117,7 @@ public class TradeService {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
+
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
                 .role(role)
@@ -134,6 +130,7 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         MarketSellDto marketSellDto = new MarketSellDto();
+        marketSellDto.setOrdersId(savedOrder.getOrdersId());
         marketSellDto.setProjectId(ordersRequestDto.getProjectId());
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
         try {
@@ -177,6 +174,7 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         MarketBuyDto marketBuyDto = new MarketBuyDto();
+        marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
         marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
 
@@ -217,6 +215,9 @@ public class TradeService {
             throw new BadParameter("번호 내놔");
         }
         List<Trade> trades = tradeRepository.findTop20ByProjectIdOrderByTradedAtDesc(projectId);
+        if (trades == null || trades.isEmpty()) {
+            return List.of();
+        }
         return trades.stream()
                 .map(OrderHistoryResponseDto::new)
                 .collect(Collectors.toList());

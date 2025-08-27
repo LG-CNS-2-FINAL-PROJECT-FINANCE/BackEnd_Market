@@ -8,6 +8,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class MarketSellDto {
+    private Integer ordersId;
     private Integer sellToken;
     private String projectId;
 }
