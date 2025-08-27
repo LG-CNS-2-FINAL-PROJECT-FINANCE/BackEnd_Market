@@ -11,9 +11,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CanceledInvestmentResponse {
+public class MyInvestmentByProductResponse {
 
     private Integer investedPrice;
+    private Integer tokenQuantity;
     private LocalDateTime investedAt;
-    private LocalDateTime updatedAt;
 }

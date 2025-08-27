@@ -90,17 +90,14 @@ public class InvestmentService {
                 .toList();
     }
 
-    // 취소 내역 확인
-    public List<CanceledInvestmentResponse> getCanceledInvestment(String projectId) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        List<Investment> myCanceled = investmentRepository.findByUserSeqAndProjectIdAndInvStatus(userSeq, projectId,
-                InvestmentStatus.CANCELLED);
-
-        return myCanceled.stream()
-                .map(investment -> CanceledInvestmentResponse.builder()
+    // 상품 주문 확인
+    public List<MyInvestmentByProductResponse> getMyInvestmentByProduct(String userSeq, String projectId) {
+        List<Investment> myInvestments = investmentRepository.findByUserSeqAndProjectId(userSeq, projectId);
+        return myInvestments.stream()
+                .map(investment -> MyInvestmentByProductResponse.builder()
                         .investedPrice(investment.getInvestedPrice())
+                        .tokenQuantity(investment.getTokenQuantity())
                         .investedAt(investment.getInvestedAt())
-                        .updatedAt(investment.getUpdatedAt())
                         .build())
                 .toList();
     }
