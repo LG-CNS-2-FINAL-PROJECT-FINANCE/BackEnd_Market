@@ -54,10 +54,10 @@ public class TradeController {
     }
 
     @PostMapping("/delete")
-    public ApiResponseDto<String> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+    public ApiResponseDto<String> editPurchase(@RequestBody OrdersRequestDto ordersRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.deleteOrder(userSeq, role, ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+        tradeService.deleteOrder(userSeq, role, ordersRequestDto.getOrderId(), ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getTokenQuantity(), ordersRequestDto.getOrdersType());
         return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
