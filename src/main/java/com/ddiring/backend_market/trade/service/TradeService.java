@@ -211,9 +211,8 @@ public class TradeService {
                 .orElseThrow(() -> new NotFound("권한 가져와")); // NotFound.java
 
         if (!order.getOrdersType().equals(ordersType)) {
-            throw new BadParameter("같은 오더 잖아 혼난다");
+            throw new BadParameter("다른 오더 잖아 혼난다");
         }
-
         ordersRepository.delete(order);
     }
 

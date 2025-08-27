@@ -28,6 +28,7 @@ public class ApiCommonAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({NoResourceFoundException.class})
     public ApiResponseDto<String> handleResourceFoundException(NoResourceFoundException e) {
+        log.warn(e.getMessage());
         return ApiResponseDto.createError("NoResource", "리소스를 찾을 수 없습니다.");
     }
 
@@ -40,6 +41,7 @@ public class ApiCommonAdvice {
     @ResponseStatus(HttpStatus.NOT_FOUND)
     @ExceptionHandler({NotFound.class})
     public ApiResponseDto<String> handleNotFound(NotFound e) {
+        log.warn(e.getMessage());
         return ApiResponseDto.createError(e.getErrorCode(), e.getErrorMessage());
     }
 
