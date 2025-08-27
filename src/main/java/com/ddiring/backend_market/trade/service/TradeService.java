@@ -210,9 +210,6 @@ public class TradeService {
         Orders order = ordersRepository.findByOrdersIdAndUserSeqAndProjectId(ordersId, userSeq, projectId)
                 .orElseThrow(() -> new NotFound("권한 가져와")); // NotFound.java
 
-        if (!order.getOrdersType().equals(ordersType)) {
-            throw new BadParameter("다른 오더 잖아 혼난다");
-        }
             if(ordersType == 1) {
                 MarketRefundDto  marketRefundDto = new MarketRefundDto();
                 marketRefundDto.setOrdersId(ordersId);
