@@ -3,7 +3,6 @@ package com.ddiring.backend_market.investment.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
-import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
@@ -163,7 +162,7 @@ public class InvestmentService {
         marketBuyDto.setBuyPrice(investment.getInvestedPrice());
 
         try {
-            ApiResponseDto<String> buyResponse = assetClient.marketBuy(userSeq, role, marketBuyDto);
+            assetClient.marketBuy(userSeq, role, marketBuyDto);
         } catch (Exception e) {
             saved.setInvStatus(InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
@@ -211,7 +210,7 @@ public class InvestmentService {
             marketRefundDto.setRefundPrice(investment.getInvestedPrice());
 
             try {
-                ApiResponseDto<String> refundResponse = assetClient.marketRefund(userSeq, role, marketRefundDto);
+                assetClient.marketRefund(userSeq, role, marketRefundDto);
             } catch (Exception e) {
                 throw new IllegalStateException("환불 요청 실패");
             }
