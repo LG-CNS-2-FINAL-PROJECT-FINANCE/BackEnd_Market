@@ -109,7 +109,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public OrderDeleteDto sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
@@ -128,6 +128,9 @@ public class TradeService {
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
+
+        OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
+        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
 
         MarketSellDto marketSellDto = new MarketSellDto();
         marketSellDto.setOrdersId(savedOrder.getOrdersId());
@@ -151,10 +154,12 @@ public class TradeService {
 
         List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
         matchAndExecuteTrade(savedOrder, purchaseOrder);
+
+        return orderDeleteDto;
     }
 
     @Transactional
-    public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public OrderDeleteDto buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
@@ -173,6 +178,9 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
+        OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
+        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
+
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
@@ -189,11 +197,12 @@ public class TradeService {
             List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
             matchAndExecuteTrade(savedOrder, sellOrder);
 
+            return orderDeleteDto;
     }
 
 
     @Transactional
-    public Orders updateOrder(Integer ordersId, String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
+    public void deleteOrder(Integer ordersId, String userSeq, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
         if (ordersId == null || userSeq == null || projectId == null || (purchasePrice == null && tokenQuantity == null)) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
@@ -205,8 +214,7 @@ public class TradeService {
             throw new BadParameter("같은 오더 잖아 혼난다");
         }
 
-        order.updateOrder(purchasePrice, tokenQuantity);
-        return ordersRepository.save(order);
+        ordersRepository.delete(order);
     }
 
     @Transactional
@@ -248,31 +256,22 @@ public class TradeService {
     }
 
     @Transactional
-    public List<TradeSearchResponseDto> getUserInfo(String userSeq) {
-        if (userSeq == null) {
-            throw new BadParameter("넌 누구냐");
+    public List<OrderUserHistory> getUserOrder(String userSeq, String projectId) {
+        if (userSeq == null || projectId == null) {
+            throw new BadParameter("이제 그만");
         }
-        List<Orders> ordersHistory = ordersRepository.findByUserSeq(userSeq);
+        List<Orders> ordersList = ordersRepository.findByUserSeqAndProjectIdOrderByRegistedAtDesc(userSeq, projectId);
 
-        return ordersHistory.stream()
-                .flatMap(orders -> {
-                    List<Trade> trades = tradeRepository.findByPurchaseIdOrSellId(orders.getOrdersId(), orders.getOrdersId());
-
-                    return trades.stream()
-                            .map(trade -> {
-                                Integer orderType = trade.getPurchaseId().equals(orders.getOrdersId()) ? 1 : 0;
-                                return new TradeSearchResponseDto(trade, orderType);
-                            });
-                })
-                .sorted((a, b) -> b.getTradedAt().compareTo(a.getTradedAt()))
+        return ordersList.stream()
+                .map(OrderUserHistory::new)
                 .collect(Collectors.toList());
     }
     @Transactional
-    public List<TradeHistoryResponseDto> getTradeHistory(String userSeq, Integer tradeType) {
-        if (userSeq == null || tradeType == null) {
+    public List<TradeHistoryResponseDto> getTradeHistory(String userSeq, String projectId) {
+        if (userSeq == null || projectId == null) {
             throw new BadParameter("이제 그만");
         }
-        List<History> tradeHistory = historyRepository.findByUserSeqAndTradeTypeOrderByTradedAtDesc(userSeq, tradeType);
+        List<History> tradeHistory = historyRepository.findByUserSeqAndProjectIdOrderByTradedAtDesc(userSeq, projectId);
 
         return tradeHistory.stream()
                 .map(TradeHistoryResponseDto::new)

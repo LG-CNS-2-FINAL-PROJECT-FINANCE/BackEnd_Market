@@ -53,31 +53,31 @@ public class TradeController {
         return ApiResponseDto.createOk(historyResponseDtos);
     }
 
-    @PostMapping("/edit/purchase")
-    public ApiResponseDto<Orders> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+    @PostMapping("/delete/purchase")
+    public ApiResponseDto<String> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
-        return ApiResponseDto.createOk(orders);
+        tradeService.deleteOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+        return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
-    @PostMapping("/edit/sell")
-    public ApiResponseDto<Orders> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
+    @PostMapping("/delete/sell")
+    public ApiResponseDto<String> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        Orders orders = tradeService.updateOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
-        return ApiResponseDto.createOk(orders);
+        tradeService.deleteOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+        return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
-    @GetMapping("/list")
-    public ApiResponseDto<List<TradeSearchResponseDto>> tradeSearch() {
+    @GetMapping("/{projectId}/user/list")
+    public ApiResponseDto<List<OrderUserHistory>> tradeSearch(@PathVariable String projectId) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        List<TradeSearchResponseDto> tradeSearchResponseDto = tradeService.getUserInfo(userSeq);
-        return ApiResponseDto.createOk(tradeSearchResponseDto);
+        List<OrderUserHistory> orderUserHistory = tradeService.getUserOrder(userSeq, projectId);
+        return ApiResponseDto.createOk(orderUserHistory);
     }
 
-    @GetMapping("/history/{tradeType}")
-    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@PathVariable Integer tradeType) {
+    @GetMapping("/{projectId}/user/history/")
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@PathVariable String projectId) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        List<TradeHistoryResponseDto> tradeHistroy = tradeService.getTradeHistory(userSeq, tradeType);
+        List<TradeHistoryResponseDto> tradeHistroy = tradeService.getTradeHistory(userSeq, projectId);
         return ApiResponseDto.createOk(tradeHistroy);
     }
 

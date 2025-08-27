@@ -25,11 +25,11 @@ public class InvestRequestAcceptedEvent {
     @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class InvestRequestAcceptedPayload {
-        private Long investmentId;
+        private String projectId;
         private String status;
     }
 
-    public static InvestRequestAcceptedEvent of(Long investmentId) {
+    public static InvestRequestAcceptedEvent of(String projectId) {
         String uuid = java.util.UUID.randomUUID().toString();
         String eventType = TOPIC + ".ACCEPTED";
 
@@ -38,7 +38,7 @@ public class InvestRequestAcceptedEvent {
                 .eventType(eventType)
                 .timestamp(Instant.now())
                 .payload(InvestRequestAcceptedPayload.builder()
-                        .investmentId(investmentId)
+                        .projectId(projectId)
                         .status("ACCEPTED")
                         .build()
                 )

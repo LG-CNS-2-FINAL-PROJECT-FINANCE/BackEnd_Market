@@ -9,6 +9,6 @@ import java.util.List;
 @Repository
 public interface HistoryRepository extends JpaRepository<History, Integer> {
     List<History> findByUserSeqOrderByTradedAtDesc(String userSeq);
-    List<History> findByUserSeqAndTradeTypeOrderByTradedAtDesc(String userSeq, Integer tradeType);
+    List<History> findByUserSeqAndProjectIdOrderByTradedAtDesc(String userSeq, String projectId);
     List<History> findAllByOrderByTradedAtDesc();
 }
