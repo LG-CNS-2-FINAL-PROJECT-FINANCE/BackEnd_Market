@@ -14,6 +14,7 @@ import com.ddiring.backend_market.investment.dto.MarketDto;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.entity.Investment;
+import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,6 +86,20 @@ public class InvestmentService {
                             .invStatus(investment.getInvStatus() == null ? null : investment.getInvStatus().name())
                             .build();
                 })
+                .toList();
+    }
+
+    // 투자 상품 취소 내역 조회
+    public List<CanceledInvestmentResponse> getCanceledInvestment() {
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        List<Investment> myCanceled = investmentRepository.findByUserSeqAndInvStatus(userSeq,
+                InvestmentStatus.CANCELLED);
+
+        return myCanceled.stream()
+                .map(investment -> CanceledInvestmentResponse.builder()
+                        .investedPrice(investment.getInvestedPrice())
+                        .updatedAt(investment.getUpdatedAt())
+                        .build())
                 .toList();
     }
 
