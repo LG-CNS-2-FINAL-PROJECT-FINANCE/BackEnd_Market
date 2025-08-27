@@ -1,6 +1,7 @@
 package com.ddiring.backend_market.investment.controller;
 
 import com.ddiring.backend_market.api.product.ProductDTO;
+import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.service.InvestmentService;
@@ -57,10 +58,11 @@ public class InvestmentController {
 
     // 주문 취소
     @PostMapping("/{investmentSeq}/cancel")
-    public ResponseEntity<InvestmentResponse> cancelInvestment(@PathVariable Integer investmentSeq) {
+    public ResponseEntity<InvestmentResponse> cancelInvestment(@PathVariable Integer investmentSeq,
+            @RequestBody CancelInvestmentRequest request) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
-        InvestmentResponse response = investmentService.cancelInvestment(userSeq, role, investmentSeq);
+        InvestmentResponse response = investmentService.cancelInvestment(userSeq, role, request);
         return ResponseEntity.ok(response);
     }
 
