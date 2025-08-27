@@ -13,6 +13,6 @@ import lombok.*;
 public class AssetRequest {
     private MarketDto marketDto;
     private ProductDTO productDto;
-//    private Integer price;
-//    private String projectId;
+    // private Integer price;
+    // private String projectId;
 }

@@ -2,6 +2,7 @@ package com.ddiring.backend_market.investment.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.AssetRequest;
+import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.api.product.ProductClient;
@@ -98,6 +99,7 @@ public class InvestmentService {
         return myCanceled.stream()
                 .map(investment -> CanceledInvestmentResponse.builder()
                         .investedPrice(investment.getInvestedPrice())
+                        .investedAt(investment.getInvestedAt())
                         .updatedAt(investment.getUpdatedAt())
                         .build())
                 .toList();
@@ -154,38 +156,24 @@ public class InvestmentService {
         Investment saved = investmentRepository.save(investment);
 
         // Asset 에스크로 예치 요청
-        ProductDTO product = null;
-        try {
-            product = productClient.getProduct(request.getProjectId());
-        } catch (Exception e) {
-            log.warn("상품 조회 실패 projectId={} error={}", request.getProjectId(), e.getMessage());
-        }
+        MarketBuyDto marketBuyDto = new MarketBuyDto();
+        marketBuyDto.setOrdersId(investment.getInvestmentSeq());
+        marketBuyDto.setProjectId(investment.getProjectId());
+        marketBuyDto.setBuyPrice(investment.getInvestedPrice());
 
-        AssetRequest assetRequest = AssetRequest.builder()
-                .marketDto(MarketDto.builder()
-                        .userSeq(GatewayRequestHeaderUtils.getUserSeq())
-                        .price(request.getInvestedPrice())
-                        .build())
-                .productDto(product == null ? ProductDTO.builder()
-                        .projectId(request.getProjectId())
-                        .title(null)
-                        .account(null)
-                        .build() : product)
-                .build();
-
-        ApiResponseDto<Integer> depositResponse;
+        ApiResponseDto<String> buyResponse;
         try {
-            depositResponse = assetClient.requestDeposit(assetRequest);
+            buyResponse = assetClient.marketBuy(userSeq, role, marketBuyDto);
         } catch (Exception e) {
-            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            saved.setInvStatus(InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(saved);
 
             return toResponse(saved);
         }
-        boolean depositOk = depositResponse != null
-                && "OK".equalsIgnoreCase(depositResponse.getCode());
-        if (!depositOk) {
+        boolean buyOk = buyResponse != null
+                && "success".equalsIgnoreCase(buyResponse.getCode());
+        if (!buyOk) {
             saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(saved);
