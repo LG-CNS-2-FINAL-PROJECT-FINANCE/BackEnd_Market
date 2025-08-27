@@ -93,11 +93,16 @@ public class InvestmentService {
     // 상품 주문 확인
     public List<MyInvestmentByProductResponse> getMyInvestmentByProduct(String userSeq, String projectId) {
         List<Investment> myInvestments = investmentRepository.findByUserSeqAndProjectId(userSeq, projectId);
+
         return myInvestments.stream()
+                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.FUNDING
+                        || inv.getInvStatus() == Investment.InvestmentStatus.PENDING)
                 .map(investment -> MyInvestmentByProductResponse.builder()
+                        .investmentSeq(investment.getInvestmentSeq())
                         .investedPrice(investment.getInvestedPrice())
                         .tokenQuantity(investment.getTokenQuantity())
                         .investedAt(investment.getInvestedAt())
+                        .invStatus(investment.getInvStatus())
                         .build())
                 .toList();
     }
