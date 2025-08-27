@@ -15,7 +15,7 @@ public interface OrdersRepository extends JpaRepository<Orders, Integer> {
     List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(String projectId, Integer ordersType);
     List<Orders> findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(String projectId, Integer ordersType);
 
-    Optional<Orders> findByOrdersIdAndUserSeqAndProjectId(Integer ordersId, String userSeq, String projectId);
+    Optional<Orders> findByOrdersIdAndUserSeqAndProjectIdAndRole(Integer ordersId, String userSeq, String projectId, String role);
     List<Orders> findByUserSeqAndProjectIdOrderByRegistedAtDesc(String userSeq, String projectId);
 
 }

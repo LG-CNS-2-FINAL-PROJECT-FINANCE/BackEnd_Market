@@ -56,14 +56,16 @@ public class TradeController {
     @PostMapping("/delete/purchase")
     public ApiResponseDto<String> editPurchase(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        tradeService.deleteOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
+        String role = GatewayRequestHeaderUtils.getRole();
+        tradeService.deleteOrder(userSeq, role, ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 1);
         return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
     @PostMapping("/delete/sell")
     public ApiResponseDto<String> editSell(@RequestBody OrdersCorrectionRequestDto ordersCorrectionRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        tradeService.deleteOrder(ordersCorrectionRequestDto.getOrdersId(), userSeq, ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
+        String role = GatewayRequestHeaderUtils.getRole();
+        tradeService.deleteOrder(userSeq, role, ordersCorrectionRequestDto.getOrdersId(), ordersCorrectionRequestDto.getProjectId(), ordersCorrectionRequestDto.getPurchasePrice(), ordersCorrectionRequestDto.getTokenQuantity(), 0);
         return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
