@@ -216,7 +216,7 @@ public class TradeService {
                 marketRefundDto.setProjectId(projectId);
                 marketRefundDto.setRefundPrice(purchasePrice);
 
-                assetClient.marketRefund(userSeq, projectId, marketRefundDto);
+                assetClient.marketRefund(userSeq, marketRefundDto);
             }
         ordersRepository.delete(order);
     }
