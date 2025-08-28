@@ -6,6 +6,7 @@ import com.ddiring.backend_market.event.dto.InvestSucceededEvent;
 import com.ddiring.backend_market.event.dto.InvestFailedEvent;
 import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
+import com.ddiring.backend_market.investment.service.InvestmentService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ public class KafkaInvestmentEventsListener {
 
     private final ObjectMapper objectMapper;
     private final InvestmentRepository investmentRepository;
+    private final InvestmentService investmentService;
 
     @KafkaListener(topics = "INVEST", groupId = "market-service-group")
     public void listenInvestmentEvents(String message) {
@@ -85,6 +87,13 @@ public class KafkaInvestmentEventsListener {
         if (!list.isEmpty()) {
             investmentRepository.saveAll(list);
         }
+        // 블록체인 토큰 이동 실제 요청 (요청 수락 후 실행)
+        try {
+            boolean bcRequested = investmentService.requestBlockchainTokenMove(projectId);
+            log.info("[INVEST] 블록체인 토큰 이동 요청 결과 projectId={} requested={}", projectId, bcRequested);
+        } catch (Exception e) {
+            log.error("[INVEST] 블록체인 토큰 이동 요청 실패 projectId={} reason={}", projectId, e.getMessage());
+        }
     }
 
     @Transactional
@@ -93,8 +102,7 @@ public class KafkaInvestmentEventsListener {
         var list = investmentRepository.findByProjectId(projectId).stream()
                 .filter(inv -> inv.getInvStatus() != InvestmentStatus.COMPLETED)
                 .peek(inv -> {
-                    inv.setInvStatus(InvestmentStatus.FAILED);
-                    inv.setFailureReason(event.getPayload().getReason());
+                    inv.setInvStatus(InvestmentStatus.REJECTED);
                     inv.setUpdatedAt(LocalDateTime.now());
                 })
                 .toList();
@@ -123,7 +131,6 @@ public class KafkaInvestmentEventsListener {
                     reason = reason + ":" + event.getPayload().getErrorMessage();
                 }
                 inv.setInvStatus(InvestmentStatus.FAILED);
-                inv.setFailureReason(reason);
                 inv.setUpdatedAt(LocalDateTime.now());
                 investmentRepository.save(inv);
             }

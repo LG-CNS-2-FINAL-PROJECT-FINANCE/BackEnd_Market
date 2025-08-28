@@ -272,11 +272,7 @@ public class InvestmentService {
             return false;
         }
 
-        // 상태 전환 ALLOC_REQUESTED
-        funding.forEach(inv -> inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED));
-        investmentRepository.saveAll(funding);
-
-        // 이벤트 생성 및 발행
+        // 이벤트 생성 및 발행 (상태 전환은 ACCEPTED 이벤트 시점에 수행)
         List<InvestRequestEvent.InvestmentItem> items = funding.stream()
                 .map(inv -> InvestRequestEvent.InvestmentItem.builder()
                         .investmentSeq(inv.getInvestmentSeq())
@@ -290,13 +286,6 @@ public class InvestmentService {
         investmentEventProducer.send("INVEST", event);
         log.info("투자 요청 이벤트 발행 projectId={} investments={}", projectId, items.size());
 
-        // 블록체인 토큰 이동 API 호출
-        try {
-            boolean bcRequested = requestBlockchainTokenMove(projectId);
-            log.info("블록체인 토큰 이동 요청 수행 projectId={} requested={}", projectId, bcRequested);
-        } catch (Exception e) {
-            log.error("블록체인 토큰 이동 요청 중 예외 projectId={} reason={}", projectId, e.getMessage());
-        }
         return true;
     }
 
@@ -319,7 +308,6 @@ public class InvestmentService {
                 String address = assetClient.getWalletAddress(inv.getUserSeq()).getData();
                 if (address == null || address.isBlank()) {
                     inv.setInvStatus(InvestmentStatus.FAILED);
-                    inv.setFailureReason("NO_WALLET_ADDRESS");
                     inv.setUpdatedAt(LocalDateTime.now());
                     continue;
                 }
@@ -330,7 +318,6 @@ public class InvestmentService {
                         .build());
             } catch (Exception e) {
                 inv.setInvStatus(InvestmentStatus.FAILED);
-                inv.setFailureReason("ADDR_ERR:" + e.getClass().getSimpleName());
                 inv.setUpdatedAt(LocalDateTime.now());
             }
         }
@@ -356,7 +343,6 @@ public class InvestmentService {
                     .filter(inv -> inv.getInvStatus() == InvestmentStatus.ALLOC_REQUESTED)
                     .forEach(inv -> {
                         inv.setInvStatus(InvestmentStatus.FAILED);
-                        inv.setFailureReason("BC_REQ_FAIL:" + e.getClass().getSimpleName());
                         inv.setUpdatedAt(LocalDateTime.now());
                     });
             investmentRepository.saveAll(allocRequested);
