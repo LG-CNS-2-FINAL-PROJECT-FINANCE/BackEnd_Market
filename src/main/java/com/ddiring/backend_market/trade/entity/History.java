@@ -27,6 +27,9 @@ public class History {
     @Column(name = "user_Seq", nullable = false)
     private String userSeq;
 
+    @Column(name = "title", nullable = false)
+    private String title;
+
     @Column(name = "trade_type", nullable = false)
     private Integer tradeType;
 
@@ -52,9 +55,10 @@ public class History {
     private LocalDate updatedAt;
 
     @Builder
-    public History(String projectId, String userSeq, Integer tradeType, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public History(String projectId, String userSeq, String title, Integer tradeType, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
+        this.title = title;
         this.tradeType = tradeType;
         this.tradePrice = tradePrice;
         this.tokenQuantity = tokenQuantity;
