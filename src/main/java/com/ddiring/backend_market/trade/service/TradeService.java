@@ -208,7 +208,7 @@ public class TradeService {
         }
 
         Orders order = ordersRepository.findByOrdersIdAndUserSeqAndProjectIdAndRole(ordersId, userSeq, projectId, role)
-                .orElseThrow(() -> new NotFound("권한 가져와")); // NotFound.java
+                .orElseThrow(() -> new NotFound("권한 가져와"));
 
             if(ordersType == 1) {
                 MarketRefundDto  marketRefundDto = new MarketRefundDto();
