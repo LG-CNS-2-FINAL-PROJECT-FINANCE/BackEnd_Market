@@ -14,7 +14,5 @@ public interface TradeRepository extends JpaRepository<Trade, Integer> {
     List<Trade> findTop20ByProjectIdOrderByTradedAtDesc(String projectId);
     List<Trade> findByPurchaseIdOrSellId(Integer purchaseId, Integer sellId);
     Optional<Trade> findByTradeId(Long tradeId);
-    @Modifying
-    @Query("update Trade t set t.tradeStatus = ?2 where t.tradeId = ?1")
-    void updateTradeStatus(Integer tradeId, String tradeStatus);
+
 }

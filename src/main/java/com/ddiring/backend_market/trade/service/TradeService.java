@@ -83,7 +83,7 @@ public class TradeService {
 //
 //                blockchainClient.requestTradeTokenMove(tradeDto);
 
-                String title = assetClient.getMarketTitle(order.getProjectId());
+                String title = assetClient.getMarketTitle(order.getTitle());
 
                 History purchaseHistory = History.builder()
                         .title(title)
