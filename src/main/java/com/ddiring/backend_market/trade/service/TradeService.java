@@ -4,6 +4,8 @@ import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.blockchain.BlockchainClient;
+import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfoDto;
+import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfoDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
@@ -70,6 +72,8 @@ public class TradeService {
                 TradeDto tradeDto = new TradeDto();
                 tradeDto.setTradeId(Math.toIntExact(trade.getTradeId()));
                 tradeDto.setProjectId(order.getProjectId());
+                tradeDto.setBuyInfo(new BuyInfoDto());
+                tradeDto.setSellInfo(new SellInfoDto());
                 tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
                 tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
                 tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
