@@ -2,6 +2,7 @@ package com.ddiring.backend_market.event.cosumer;
 
 import com.ddiring.backend_market.event.dto.*;
 import com.ddiring.backend_market.trade.service.TradeService;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -20,19 +21,18 @@ public class KafkaTradeEventsListener {
     private final ObjectMapper objectMapper; // JSON 파싱을 위해 ObjectMapper 주입
 
     @KafkaListener(topics = "TRADE", groupId = "market-service-group")
-    public void listenTradeEvents(Object message) {
+    public void listenTradeEvents(String message) { // 1. 메시지를 String으로 받습니다.
         try {
-            Map<String, Object> messageMap = (Map<String, Object>) message;
+            // 2. 받은 String을 먼저 Map으로 변환하여 내용을 확인합니다.
+            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {});
 
-            // 2. ⭐️ Map에서 직접 eventType을 꺼냅니다.
             String eventType = (String) messageMap.get("eventType");
             if (eventType == null) {
                 log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
                 return;
             }
-            log.info("수신된 이벤트 타입: {}", eventType);
 
-            // 3. ⭐️ objectMapper.convertValue를 사용해 Map을 원하는 DTO로 최종 변환합니다.
+            log.info("수신된 이벤트 타입: {}", eventType);
             switch (eventType) {
                 case "TRADE.DEPOSIT.SUCCEEDED":
                     DepositSucceededEvent depositSucceededEvent = objectMapper.convertValue(messageMap, DepositSucceededEvent.class);
