@@ -3,6 +3,8 @@ package com.ddiring.backend_market.trade.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
+import com.ddiring.backend_market.api.blockchain.BlockchainClient;
+import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
@@ -31,6 +33,7 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
+    private final BlockchainClient blockchainClient;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
@@ -63,6 +66,18 @@ public class TradeService {
                         .build();
 
                 tradeRepository.save(trade);
+
+                TradeDto tradeDto = new TradeDto();
+                tradeDto.setTradeId(Math.toIntExact(trade.getTradeId()));
+                tradeDto.setProjectId(order.getProjectId());
+                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+
+                blockchainClient.requestTradeTokenMove(tradeDto);
 
                 String title = assetClient.getMarketTitle(order.getProjectId());
 
