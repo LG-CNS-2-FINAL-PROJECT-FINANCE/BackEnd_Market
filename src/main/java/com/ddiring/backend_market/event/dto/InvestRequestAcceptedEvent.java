@@ -3,21 +3,20 @@ package com.ddiring.backend_market.event.dto;
 import lombok.*;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestRequestAcceptedEvent {
-    public static final String TOPIC = "INVESTMENT.REQUEST";
+    public static final String PREFIX = "INVESTMENT.REQUEST";
 
-    // --- Header ---
+    // Header
     private String eventId;
     private String eventType;
     private Instant timestamp;
 
-    // --- Payload ---
+    // Payload
     private InvestRequestAcceptedPayload payload;
 
     @Getter
@@ -31,7 +30,7 @@ public class InvestRequestAcceptedEvent {
 
     public static InvestRequestAcceptedEvent of(String projectId) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = TOPIC + ".ACCEPTED";
+        String eventType = PREFIX + ".ACCEPTED";
 
         return InvestRequestAcceptedEvent.builder()
                 .eventId(uuid)
@@ -40,8 +39,7 @@ public class InvestRequestAcceptedEvent {
                 .payload(InvestRequestAcceptedPayload.builder()
                         .projectId(projectId)
                         .status("ACCEPTED")
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }

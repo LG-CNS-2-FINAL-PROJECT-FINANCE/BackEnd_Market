@@ -6,14 +6,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestSucceededEvent {
-    public static final String TOPIC = "INVESTMENT";
+    public static final String PREFIX = "INVESTMENT";
 
     // --- Header ---
     private String eventId;
@@ -36,7 +35,7 @@ public class InvestSucceededEvent {
 
     public static InvestSucceededEvent of(Long investmentId, String investorAddress, Long tokenAmount) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = TOPIC + ".SUCCEEDED";
+        String eventType = PREFIX + ".SUCCEEDED";
 
         return InvestSucceededEvent.builder()
                 .eventId(uuid)
@@ -47,8 +46,7 @@ public class InvestSucceededEvent {
                         .status("SUCCEEDED")
                         .investorAddress(investorAddress)
                         .tokenAmount(tokenAmount)
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }

@@ -305,7 +305,7 @@ public class InvestmentService {
     public boolean requestBlockchainTokenMove(String projectId) {
         // ALLOC_REQUESTED 상태 투자 조회
         List<Investment> allocRequested = investmentRepository.findByProjectId(projectId).stream()
-                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.ALLOC_REQUESTED)
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.ALLOC_REQUESTED)
                 .toList();
         if (allocRequested.isEmpty()) {
             log.info("토큰 이동 대상 없음 projectId={}", projectId);
@@ -318,7 +318,7 @@ public class InvestmentService {
                 // 지갑 주소 조회
                 String address = assetClient.getWalletAddress(inv.getUserSeq()).getData();
                 if (address == null || address.isBlank()) {
-                    inv.setInvStatus(Investment.InvestmentStatus.FAILED);
+                    inv.setInvStatus(InvestmentStatus.FAILED);
                     inv.setFailureReason("NO_WALLET_ADDRESS");
                     inv.setUpdatedAt(LocalDateTime.now());
                     continue;
@@ -345,6 +345,7 @@ public class InvestmentService {
                 .projectId(projectId)
                 .investInfoList(investInfoList)
                 .build();
+
         try {
             blockchainClient.requestInvestmentTokenMove(investmentDto);
             log.info("블록체인 토큰 이동 요청 전송 projectId={} count={}", projectId, investInfoList.size());
@@ -352,9 +353,9 @@ public class InvestmentService {
         } catch (Exception e) {
             log.error("블록체인 토큰 이동 요청 실패 projectId={} reason={}", projectId, e.getMessage());
             allocRequested.stream()
-                    .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.ALLOC_REQUESTED)
+                    .filter(inv -> inv.getInvStatus() == InvestmentStatus.ALLOC_REQUESTED)
                     .forEach(inv -> {
-                        inv.setInvStatus(Investment.InvestmentStatus.FAILED);
+                        inv.setInvStatus(InvestmentStatus.FAILED);
                         inv.setFailureReason("BC_REQ_FAIL:" + e.getClass().getSimpleName());
                         inv.setUpdatedAt(LocalDateTime.now());
                     });

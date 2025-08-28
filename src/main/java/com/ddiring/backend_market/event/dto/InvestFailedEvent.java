@@ -6,14 +6,13 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestFailedEvent {
-    public static final String TOPIC = "INVESTMENT";
+    public static final String PREFIX = "INVESTMENT";
 
     // --- Header ---
     private String eventId;
@@ -36,7 +35,7 @@ public class InvestFailedEvent {
 
     public static InvestFailedEvent of(Long investmentId, String errorType, String errorMessage) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = TOPIC + ".FAILED";
+        String eventType = PREFIX + ".FAILED";
 
         return InvestFailedEvent.builder()
                 .eventId(uuid)
@@ -47,8 +46,7 @@ public class InvestFailedEvent {
                         .status("FAILED")
                         .errorType(errorType)
                         .errorMessage(errorMessage)
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }

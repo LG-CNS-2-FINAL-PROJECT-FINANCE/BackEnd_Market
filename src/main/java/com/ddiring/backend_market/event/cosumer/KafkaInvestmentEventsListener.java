@@ -4,105 +4,129 @@ import com.ddiring.backend_market.event.dto.InvestRequestAcceptedEvent;
 import com.ddiring.backend_market.event.dto.InvestRequestRejectedEvent;
 import com.ddiring.backend_market.event.dto.InvestSucceededEvent;
 import com.ddiring.backend_market.event.dto.InvestFailedEvent;
-import com.ddiring.backend_market.investment.entity.Investment;
+import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
-import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class KafkaInvestmentEventsListener {
 
-//    private final ObjectMapper objectMapper;
-//    private final InvestmentRepository investmentRepository;
-//
-//    @KafkaListener(topics = "INVEST", groupId = "market-service-group")
-//    public void listenInvestmentEvents(String message) {
-//        try {
-//            JsonNode node = objectMapper.readTree(message);
-//            String eventType = node.get("eventType").asText();
-//            log.info("[INVEST] 이벤트 수신: {}", eventType);
-//
-//            switch (eventType) {
-//                case InvestRequestAcceptedEvent.EVENT_TYPE -> {
-//                    InvestRequestAcceptedEvent evt = objectMapper.readValue(message, InvestRequestAcceptedEvent.class);
-//                    handleRequestAccepted(evt);
-//                }
-//                case InvestRequestRejectedEvent.EVENT_TYPE -> {
-//                    InvestRequestRejectedEvent evt = objectMapper.readValue(message, InvestRequestRejectedEvent.class);
-//                    handleRequestRejected(evt);
-//                }
-//                case InvestSucceededEvent.EVENT_TYPE -> {
-//                    InvestSucceededEvent evt = objectMapper.readValue(message, InvestSucceededEvent.class);
-//                    handleInvestSucceeded(evt);
-//                }
-//                case InvestFailedEvent.EVENT_TYPE -> {
-//                    InvestFailedEvent evt = objectMapper.readValue(message, InvestFailedEvent.class);
-//                    handleInvestFailed(evt);
-//                }
-//                default -> log.warn("알 수 없는 투자 이벤트 타입: {}", eventType);
-//            }
-//        } catch (Exception e) {
-//            log.error("투자 이벤트 처리 실패: {}", message, e);
-//        }
-//    }
-//
-//    private void handleRequestAccepted(InvestRequestAcceptedEvent event) {
-//        Long id = event.getPayload().getInvestmentId();
-//        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-//            if (inv.getInvStatus() == Investment.InvestmentStatus.FUNDING
-//                    || inv.getInvStatus() == Investment.InvestmentStatus.PENDING) {
-//                inv.setInvStatus(Investment.InvestmentStatus.ALLOC_REQUESTED);
-//                inv.setUpdatedAt(LocalDateTime.now());
-//                investmentRepository.save(inv);
-//            }
-//        });
-//    }
-//
-//    private void handleRequestRejected(InvestRequestRejectedEvent event) {
-//        Long id = event.getPayload().getInvestmentId();
-//        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-//            if (inv.getInvStatus() != Investment.InvestmentStatus.COMPLETED) {
-//                inv.setInvStatus(Investment.InvestmentStatus.FAILED);
-//                inv.setFailureReason(event.getPayload().getReason());
-//                inv.setUpdatedAt(LocalDateTime.now());
-//                investmentRepository.save(inv);
-//            }
-//        });
-//    }
-//
-//    private void handleInvestSucceeded(InvestSucceededEvent event) {
-//        Long id = event.getPayload().getInvestmentId();
-//        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-//            if (inv.getInvStatus() != Investment.InvestmentStatus.COMPLETED) {
-//                inv.setInvStatus(Investment.InvestmentStatus.COMPLETED);
-//                inv.setTxHash(event.getPayload().getTxHash());
-//                inv.setUpdatedAt(LocalDateTime.now());
-//                investmentRepository.save(inv);
-//            }
-//        });
-//    }
-//
-//    private void handleInvestFailed(InvestFailedEvent event) {
-//        Long id = event.getPayload().getInvestmentId();
-//        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-//            if (inv.getInvStatus() != Investment.InvestmentStatus.COMPLETED) {
-//                inv.setInvStatus(Investment.InvestmentStatus.FAILED);
-//                String reason = event.getPayload().getErrorType();
-//                if (event.getPayload().getErrorMessage() != null) {
-//                    reason = reason + ":" + event.getPayload().getErrorMessage();
-//                }
-//                inv.setFailureReason(reason);
-//                inv.setUpdatedAt(LocalDateTime.now());
-//                investmentRepository.save(inv);
-//            }
-//        });
-//    }
+    private final ObjectMapper objectMapper;
+    private final InvestmentRepository investmentRepository;
+
+    @KafkaListener(topics = "INVEST", groupId = "market-service-group")
+    public void listenInvestmentEvents(String message) {
+        try {
+            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {
+            });
+            String eventType = (String) messageMap.get("eventType");
+            if (eventType == null) {
+                log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
+                return;
+            }
+
+            log.info("[INVEST] 이벤트 수신: {}", eventType);
+            switch (eventType) {
+                case "INVESTMENT.REQUEST.ACCEPTED": {
+                    InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap.get("payload"),
+                            InvestRequestAcceptedEvent.class);
+                    handleRequestAccepted(accepted);
+                    break;
+                }
+                case "INVESTMENT.REQUEST.REJECTED": {
+                    InvestRequestRejectedEvent rejected = objectMapper.convertValue(messageMap.get("payload"),
+                            InvestRequestRejectedEvent.class);
+                    handleRequestRejected(rejected);
+                    break;
+                }
+                case "INVESTMENT.SUCCEEDED": {
+                    InvestSucceededEvent succeeded = objectMapper.convertValue(messageMap.get("payload"),
+                            InvestSucceededEvent.class);
+                    handleInvestSucceeded(succeeded);
+                    break;
+                }
+                case "INVESTMENT.FAILED": {
+                    InvestFailedEvent failed = objectMapper.convertValue(messageMap.get("payload"),
+                            InvestFailedEvent.class);
+                    handleInvestFailed(failed);
+                    break;
+                }
+                default:
+                    log.warn("알 수 없는 투자 이벤트 타입: {}", eventType);
+                    break;
+            }
+        } catch (Exception e) {
+            log.error("투자 이벤트 처리 실패: {}", message, e);
+        }
+    }
+
+    @Transactional
+    private void handleRequestAccepted(InvestRequestAcceptedEvent event) {
+        String projectId = event.getPayload().getProjectId();
+        var list = investmentRepository.findByProjectId(projectId).stream()
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
+                        || inv.getInvStatus() == InvestmentStatus.PENDING)
+                .peek(inv -> {
+                    inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
+                    inv.setUpdatedAt(LocalDateTime.now());
+                })
+                .toList();
+        if (!list.isEmpty()) {
+            investmentRepository.saveAll(list);
+        }
+    }
+
+    @Transactional
+    private void handleRequestRejected(InvestRequestRejectedEvent event) {
+        String projectId = event.getPayload().getProjectId();
+        var list = investmentRepository.findByProjectId(projectId).stream()
+                .filter(inv -> inv.getInvStatus() != InvestmentStatus.COMPLETED)
+                .peek(inv -> {
+                    inv.setInvStatus(InvestmentStatus.FAILED);
+                    inv.setFailureReason(event.getPayload().getReason());
+                    inv.setUpdatedAt(LocalDateTime.now());
+                })
+                .toList();
+        if (!list.isEmpty()) {
+            investmentRepository.saveAll(list);
+        }
+    }
+
+    private void handleInvestSucceeded(InvestSucceededEvent event) {
+        Long id = event.getPayload().getInvestmentId();
+        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
+            if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
+                inv.setInvStatus(InvestmentStatus.COMPLETED);
+                inv.setUpdatedAt(LocalDateTime.now());
+                investmentRepository.save(inv);
+            }
+        });
+    }
+
+    private void handleInvestFailed(InvestFailedEvent event) {
+        Long id = event.getPayload().getInvestmentId();
+        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
+            if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
+                String reason = event.getPayload().getErrorType();
+                if (event.getPayload().getErrorMessage() != null) {
+                    reason = reason + ":" + event.getPayload().getErrorMessage();
+                }
+                inv.setInvStatus(InvestmentStatus.FAILED);
+                inv.setFailureReason(reason);
+                inv.setUpdatedAt(LocalDateTime.now());
+                investmentRepository.save(inv);
+            }
+        });
+    }
 }
