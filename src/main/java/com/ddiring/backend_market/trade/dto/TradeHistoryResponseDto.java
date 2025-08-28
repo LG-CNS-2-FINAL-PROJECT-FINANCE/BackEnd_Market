@@ -11,12 +11,14 @@ import java.time.LocalDateTime;
 @Getter
 @NoArgsConstructor
 public class TradeHistoryResponseDto {
+    private String title;
     private Integer tradeType;
     private Integer tradePrice;
     private Integer tokenQuantity;
     private LocalDateTime tradedAt;
 
     public TradeHistoryResponseDto(History history) {
+        this.title = history.getTitle();
         this.tradeType = history.getTradeType();
         this.tradePrice = history.getTradePrice();
         this.tokenQuantity = history.getTokenQuantity();

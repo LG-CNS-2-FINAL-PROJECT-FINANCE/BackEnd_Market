@@ -155,7 +155,6 @@ public class InvestmentService {
 
         Investment saved = investmentRepository.save(investment);
 
-        // Asset 에스크로 예치 요청
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(investment.getInvestmentSeq());
         marketBuyDto.setProjectId(investment.getProjectId());

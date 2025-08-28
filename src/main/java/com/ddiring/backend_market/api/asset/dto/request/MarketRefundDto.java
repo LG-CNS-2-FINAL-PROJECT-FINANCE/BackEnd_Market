@@ -8,7 +8,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class MarketRefundDto {
-
     private Integer ordersId;
     private String projectId;
     private Integer refundPrice;

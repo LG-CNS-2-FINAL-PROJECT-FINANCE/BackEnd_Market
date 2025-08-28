@@ -27,6 +27,9 @@ public class Orders {
     @Column(name = "role", nullable = false)
     private String role;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "orders_type", nullable = false)
     private Integer ordersType;           // 구매||판매
 
