@@ -103,7 +103,6 @@ public class KafkaInvestmentEventsListener {
                 .filter(inv -> inv.getInvStatus() != InvestmentStatus.COMPLETED)
                 .peek(inv -> {
                     inv.setInvStatus(InvestmentStatus.REJECTED);
-                    inv.setFailureReason(event.getPayload().getReason());
                     inv.setUpdatedAt(LocalDateTime.now());
                 })
                 .toList();
@@ -132,7 +131,6 @@ public class KafkaInvestmentEventsListener {
                     reason = reason + ":" + event.getPayload().getErrorMessage();
                 }
                 inv.setInvStatus(InvestmentStatus.FAILED);
-                inv.setFailureReason(reason);
                 inv.setUpdatedAt(LocalDateTime.now());
                 investmentRepository.save(inv);
             }
