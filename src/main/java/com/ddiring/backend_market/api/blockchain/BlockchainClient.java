@@ -13,6 +13,6 @@ public interface BlockchainClient {
     @PostMapping("/api/contract/investment")
     ApiResponseDto<?> requestInvestmentTokenMove(@RequestBody InvestmentDto investmentDto);
 
-    @PostMapping("/api/contract/trade")
+    @PostMapping("/api/contract/trade/execute")
     ApiResponseDto<?> requestTradeTokenMove(@RequestBody TradeDto tradeDto);
 }
