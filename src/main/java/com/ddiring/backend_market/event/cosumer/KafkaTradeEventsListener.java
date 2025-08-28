@@ -21,9 +21,9 @@ public class KafkaTradeEventsListener {
     private final ObjectMapper objectMapper; // JSON 파싱을 위해 ObjectMapper 주입
 
     @KafkaListener(topics = "TRADE", groupId = "market-service-group")
-    public void listenTradeEvents(String message) { // 1. 메시지를 String으로 받습니다.
+    public void listenTradeEvents(String message) {
         try {
-            // 2. 받은 String을 먼저 Map으로 변환하여 내용을 확인합니다.
+
             Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {});
 
             String eventType = (String) messageMap.get("eventType");
