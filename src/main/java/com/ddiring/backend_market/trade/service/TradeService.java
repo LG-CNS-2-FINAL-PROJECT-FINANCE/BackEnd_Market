@@ -69,19 +69,20 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
-//                TradeDto tradeDto = new TradeDto();
-//                tradeDto.setTradeId(Math.toIntExact(trade.getTradeId()));
-//                tradeDto.setProjectId(order.getProjectId());
-//                tradeDto.setBuyInfo(new BuyInfoDto());
-//                tradeDto.setSellInfo(new SellInfoDto());
-//                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
-//                tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
-//                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
-//                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
-//                tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
-//                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
-//
-//                blockchainClient.requestTradeTokenMove(tradeDto);
+                TradeDto tradeDto = new TradeDto();
+                tradeDto.setTradeId(Math.toIntExact(trade.getTradeId()));
+                tradeDto.setProjectId(order.getProjectId());
+                tradeDto.setBuyInfo(new BuyInfoDto());
+                tradeDto.setSellInfo(new SellInfoDto());
+                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+
+                blockchainClient.requestTradeTokenMove(tradeDto);
+
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
                 titleRequestDto.setProjectId(order.getProjectId());
                 String title = assetClient.getMarketTitle(titleRequestDto);
