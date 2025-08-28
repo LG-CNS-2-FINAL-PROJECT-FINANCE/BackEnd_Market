@@ -12,7 +12,6 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class OrdersRequestDto {
-    private Integer orderId;
     private String projectId;
     private Integer purchasePrice;
     private Integer tokenQuantity;
