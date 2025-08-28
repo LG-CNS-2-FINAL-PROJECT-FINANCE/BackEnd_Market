@@ -33,5 +33,5 @@ public interface AssetClient {
     ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketRefundDto marketRefundDto);
 
     @GetMapping("/{projectId}/title")
-    String getMarketTitle(@PathVariable String projectId);
+    String getMarketTitle(@PathVariable("projectId") String projectId);
 }
