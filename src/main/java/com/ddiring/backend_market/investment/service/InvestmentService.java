@@ -144,22 +144,16 @@ public class InvestmentService {
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
-        ProductDTO product = productClient.getProduct(request.getProjectId());
-
-        Integer minIvestment = product.getMinInvestment();
-
         Integer investedPrice = request.getInvestedPrice();
         if (investedPrice == null || investedPrice <= 0) {
             throw new IllegalArgumentException("투자금 오류");
         }
 
-        int calcToken = investedPrice / minIvestment;
-
         Investment investment = Investment.builder()
                 .userSeq(userSeq)
                 .projectId(request.getProjectId())
                 .investedPrice(request.getInvestedPrice())
-                .tokenQuantity(calcToken)
+                .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
                 .invStatus(InvestmentStatus.PENDING)
                 .build();
