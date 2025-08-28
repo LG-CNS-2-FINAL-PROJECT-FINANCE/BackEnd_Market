@@ -160,6 +160,7 @@ public class InvestmentService {
         marketBuyDto.setOrdersId(investment.getInvestmentSeq());
         marketBuyDto.setProjectId(investment.getProjectId());
         marketBuyDto.setBuyPrice(investment.getInvestedPrice());
+        marketBuyDto.setTransType(0);
 
         try {
             assetClient.marketBuy(userSeq, role, marketBuyDto);
