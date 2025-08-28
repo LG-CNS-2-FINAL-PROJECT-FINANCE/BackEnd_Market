@@ -134,7 +134,6 @@ public class TradeService {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
-
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
                 .role(role)
