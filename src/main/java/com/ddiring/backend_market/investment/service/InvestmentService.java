@@ -3,6 +3,8 @@ package com.ddiring.backend_market.investment.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
+import com.ddiring.backend_market.api.blockchain.BlockchainClient;
+import com.ddiring.backend_market.api.blockchain.dto.request.InvestmentDto;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
@@ -36,6 +38,7 @@ public class InvestmentService {
     private final UserClient userClient;
     private final ProductClient productClient;
     private final AssetClient assetClient;
+    private final BlockchainClient blockchainClient; // 블록체인 연동 Client
 
     // 투자 상품 전체 조회
     public List<ProductDTO> getAllProduct() {
@@ -144,16 +147,21 @@ public class InvestmentService {
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
+        ProductDTO product = productClient.getProduct(request.getProjectId());
+
+        Integer minIvestment = product.getMinInvestment();
         Integer investedPrice = request.getInvestedPrice();
-        if (investedPrice == null || investedPrice <= 0) {
-            throw new IllegalArgumentException("투자금 오류");
+        if (investedPrice < minIvestment) {
+            throw new IllegalArgumentException("최소 투자 금액 미달");
         }
+
+        int calcToken = investedPrice / minIvestment;
 
         Investment investment = Investment.builder()
                 .userSeq(userSeq)
                 .projectId(request.getProjectId())
                 .investedPrice(request.getInvestedPrice())
-                .tokenQuantity(request.getTokenQuantity())
+                .tokenQuantity(calcToken)
                 .investedAt(LocalDateTime.now())
                 .invStatus(InvestmentStatus.PENDING)
                 .build();
@@ -256,7 +264,7 @@ public class InvestmentService {
 
         // FUNDING 상태 투자 조회
         List<Investment> funding = investmentRepository.findByProjectId(projectId).stream()
-                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.FUNDING)
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING)
                 .collect(Collectors.toList());
 
         if (funding.isEmpty()) {
@@ -265,7 +273,7 @@ public class InvestmentService {
         }
 
         // 상태 전환 ALLOC_REQUESTED
-        funding.forEach(inv -> inv.setInvStatus(Investment.InvestmentStatus.ALLOC_REQUESTED));
+        funding.forEach(inv -> inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED));
         investmentRepository.saveAll(funding);
 
         // 이벤트 생성 및 발행
@@ -281,7 +289,78 @@ public class InvestmentService {
         InvestRequestEvent event = InvestRequestEvent.of(projectId, items);
         investmentEventProducer.send("INVEST", event);
         log.info("투자 요청 이벤트 발행 projectId={} investments={}", projectId, items.size());
+
+        // 블록체인 토큰 이동 API 호출
+        try {
+            boolean bcRequested = requestBlockchainTokenMove(projectId);
+            log.info("블록체인 토큰 이동 요청 수행 projectId={} requested={}", projectId, bcRequested);
+        } catch (Exception e) {
+            log.error("블록체인 토큰 이동 요청 중 예외 projectId={} reason={}", projectId, e.getMessage());
+        }
         return true;
+    }
+
+    // 블록 체인 토큰 이동
+    @Transactional
+    public boolean requestBlockchainTokenMove(String projectId) {
+        // ALLOC_REQUESTED 상태 투자 조회
+        List<Investment> allocRequested = investmentRepository.findByProjectId(projectId).stream()
+                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.ALLOC_REQUESTED)
+                .toList();
+        if (allocRequested.isEmpty()) {
+            log.info("토큰 이동 대상 없음 projectId={}", projectId);
+            return false;
+        }
+
+        List<InvestmentDto.InvestInfo> investInfoList = new ArrayList<>();
+        for (Investment inv : allocRequested) {
+            try {
+                // 지갑 주소 조회
+                String address = assetClient.getWalletAddress(inv.getUserSeq()).getData();
+                if (address == null || address.isBlank()) {
+                    inv.setInvStatus(Investment.InvestmentStatus.FAILED);
+                    inv.setFailureReason("NO_WALLET_ADDRESS");
+                    inv.setUpdatedAt(LocalDateTime.now());
+                    continue;
+                }
+                investInfoList.add(InvestmentDto.InvestInfo.builder()
+                        .investmentId(inv.getInvestmentSeq().longValue())
+                        .investorAddress(address)
+                        .tokenAmount(inv.getTokenQuantity().longValue())
+                        .build());
+            } catch (Exception e) {
+                inv.setInvStatus(InvestmentStatus.FAILED);
+                inv.setFailureReason("ADDR_ERR:" + e.getClass().getSimpleName());
+                inv.setUpdatedAt(LocalDateTime.now());
+            }
+        }
+        investmentRepository.saveAll(allocRequested); // 주소 실패 건 반영
+
+        if (investInfoList.isEmpty()) {
+            log.warn("유효한 투자 없음 projectId={} -> 블록체인 요청 생략", projectId);
+            return false;
+        }
+
+        InvestmentDto investmentDto = InvestmentDto.builder()
+                .projectId(projectId)
+                .investInfoList(investInfoList)
+                .build();
+        try {
+            blockchainClient.requestInvestmentTokenMove(investmentDto);
+            log.info("블록체인 토큰 이동 요청 전송 projectId={} count={}", projectId, investInfoList.size());
+            return true;
+        } catch (Exception e) {
+            log.error("블록체인 토큰 이동 요청 실패 projectId={} reason={}", projectId, e.getMessage());
+            allocRequested.stream()
+                    .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.ALLOC_REQUESTED)
+                    .forEach(inv -> {
+                        inv.setInvStatus(Investment.InvestmentStatus.FAILED);
+                        inv.setFailureReason("BC_REQ_FAIL:" + e.getClass().getSimpleName());
+                        inv.setUpdatedAt(LocalDateTime.now());
+                    });
+            investmentRepository.saveAll(allocRequested);
+            return false;
+        }
     }
 
     private InvestmentResponse toResponse(Investment inv) {
@@ -293,8 +372,6 @@ public class InvestmentService {
                 .tokenQuantity(inv.getTokenQuantity())
                 .invStatus(inv.getInvStatus().name())
                 .investedAt(inv.getInvestedAt())
-                .txHash(inv.getTxHash())
-                .failureReason(inv.getFailureReason())
                 .build();
     }
 }

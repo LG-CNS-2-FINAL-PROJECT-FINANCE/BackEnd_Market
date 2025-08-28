@@ -32,3 +32,6 @@ asset:
 
 product:
   base-url: http://localhost:8083
+
+blockchain:
+  base-url: http://localhost:8085
