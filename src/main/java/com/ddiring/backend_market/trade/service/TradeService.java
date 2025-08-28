@@ -82,8 +82,9 @@ public class TradeService {
 //                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
 //
 //                blockchainClient.requestTradeTokenMove(tradeDto);
-
-                String title = assetClient.getMarketTitle(order.getProjectId());
+                TitleRequestDto titleRequestDto = new TitleRequestDto();
+                titleRequestDto.setProjectId(order.getProjectId());
+                String title = assetClient.getMarketTitle(titleRequestDto);
 
                 History purchaseHistory = History.builder()
                         .title(title)
