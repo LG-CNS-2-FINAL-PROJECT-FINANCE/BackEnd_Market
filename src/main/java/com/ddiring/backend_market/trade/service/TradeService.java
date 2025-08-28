@@ -70,7 +70,7 @@ public class TradeService {
                 tradeRepository.save(trade);
 
                 TradeDto tradeDto = new TradeDto();
-                tradeDto.setTradeId(Math.toIntExact(trade.getTradeId()));
+                tradeDto.setTradeId(Math.toIntExact(Long.valueOf(trade.getTradeId())));
                 tradeDto.setProjectId(order.getProjectId());
                 tradeDto.setBuyInfo(new BuyInfoDto());
                 tradeDto.setSellInfo(new SellInfoDto());
