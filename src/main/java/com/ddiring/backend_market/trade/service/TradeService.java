@@ -1,11 +1,12 @@
 package com.ddiring.backend_market.trade.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
-import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
-import com.ddiring.backend_market.api.asset.dto.request.AssetRequest;
-import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
+import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
-import com.ddiring.backend_market.api.asset.dto.request.MarketSellDto;
+import com.ddiring.backend_market.api.blockchain.BlockchainClient;
+import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfoDto;
+import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfoDto;
+import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
@@ -34,6 +35,7 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
+    private final BlockchainClient blockchainClient;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
@@ -67,7 +69,26 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
+                TradeDto tradeDto = new TradeDto();
+                tradeDto.setTradeId(Math.toIntExact(Long.valueOf(trade.getTradeId())));
+                tradeDto.setProjectId(order.getProjectId());
+                tradeDto.setBuyInfo(new BuyInfoDto());
+                tradeDto.setSellInfo(new SellInfoDto());
+                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
+                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+
+                blockchainClient.requestTradeTokenMove(tradeDto);
+
+                TitleRequestDto titleRequestDto = new TitleRequestDto();
+                titleRequestDto.setProjectId(order.getProjectId());
+                String title = assetClient.getMarketTitle(titleRequestDto);
+
                 History purchaseHistory = History.builder()
+                        .title(title)
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(1)
@@ -78,6 +99,7 @@ public class TradeService {
                 historyRepository.save(purchaseHistory);
 
                 History sellHistory = History.builder()
+                        .title(title)
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(0)
@@ -131,12 +153,13 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
+        orderDeleteDto.setOrdersId(savedOrder.getOrdersId());
 
         MarketSellDto marketSellDto = new MarketSellDto();
         marketSellDto.setOrdersId(savedOrder.getOrdersId());
         marketSellDto.setProjectId(ordersRequestDto.getProjectId());
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
+        marketSellDto.setTransType(1);
         try {
             ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
             String walletAddress = response.getData();
@@ -180,12 +203,13 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
+        orderDeleteDto.setOrdersId(savedOrder.getOrdersId());
 
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
         marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
+        marketBuyDto.setTransType(1);
 
             try {
                 assetClient.marketBuy(userSeq, role, marketBuyDto);
@@ -204,16 +228,16 @@ public class TradeService {
 
     @Transactional
     public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
-        if (orderDeleteDto.getOrderId() == null || userSeq == null) {
+        if (orderDeleteDto.getOrdersId() == null || userSeq == null ||  role == null) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
 
-        Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrderId())
-                .orElseThrow(() -> new NotFound("권한 가져와")); // NotFound.java
+        Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrdersId())
+                .orElseThrow(() -> new NotFound("권한 가져와"));
 
             if(order.getOrdersType() == 1) {
-                MarketRefundDto  marketRefundDto = new MarketRefundDto();
-                marketRefundDto.setOrdersId(order.getOrdersId());
+                MarketRefundDto marketRefundDto = new MarketRefundDto();
+                marketRefundDto.setOrdersId(orderDeleteDto.getOrdersId());
                 marketRefundDto.setProjectId(order.getProjectId());
                 marketRefundDto.setRefundPrice(order.getPurchasePrice());
 

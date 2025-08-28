@@ -1,6 +1,5 @@
 package com.ddiring.backend_market.event.dto;
 
-
 import lombok.*;
 
 import java.time.Instant;
@@ -10,7 +9,7 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestRequestRejectedEvent {
-    public static final String TOPIC = "INVESTMENT.REQUEST";
+    public static final String PREFIX = "INVESTMENT.REQUEST";
 
     // --- Header ---
     private String eventId;
@@ -32,7 +31,7 @@ public class InvestRequestRejectedEvent {
 
     public static InvestRequestRejectedEvent of(String projectId, String reason) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = TOPIC + ".REJECTED";
+        String eventType = PREFIX + ".REJECTED";
 
         return InvestRequestRejectedEvent.builder()
                 .eventId(uuid)
@@ -42,8 +41,7 @@ public class InvestRequestRejectedEvent {
                         .projectId(projectId)
                         .status("REJECTED")
                         .reason(reason)
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }

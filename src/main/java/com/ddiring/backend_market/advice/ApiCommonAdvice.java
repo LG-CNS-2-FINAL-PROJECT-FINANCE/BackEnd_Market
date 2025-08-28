@@ -35,6 +35,7 @@ public class ApiCommonAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler({ClientError.class})
     public ApiResponseDto<String> handleClientError(ClientError e) {
+        log.warn(e.getMessage());
         return ApiResponseDto.createError(e.getErrorCode(), e.getErrorMessage());
     }
 

@@ -31,6 +31,9 @@ public class Trade {
     @Column(name = "trade_status")
     private String tradeStatus;
 
+    @Column(name = "title")
+    private String title;
+
     @Column(name = "trade_price", nullable = false)
     private Integer tradePrice;
 
