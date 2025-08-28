@@ -2,7 +2,6 @@ package com.ddiring.backend_market.api.asset;
 
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
-import com.ddiring.backend_market.event.dto.MarketRefundDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,12 +24,15 @@ public interface AssetClient {
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
     @PostMapping("/api/asset/market/buy")
-    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketBuyDto marketBuyDto);
+    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+            @RequestBody MarketBuyDto marketBuyDto);
 
     @PostMapping("/api/asset/market/sell")
-    ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq, @RequestBody MarketSellDto marketSellDto);
+    ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq,
+            @RequestBody MarketSellDto marketSellDto);
 
     @PostMapping("/api/asset/market/refund")
-    ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketRefundDto marketRefundDto);
+    ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+            @RequestBody MarketRefundDto marketRefundDto);
 
 }

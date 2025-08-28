@@ -10,5 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class CancelInvestmentRequest {
-    private String userSeq;
+
+    private Integer investmentSeq;
+    private String projectId;
+    private Integer investedPrice;
 }

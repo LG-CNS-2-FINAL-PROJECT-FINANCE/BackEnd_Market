@@ -1,17 +1,15 @@
 package com.ddiring.backend_market.investment.service;
 
 import com.ddiring.backend_market.api.asset.AssetClient;
-import com.ddiring.backend_market.api.asset.dto.request.AssetRequest;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
-import com.ddiring.backend_market.common.dto.ApiResponseDto;
-import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
+import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
-import com.ddiring.backend_market.investment.dto.MarketDto;
+import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
 import com.ddiring.backend_market.investment.entity.Investment;
@@ -152,7 +150,7 @@ public class InvestmentService {
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(request.getTokenQuantity())
                 .investedAt(LocalDateTime.now())
-                .invStatus(Investment.InvestmentStatus.PENDING)
+                .invStatus(InvestmentStatus.PENDING)
                 .build();
 
         Investment saved = investmentRepository.save(investment);
@@ -163,9 +161,8 @@ public class InvestmentService {
         marketBuyDto.setProjectId(investment.getProjectId());
         marketBuyDto.setBuyPrice(investment.getInvestedPrice());
 
-        ApiResponseDto<String> buyResponse;
         try {
-            buyResponse = assetClient.marketBuy(userSeq, role, marketBuyDto);
+            assetClient.marketBuy(userSeq, role, marketBuyDto);
         } catch (Exception e) {
             saved.setInvStatus(InvestmentStatus.CANCELLED);
             saved.setUpdatedAt(LocalDateTime.now());
@@ -173,17 +170,9 @@ public class InvestmentService {
 
             return toResponse(saved);
         }
-        boolean buyOk = buyResponse != null
-                && "success".equalsIgnoreCase(buyResponse.getMessage());
-        if (!buyOk) {
-            saved.setInvStatus(Investment.InvestmentStatus.CANCELLED);
-            saved.setUpdatedAt(LocalDateTime.now());
-            investmentRepository.save(saved);
-            return toResponse(saved);
-        }
 
         // 입금 성공 => 펀딩 진행 상태로 변경
-        saved.setInvStatus(Investment.InvestmentStatus.FUNDING);
+        saved.setInvStatus(InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
         return toResponse(saved);
@@ -191,9 +180,9 @@ public class InvestmentService {
 
     // 주문 취소
     @Transactional
-    public InvestmentResponse cancelInvestment(String userSeq, String role, Integer investmentSeq) {
-        Investment investment = investmentRepository.findById(investmentSeq)
-                .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + investmentSeq));
+    public InvestmentResponse cancelInvestment(String userSeq, String role, CancelInvestmentRequest request) {
+        Investment investment = investmentRepository.findById(request.getInvestmentSeq())
+                .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + request.getInvestmentSeq()));
 
         // 이미 취소된 경우 그대로 반환
         if (investment.isCancelled()) {
@@ -202,51 +191,33 @@ public class InvestmentService {
 
         // 1) PENDING -> 단순 취소
         if (investment.isPending()) {
-            investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+            investment.setInvStatus(InvestmentStatus.CANCELLED);
             investment.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(investment); // 삭제 대신 상태만 변경하여 이력 유지
             return toResponse(investment);
         }
 
-        // 2) FUNDING / ALLOC_REQUESTED / COMPLETED 단계 -> 환불 필요
+        // 2) FUNDING -> 환불 필요
         boolean requireRefund = switch (investment.getInvStatus()) {
-            case FUNDING, ALLOC_REQUESTED, COMPLETED -> true;
+            case FUNDING -> true;
             default -> false;
         };
 
         if (requireRefund) {
-            ProductDTO product = null;
-            try {
-                product = productClient.getProduct(investment.getProjectId());
-            } catch (Exception e) {
-                log.warn("상품 조회 실패(환불) projectId={} error={}", investment.getProjectId(), e.getMessage());
-            }
-
-            AssetRequest refundReq = AssetRequest.builder()
-                    .marketDto(MarketDto.builder()
-                            .userSeq(GatewayRequestHeaderUtils.getUserSeq())
-                            .price(investment.getInvestedPrice())
-                            .build())
-                    .productDto(product == null ? ProductDTO.builder()
-                            .projectId(investment.getProjectId())
-                            .title(null)
-                            .build() : product)
-                    .build();
+            MarketRefundDto marketRefundDto = new MarketRefundDto();
+            marketRefundDto.setOrdersId(investment.getInvestmentSeq());
+            marketRefundDto.setProjectId(investment.getProjectId());
+            marketRefundDto.setRefundPrice(investment.getInvestedPrice());
 
             try {
-                ApiResponseDto<Integer> refundResponse = assetClient.requestRefund(refundReq);
-                boolean refundOk = refundResponse != null && "OK".equalsIgnoreCase(refundResponse.getCode());
-                if (!refundOk) {
-                    throw new IllegalStateException("환불 실패 (code!=OK)");
-                }
+                assetClient.marketRefund(userSeq, role, marketRefundDto);
             } catch (Exception e) {
-                log.error("투자 환불 요청 실패 investmentSeq={} error={}", investmentSeq, e.getMessage());
                 throw new IllegalStateException("환불 요청 실패");
             }
         }
 
         // 환불 성공 -> 상태 CANCELLED 후 삭제
-        investment.setInvStatus(Investment.InvestmentStatus.CANCELLED);
+        investment.setInvStatus(InvestmentStatus.CANCELLED);
         investment.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(investment);
         return toResponse(investment);
