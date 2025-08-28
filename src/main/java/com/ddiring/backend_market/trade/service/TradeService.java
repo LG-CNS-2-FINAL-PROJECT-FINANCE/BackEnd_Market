@@ -203,19 +203,19 @@ public class TradeService {
 
 
     @Transactional
-    public void deleteOrder(String userSeq, String role, Integer ordersId, String projectId, Integer purchasePrice, Integer tokenQuantity, Integer ordersType) {
-        if (ordersId == null || userSeq == null || projectId == null || (purchasePrice == null && tokenQuantity == null)) {
+    public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
+        if (orderDeleteDto.getOrderId() == null || userSeq == null ||  role == null) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
 
-        Orders order = ordersRepository.findByOrdersIdAndUserSeqAndProjectIdAndRole(ordersId, userSeq, projectId, role)
+        Orders order = ordersRepository.findById(orderDeleteDto.getOrderId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
-            if(ordersType == 1) {
+            if(order.getOrdersType() == 1) {
                 MarketRefundDto  marketRefundDto = new MarketRefundDto();
-                marketRefundDto.setOrdersId(ordersId);
-                marketRefundDto.setProjectId(projectId);
-                marketRefundDto.setRefundPrice(purchasePrice);
+                marketRefundDto.setOrdersId(orderDeleteDto.getOrderId());
+                marketRefundDto.setProjectId(order.getProjectId());
+                marketRefundDto.setRefundPrice(order.getPurchasePrice());
 
                 assetClient.marketRefund(userSeq, role, marketRefundDto);
             }
