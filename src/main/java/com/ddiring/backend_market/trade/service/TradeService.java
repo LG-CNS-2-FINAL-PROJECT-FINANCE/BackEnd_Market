@@ -90,7 +90,6 @@ public class TradeService {
                         .buyInfo(buyInfo)
                         .sellInfo(sellInfo)
                         .build();
-                log.info("아 나와다 다들 {}", tradeDto);
                 log.info(
                         "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
                         tradeDto.getTradeId(),
@@ -101,6 +100,7 @@ public class TradeService {
                         tradeDto.getSellInfo().getSellId(),
                         tradeDto.getSellInfo().getTokenAmount(),
                         tradeDto.getSellInfo().getSellerAddress());
+
                 // blockchainClient.requestTradeTokenMove(tradeDto);
 
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
@@ -186,9 +186,6 @@ public class TradeService {
             String walletAddress = response.getData();
             log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
             assetClient.marketSell(userSeq, marketSellDto);
-            // SellOrderEventDto eventPayload = new
-            // SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
-            // kafkaTemplate.send("sell-order-topic", eventPayload);
 
             order.setWalletAddress(walletAddress);
             ordersRepository.save(order);

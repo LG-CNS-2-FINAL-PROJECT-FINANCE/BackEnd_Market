@@ -74,7 +74,7 @@ public class KafkaInvestmentEventsListener {
     }
 
     @Transactional
-    private void handleRequestAccepted(InvestRequestAcceptedEvent event) {
+    public void handleRequestAccepted(InvestRequestAcceptedEvent event) {
         String projectId = event.getPayload().getProjectId();
         var list = investmentRepository.findByProjectId(projectId).stream()
                 .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
@@ -97,7 +97,7 @@ public class KafkaInvestmentEventsListener {
     }
 
     @Transactional
-    private void handleRequestRejected(InvestRequestRejectedEvent event) {
+    public void handleRequestRejected(InvestRequestRejectedEvent event) {
         String projectId = event.getPayload().getProjectId();
         var list = investmentRepository.findByProjectId(projectId).stream()
                 .filter(inv -> inv.getInvStatus() != InvestmentStatus.COMPLETED)
