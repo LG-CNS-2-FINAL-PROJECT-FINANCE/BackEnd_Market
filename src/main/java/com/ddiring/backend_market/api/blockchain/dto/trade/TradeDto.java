@@ -7,7 +7,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TradeDto {
-    private Integer tradeId;
+    private Long tradeId;
     private String projectId;
     private BuyInfoDto buyInfo;
     private SellInfoDto sellInfo;
