@@ -15,7 +15,7 @@ public interface AssetClient {
     ApiResponseDto<Integer> requestDeposit(@RequestBody AssetRequest request);
 
     @PostMapping("/api/asset/escrow/withdrawal")
-    ApiResponseDto<Integer> requestRefund(@RequestBody AssetRequest request);
+    ApiResponseDto<Integer> requestWithdrawal(@RequestBody SaveRecordRequest saveRecordRequest);
 
     @PostMapping("/api/asset/escrow/release")
     ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);
@@ -24,13 +24,16 @@ public interface AssetClient {
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
     @PostMapping("/api/asset/market/buy")
-    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketBuyDto marketBuyDto);
+    ApiResponseDto<String> marketBuy(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+            @RequestBody MarketBuyDto marketBuyDto);
 
     @PostMapping("/api/asset/market/sell")
-    ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq, @RequestBody MarketSellDto marketSellDto);
+    ApiResponseDto<String> marketSell(@RequestHeader("userSeq") String userSeq,
+            @RequestBody MarketSellDto marketSellDto);
 
     @PostMapping("/api/asset/market/refund")
-    ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role, @RequestBody MarketRefundDto marketRefundDto);
+    ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+            @RequestBody MarketRefundDto marketRefundDto);
 
     @PostMapping("/api/asset/title")
     String getMarketTitle(@RequestBody TitleRequestDto titleRequestDto);

@@ -83,15 +83,12 @@ public class TradeService {
                 tradeDto.getSellInfo().setSellId(
                         Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
                 tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
-<<<<<<< HEAD
+
                 tradeDto.getSellInfo().setSellerAddress(
                         order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
-
-                blockchainClient.requestTradeTokenMove(tradeDto);
-=======
-                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
                 log.info("아 나와다 다들 {}", tradeDto);
-                log.info("Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
+                log.info(
+                        "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
                         tradeDto.getTradeId(),
                         tradeDto.getProjectId(),
                         tradeDto.getBuyInfo().getBuyId(),
@@ -99,10 +96,8 @@ public class TradeService {
                         tradeDto.getBuyInfo().getBuyerAddress(),
                         tradeDto.getSellInfo().getSellId(),
                         tradeDto.getSellInfo().getTokenAmount(),
-                        tradeDto.getSellInfo().getSellerAddress()
-                );
-//                blockchainClient.requestTradeTokenMove(tradeDto);
->>>>>>> 546d0d9b70c1e8d2aca012836a5ea307ec058120
+                        tradeDto.getSellInfo().getSellerAddress());
+                // blockchainClient.requestTradeTokenMove(tradeDto);
 
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
                 titleRequestDto.setProjectId(order.getProjectId());
