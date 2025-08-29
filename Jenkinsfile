@@ -12,7 +12,7 @@ pipeline {
         MANIFEST_DIR = 'helm_chart'
         REGISTRY_HOST = credentials('DEV_REGISTRY')
         PROD_REGISTRY = credentials('PROD_REGISTRY')
-				SERVICE_NAME = '(서비스 이름: product, market 등...)'
+				SERVICE_NAME = 'market'
     }
 
     tools {
