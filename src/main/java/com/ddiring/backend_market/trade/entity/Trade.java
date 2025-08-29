@@ -34,6 +34,12 @@ public class Trade {
     @Column(name = "title")
     private String title;
 
+    @Column(name = "buyer_address")
+    private String buyerAddress;
+
+    @Column(name = "seller_address")
+    private String sellerAddress;
+
     @Column(name = "trade_price", nullable = false)
     private Integer tradePrice;
 
@@ -56,7 +62,7 @@ public class Trade {
     private LocalDate updatedAt;
 
     @Builder
-    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity,String tradeStatus, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity, String tradeStatus, LocalDateTime tradedAt, String buyerAddress, String sellerAddress, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.purchaseId = purchaseId;
         this.sellId = sellId;
@@ -64,11 +70,11 @@ public class Trade {
         this.tradeStatus = tradeStatus;
         this.tokenQuantity = tokenQuantity;
         this.tradedAt = tradedAt;
+        this.buyerAddress = buyerAddress;
+        this.sellerAddress = sellerAddress;
         this.createdId = createdId;
         this.createdAt = createdAt;
         this.updatedId = updatedId;
         this.updatedAt = updatedAt;
     }
-
-
 }
