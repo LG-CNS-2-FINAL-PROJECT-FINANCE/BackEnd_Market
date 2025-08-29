@@ -37,8 +37,7 @@ public class TradeService {
     private final AssetClient assetClient;
     private final BlockchainClient blockchainClient;
 
-    private TradeDto matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
-        TradeDto tradeDto = null;
+    private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPurchasePrice() >= oldOrder.getPurchasePrice()) {
@@ -69,7 +68,7 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
-                tradeDto = new TradeDto();
+                TradeDto tradeDto = new TradeDto();
                 tradeDto.setTradeId(trade.getTradeId());
                 tradeDto.setProjectId(order.getProjectId());
                 tradeDto.setBuyInfo(new BuyInfoDto());
@@ -81,7 +80,16 @@ public class TradeService {
                 tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
                 tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
                 log.info("아 나와다 다들 {}", tradeDto);
-
+                log.info("Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
+                        tradeDto.getTradeId(),
+                        tradeDto.getProjectId(),
+                        tradeDto.getBuyInfo().getBuyId(),
+                        tradeDto.getBuyInfo().getTokenAmount(),
+                        tradeDto.getBuyInfo().getBuyerAddress(),
+                        tradeDto.getSellInfo().getSellId(),
+                        tradeDto.getSellInfo().getTokenAmount(),
+                        tradeDto.getSellInfo().getSellerAddress()
+                );
 //                blockchainClient.requestTradeTokenMove(tradeDto);
 
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
@@ -130,7 +138,6 @@ public class TradeService {
                 }
             }
         }
-        return tradeDto;
     }
 
     @Transactional
