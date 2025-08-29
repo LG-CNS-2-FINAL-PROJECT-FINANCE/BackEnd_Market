@@ -42,8 +42,7 @@ public class TradeService {
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPurchasePrice() >= oldOrder.getPurchasePrice()) {
                 tradePossible = true;
-            }
-            else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
+            } else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
                 tradePossible = true;
             }
 
@@ -54,8 +53,10 @@ public class TradeService {
                 log.info("거래 체결 시작. 신규 주문 ID: {}, 기존 주문 ID: {}", order.getOrdersId(), oldOrder.getOrdersId());
                 Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
                 Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
-                log.info("구매 주문 정보: userSeq={}, ordersId={}", purchaseOrderForLog.getUserSeq(), purchaseOrderForLog.getOrdersId());
-                log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(), sellOrderForLog.getOrdersId());
+                log.info("구매 주문 정보: userSeq={}, ordersId={}", purchaseOrderForLog.getUserSeq(),
+                        purchaseOrderForLog.getOrdersId());
+                log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(),
+                        sellOrderForLog.getOrdersId());
                 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
@@ -74,12 +75,16 @@ public class TradeService {
                 tradeDto.setProjectId(order.getProjectId());
                 tradeDto.setBuyInfo(new BuyInfoDto());
                 tradeDto.setSellInfo(new SellInfoDto());
-                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getBuyInfo().setBuyId(
+                        Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
                 tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
-                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
-                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
+                tradeDto.getBuyInfo().setBuyerAddress(
+                        order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                tradeDto.getSellInfo().setSellId(
+                        Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
                 tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
-                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                tradeDto.getSellInfo().setSellerAddress(
+                        order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
 
                 blockchainClient.requestTradeTokenMove(tradeDto);
 
@@ -133,10 +138,11 @@ public class TradeService {
 
     @Transactional
     public OrderDeleteDto sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
-        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
+        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
+                || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
-        if(ordersRequestDto.getOrdersType() == 1) {
+        if (ordersRequestDto.getOrdersType() == 1) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
@@ -165,7 +171,8 @@ public class TradeService {
             String walletAddress = response.getData();
             log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
             assetClient.marketSell(userSeq, marketSellDto);
-            // SellOrderEventDto eventPayload = new SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
+            // SellOrderEventDto eventPayload = new
+            // SellOrderEventDto(savedOrder.getOrdersId(), userSeq, walletAddress, ...);
             // kafkaTemplate.send("sell-order-topic", eventPayload);
 
             order.setWalletAddress(walletAddress);
@@ -176,7 +183,8 @@ public class TradeService {
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
         }
 
-        List<Orders> purchaseOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
+        List<Orders> purchaseOrder = ordersRepository
+                .findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
         matchAndExecuteTrade(savedOrder, purchaseOrder);
 
         return orderDeleteDto;
@@ -184,10 +192,11 @@ public class TradeService {
 
     @Transactional
     public OrderDeleteDto buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
-        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
+        if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
+                || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
         }
-        if(ordersRequestDto.getOrdersType() == 0) {
+        if (ordersRequestDto.getOrdersType() == 0) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
@@ -211,38 +220,38 @@ public class TradeService {
         marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
         marketBuyDto.setTransType(1);
 
-            try {
-                assetClient.marketBuy(userSeq, role, marketBuyDto);
-                log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
-            } catch (Exception e) {
-                log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
-                throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-            }
+        try {
+            assetClient.marketBuy(userSeq, role, marketBuyDto);
+            log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
+        } catch (Exception e) {
+            log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
+            throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
+        }
 
-            List<Orders> sellOrder = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
-            matchAndExecuteTrade(savedOrder, sellOrder);
+        List<Orders> sellOrder = ordersRepository
+                .findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
+        matchAndExecuteTrade(savedOrder, sellOrder);
 
-            return orderDeleteDto;
+        return orderDeleteDto;
     }
-
 
     @Transactional
     public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
-        if (orderDeleteDto.getOrdersId() == null || userSeq == null ||  role == null) {
+        if (orderDeleteDto.getOrdersId() == null || userSeq == null || role == null) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
 
         Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrdersId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
-            if(order.getOrdersType() == 1) {
-                MarketRefundDto marketRefundDto = new MarketRefundDto();
-                marketRefundDto.setOrdersId(orderDeleteDto.getOrdersId());
-                marketRefundDto.setProjectId(order.getProjectId());
-                marketRefundDto.setRefundPrice(order.getPurchasePrice());
+        if (order.getOrdersType() == 1) {
+            MarketRefundDto marketRefundDto = new MarketRefundDto();
+            marketRefundDto.setOrdersId(orderDeleteDto.getOrdersId());
+            marketRefundDto.setProjectId(order.getProjectId());
+            marketRefundDto.setRefundPrice(order.getPurchasePrice());
 
-                assetClient.marketRefund(userSeq, role, marketRefundDto);
-            }
+            assetClient.marketRefund(userSeq, role, marketRefundDto);
+        }
         ordersRepository.delete(order);
     }
 
@@ -266,7 +275,8 @@ public class TradeService {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
         }
         // 구매자의 매수 주문서 조회
-        List<Orders> orders = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(projectId, 1);
+        List<Orders> orders = ordersRepository
+                .findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(projectId, 1);
         return orders.stream()
                 .map(OrdersResponseDto::new)
                 .collect(Collectors.toList());
@@ -278,7 +288,8 @@ public class TradeService {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
         }
         // 판매자의 매도 주문서 조회
-        List<Orders> orders = ordersRepository.findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(projectId, 0);
+        List<Orders> orders = ordersRepository
+                .findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(projectId, 0);
         return orders.stream()
                 .map(OrdersResponseDto::new)
                 .collect(Collectors.toList());
@@ -295,6 +306,7 @@ public class TradeService {
                 .map(OrderUserHistory::new)
                 .collect(Collectors.toList());
     }
+
     @Transactional
     public List<TradeHistoryResponseDto> getTradeHistory(String userSeq, String projectId) {
         if (userSeq == null || projectId == null) {
