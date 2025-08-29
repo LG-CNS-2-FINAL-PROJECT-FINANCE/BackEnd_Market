@@ -34,4 +34,7 @@ public interface AssetClient {
 
     @PostMapping("/api/asset/title")
     String getMarketTitle(@RequestBody TitleRequestDto titleRequestDto);
+
+    @PostMapping("/api/asset/update")
+    ApiResponseDto<String> updateAssetsAfterTrade(@RequestBody UpdateAssetRequestDto requestDto);
 }

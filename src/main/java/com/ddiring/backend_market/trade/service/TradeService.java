@@ -60,6 +60,8 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
                         .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
+                        .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
+                        .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .tradePrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
@@ -68,17 +70,24 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
-                TradeDto tradeDto = new TradeDto();
-                tradeDto.setTradeId(trade.getTradeId());
-                tradeDto.setProjectId(order.getProjectId());
-                tradeDto.setBuyInfo(new BuyInfoDto());
-                tradeDto.setSellInfo(new SellInfoDto());
-                tradeDto.getBuyInfo().setBuyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()));
-                tradeDto.getBuyInfo().setTokenAmount((long) tradedQuantity);
-                tradeDto.getBuyInfo().setBuyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress());
-                tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
-                tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
-                tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                BuyInfoDto buyInfo = BuyInfoDto.builder()
+                        .buyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()))
+                        .tokenAmount((long) tradedQuantity)
+                        .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
+                        .build();
+
+                SellInfoDto sellInfo = SellInfoDto.builder()
+                        .sellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()))
+                        .tokenAmount((long) tradedQuantity)
+                        .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
+                        .build();
+
+                TradeDto tradeDto = TradeDto.builder()
+                        .tradeId(trade.getTradeId())
+                        .projectId(order.getProjectId())
+                        .buyInfo(buyInfo)
+                        .sellInfo(sellInfo)
+                        .build();
                 log.info("아 나와다 다들 {}", tradeDto);
                 log.info("Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
                         tradeDto.getTradeId(),
@@ -341,87 +350,4 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
-    public void handleTradeRequestAccepted(TradeRequestAcceptedEvent event) {
-        TradeRequestAcceptedEvent.TradeRequestAcceptedPayload payload = event.getPayload();
-        log.info("TradeRequestAcceptedEvent 처리: tradeId={}", payload.getTradeId());
-
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        trade.setTradeStatus("PENDING");
-        tradeRepository.save(trade);
-    }
-
-    @Transactional
-    public void handleTradeRequestRejected(TradeRequestRejectedEvent event) {
-        TradeRequestRejectedEvent.TradeRequestRejectedPayload payload = event.getPayload();
-        log.info("TradeRequestRejectedEvent 처리: tradeId={}", payload.getTradeId());
-
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        trade.setTradeStatus("PENDING");
-        tradeRepository.save(trade);
-    }
-
-    @Transactional
-    public void handleTradeSucceeded(TradeSucceededEvent event) {
-        TradeSucceededEvent.TradeSucceededPayload payload = event.getPayload();
-        log.info("TradeSucceededEvent 처리: tradeId={}", payload.getTradeId());
-
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        // 마켓 서비스 DB 상태 업데이트
-        trade.setTradeStatus("SUCCEEDED");
-        tradeRepository.save(trade);
-
-        Orders purchaseOrder = ordersRepository.findById(trade.getPurchaseId().intValue()).orElseThrow();
-        purchaseOrder.setOrdersStatus("SUCCEEDED");
-        ordersRepository.save(purchaseOrder);
-
-        Orders sellOrder = ordersRepository.findById(trade.getSellId().intValue()).orElseThrow();
-        sellOrder.setOrdersStatus("SUCCEEDED");
-        ordersRepository.save(sellOrder);
-
-        try {
-            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
-            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), sellOrder.getUserSeq(), amount);
-            assetClient.releaseEscrowToSeller(request);
-            log.info("Asset 서비스에 판매대금({}) 전송 요청 완료. tradeId={}", amount, trade.getTradeId());
-        } catch (Exception e) {
-            log.error("Asset 서비스 호출(판매대금 전송) 실패. tradeId={}", trade.getTradeId(), e);
-        }
-    }
-
-    @Transactional
-    public void handleTradeFailed(TradeFailedEvent event) {
-        TradeFailedEvent.TradeFailedPayload payload = event.getPayload();
-        log.info("TradeFailedEvent 처리: tradeId={}", payload.getTradeId());
-
-        Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
-
-        // 마켓 서비스 DB 상태 업데이트
-        trade.setTradeStatus("FAILED");
-        tradeRepository.save(trade);
-
-        Orders purchaseOrder = ordersRepository.findById(trade.getPurchaseId().intValue()).orElseThrow();
-        purchaseOrder.setOrdersStatus("FAILED");
-        ordersRepository.save(purchaseOrder);
-
-        Orders sellOrder = ordersRepository.findById(trade.getSellId().intValue()).orElseThrow();
-        sellOrder.setOrdersStatus("FAILED");
-        ordersRepository.save(sellOrder);
-
-        try {
-            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
-            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), purchaseOrder.getUserSeq(), amount);
-            assetClient.refundEscrowToBuyer(request);
-            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
-        } catch (Exception e) {
-            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
-        }
-    }
 }
