@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'com.ddiring'
-version = '0.9.2'
+version = '0.9.3'
 
 java {
 	toolchain {

@@ -80,8 +80,9 @@ public class TradeService {
                 tradeDto.getSellInfo().setSellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()));
                 tradeDto.getSellInfo().setTokenAmount((long) tradedQuantity);
                 tradeDto.getSellInfo().setSellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress());
+                log.info(tradeDto.toString());
 
-                blockchainClient.requestTradeTokenMove(tradeDto);
+//                blockchainClient.requestTradeTokenMove(tradeDto);
 
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
                 titleRequestDto.setProjectId(order.getProjectId());
