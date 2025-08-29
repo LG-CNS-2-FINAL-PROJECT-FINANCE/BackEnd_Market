@@ -61,10 +61,11 @@ public class Orders {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(String projectId, String userSeq, String role, Integer ordersType, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Orders(String projectId, String userSeq, String role, Integer ordersType, String walletAddress, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.role = role;
+        this.walletAddress = walletAddress;
         this.ordersType = ordersType;
         this.purchasePrice = purchasePrice;
         this.tokenQuantity = tokenQuantity;

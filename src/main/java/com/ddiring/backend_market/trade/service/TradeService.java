@@ -190,10 +190,14 @@ public class TradeService {
         if(ordersRequestDto.getOrdersType() == 0) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
+        ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
+        String walletAddress = response.getData();
+        log.info("구매접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
         Orders order = Orders.builder()
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
                 .role(role)
+                .walletAddress(walletAddress)
                 .ordersType(ordersRequestDto.getOrdersType())
                 .purchasePrice(ordersRequestDto.getPurchasePrice())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
@@ -329,38 +333,6 @@ public class TradeService {
     }
 
     @Transactional
-    public void handleDepositSucceeded(DepositSucceededEvent event) {
-        DepositSucceededEvent.DepositSucceededPayload payload = event.getPayload();
-        log.info("DepositSucceededEvent 처리: sellId={}", payload.getSellId());
-
-        Orders sellOrder = ordersRepository.findById(payload.getSellId().intValue())
-                .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
-
-        // ✅ 소유자 검증
-        if (!sellOrder.getWalletAddress().equals(payload.getSellerAddress())) {
-            throw new SecurityException("주문 소유자(지갑 주소)가 일치하지 않습니다.");
-        }
-
-        // ✅ 상태를 WAITING으로 변경
-        sellOrder.setOrdersStatus("WAITING");
-        // 토큰 개수는 이미 예치 시점에 확정되었으므로 여기서는 상태만 변경
-        ordersRepository.save(sellOrder);
-    }
-
-    @Transactional
-    public void handleDepositFailed(DepositFailedEvent event) {
-        DepositFailedEvent.DepositFailedPayload payload = event.getPayload();
-        log.info("DepositFailedEvent 처리: sellId={}", payload.getSellId());
-
-        Orders sellOrder = ordersRepository.findById(payload.getSellId().intValue())
-                .orElseThrow(() -> new IllegalArgumentException("판매 주문을 찾을 수 없습니다."));
-
-        // ✅ 상태를 REJECTED로 변경
-        sellOrder.setOrdersStatus("REJECTED");
-        ordersRepository.save(sellOrder);
-    }
-
-    @Transactional
     public void handleTradeRequestAccepted(TradeRequestAcceptedEvent event) {
         TradeRequestAcceptedEvent.TradeRequestAcceptedPayload payload = event.getPayload();
         log.info("TradeRequestAcceptedEvent 처리: tradeId={}", payload.getTradeId());
@@ -368,7 +340,6 @@ public class TradeService {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        // ✅ 상태를 PENDING으로 변경
         trade.setTradeStatus("PENDING");
         tradeRepository.save(trade);
     }
@@ -381,8 +352,6 @@ public class TradeService {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        // ✅ 명세에 따라 상태를 PENDING으로 변경
-        // (참고: 일반적으로 REJECTED나 FAILED로 변경하는 것이 더 자연스러울 수 있습니다.)
         trade.setTradeStatus("PENDING");
         tradeRepository.save(trade);
     }
