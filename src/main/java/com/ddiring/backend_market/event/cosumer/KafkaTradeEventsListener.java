@@ -120,7 +120,7 @@ public class KafkaTradeEventsListener {
                     .buyAddress(payload.getBuyerAddress())
                     .buyTokenAmount(payload.getBuyerTokenAmount())
                     .sellAddress(payload.getSellerAddress())
-                    .sellPrice(trade.getTradePrice())
+                    .sellPrice(trade.getTradePrice().longValue())
                     .build();
 
             assetClient.updateAssetsAfterTrade(requestDto);
