@@ -12,8 +12,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -30,8 +30,7 @@ public class KafkaInvestmentEventsListener {
     @KafkaListener(topics = "INVEST", groupId = "market-service-group")
     public void listenInvestmentEvents(String message) {
         try {
-            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {
-            });
+            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {});
             String eventType = (String) messageMap.get("eventType");
             if (eventType == null) {
                 log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
@@ -43,7 +42,8 @@ public class KafkaInvestmentEventsListener {
                 case "INVESTMENT.REQUEST.ACCEPTED": {
                     InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap.get("payload"),
                             InvestRequestAcceptedEvent.class);
-                    handleRequestAccepted(accepted);
+                    // ▼▼▼ 1. 로직이 분리된 메서드를 호출하도록 변경 ▼▼▼
+                    processRequestAccepted(accepted);
                     break;
                 }
                 case "INVESTMENT.REQUEST.REJECTED": {
@@ -73,9 +73,26 @@ public class KafkaInvestmentEventsListener {
         }
     }
 
-    @Transactional
-    public void handleRequestAccepted(InvestRequestAcceptedEvent event) {
+    // --- ▼▼▼ 2. 'ACCEPTED' 이벤트 처리 로직 분리 ▼▼▼ ---
+
+    /**
+     * 'ACCEPTED' 이벤트의 전체 처리를 조율하는 메서드 (트랜잭션 없음)
+     */
+    public void processRequestAccepted(InvestRequestAcceptedEvent event) {
         String projectId = event.getPayload().getProjectId();
+
+        // 2-1. DB 상태 업데이트를 먼저 실행하고 트랜잭션을 커밋합니다.
+        updateStatusForAcceptedRequest(projectId);
+
+        // 2-2. DB 트랜잭션이 끝난 후, 외부 블록체인 API를 호출합니다.
+        triggerBlockchainTokenMove(projectId);
+    }
+
+    /**
+     * DB 상태 변경만을 담당하는 메서드 (트랜잭션 적용)
+     */
+    @Transactional
+    public void updateStatusForAcceptedRequest(String projectId) {
         var list = investmentRepository.findByProjectId(projectId).stream()
                 .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
                         || inv.getInvStatus() == InvestmentStatus.PENDING)
@@ -87,14 +104,22 @@ public class KafkaInvestmentEventsListener {
         if (!list.isEmpty()) {
             investmentRepository.saveAll(list);
         }
-        // 블록체인 토큰 이동 실제 요청 (요청 수락 후 실행)
+    }
+
+    /**
+     * 블록체인 API 호출만을 담당하는 메서드 (트랜잭션 없음)
+     */
+    public void triggerBlockchainTokenMove(String projectId) {
         try {
             boolean bcRequested = investmentService.requestBlockchainTokenMove(projectId);
             log.info("[INVEST] 블록체인 토큰 이동 요청 결과 projectId={} requested={}", projectId, bcRequested);
         } catch (Exception e) {
             log.error("[INVEST] 블록체인 토큰 이동 요청 실패 projectId={} reason={}", projectId, e.getMessage());
+            // TODO: 실패 시 재시도 또는 관리자 알림 등의 보상 로직이 필요할 수 있습니다.
         }
     }
+
+    // --- ▲▲▲ 'ACCEPTED' 이벤트 처리 로직 분리 끝 ▲▲▲ ---
 
     @Transactional
     public void handleRequestRejected(InvestRequestRejectedEvent event) {
@@ -111,7 +136,9 @@ public class KafkaInvestmentEventsListener {
         }
     }
 
-    private void handleInvestSucceeded(InvestSucceededEvent event) {
+    // ▼▼▼ 3. @Transactional 추가 ▼▼▼
+    @Transactional
+    public void handleInvestSucceeded(InvestSucceededEvent event) {
         Long id = event.getPayload().getInvestmentId();
         investmentRepository.findById(id.intValue()).ifPresent(inv -> {
             if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
@@ -122,7 +149,9 @@ public class KafkaInvestmentEventsListener {
         });
     }
 
-    private void handleInvestFailed(InvestFailedEvent event) {
+    // ▼▼▼ 4. @Transactional 추가 및 public으로 변경 ▼▼▼
+    @Transactional
+    public void handleInvestFailed(InvestFailedEvent event) {
         Long id = event.getPayload().getInvestmentId();
         investmentRepository.findById(id.intValue()).ifPresent(inv -> {
             if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
@@ -130,6 +159,7 @@ public class KafkaInvestmentEventsListener {
                 if (event.getPayload().getErrorMessage() != null) {
                     reason = reason + ":" + event.getPayload().getErrorMessage();
                 }
+                // TODO: 'reason' 변수를 inv 객체에 저장하는 로직이 필요해 보입니다.
                 inv.setInvStatus(InvestmentStatus.FAILED);
                 inv.setUpdatedAt(LocalDateTime.now());
                 investmentRepository.save(inv);
