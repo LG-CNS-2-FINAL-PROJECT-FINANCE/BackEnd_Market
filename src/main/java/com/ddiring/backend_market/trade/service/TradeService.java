@@ -37,13 +37,13 @@ public class TradeService {
     private final AssetClient assetClient;
     private final BlockchainClient blockchainClient;
 
-    private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
+    private TradeDto matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
+        TradeDto tradeDto = null;
         for (Orders oldOrder : oldOrders) {
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPurchasePrice() >= oldOrder.getPurchasePrice()) {
                 tradePossible = true;
-            }
-            else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
+            } else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
                 tradePossible = true;
             }
 
@@ -69,7 +69,7 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
-                TradeDto tradeDto = new TradeDto();
+                tradeDto = new TradeDto();
                 tradeDto.setTradeId(trade.getTradeId());
                 tradeDto.setProjectId(order.getProjectId());
                 tradeDto.setBuyInfo(new BuyInfoDto());
@@ -130,6 +130,7 @@ public class TradeService {
                 }
             }
         }
+        return tradeDto;
     }
 
     @Transactional
