@@ -49,4 +49,10 @@ public class InvestSucceededEvent {
                         .build())
                 .build();
     }
+
+    public static InvestSucceededEvent of(Integer investmentSeq, String investorAddress, Integer tokenQuantity) {
+        Long id = investmentSeq == null ? null : investmentSeq.longValue();
+        Long tokenAmount = tokenQuantity == null ? null : tokenQuantity.longValue();
+        return of(id, investorAddress, tokenAmount);
+    }
 }
