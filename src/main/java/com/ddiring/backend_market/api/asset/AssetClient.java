@@ -17,9 +17,6 @@ public interface AssetClient {
     @PostMapping("/api/asset/escrow/withdrawal")
     ApiResponseDto<Integer> requestWithdrawal(@RequestBody SaveRecordRequest saveRecordRequest);
 
-    @PostMapping("/api/asset/escrow/release")
-    ApiResponseDto<Void> releaseEscrowToSeller(@RequestBody AssetEscrowRequest request);
-
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);
 
