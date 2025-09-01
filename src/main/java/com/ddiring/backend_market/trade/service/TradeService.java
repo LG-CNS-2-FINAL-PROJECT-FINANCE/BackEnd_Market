@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -356,4 +357,14 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
+    public VerifyTradeDto.Response verifyTrade(VerifyTradeDto.Request requestDto) {
+        Boolean isExisted = tradeRepository.existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(
+                requestDto.getTradeId(),
+                requestDto.getBuyId(),
+                requestDto.getSellId(),
+                requestDto.getTokenAmount()
+        );
+
+        return VerifyTradeDto.Response.builder().result(isExisted).build();
+    }
 }
