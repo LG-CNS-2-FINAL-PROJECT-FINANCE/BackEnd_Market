@@ -9,6 +9,7 @@ import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
+import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
 import com.ddiring.backend_market.investment.dto.VerifyInvestmentDto;
@@ -370,15 +371,13 @@ public class InvestmentService {
 
     public VerifyInvestmentDto.Response verifyInvestments(VerifyInvestmentDto.Request requestDto) {
         try {
-            List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> {
-                return Integer.valueOf(investment.getInvestmentId());
-            }).toList();
+            List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> investment.getInvestmentId().intValue()).toList();
 
             Set<Integer> existedIdSet = investmentRepository.findByInvestmentSeqIn(investmentIdList).stream()
                     .map(Investment::getInvestmentSeq)
                     .collect(Collectors.toSet());
 
-            VerifyInvestmentDto.Response response = VerifyInvestmentDto.Response.builder().result(List.of()).build();
+            VerifyInvestmentDto.Response response = VerifyInvestmentDto.Response.builder().result(new ArrayList<>()).build();
             investmentIdList.forEach(investmentId -> {
                 response.getResult().add(existedIdSet.contains(investmentId));
             });
