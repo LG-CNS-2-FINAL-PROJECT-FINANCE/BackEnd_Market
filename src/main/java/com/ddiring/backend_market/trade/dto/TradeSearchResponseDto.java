@@ -22,7 +22,7 @@ public class TradeSearchResponseDto {
     private LocalDateTime tradedAt;
 
     public TradeSearchResponseDto(Trade trade, Integer orderType) {
-        this.ordersId = orderType == 1 ? trade.getPurchaseId() : trade.getSellId(); // 1은 구매, 0은 판매
+        this.ordersId = trade.getTradeId().intValue();// 1은 구매, 0은 판매
         this.orderType = orderType;
         this.tradePrice = trade.getTradePrice();
         this.tokenQuantity = trade.getTokenQuantity();
