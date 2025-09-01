@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import java.util.List;
 
-public class CheckInvestmentChainlinkDto {
+public class VerifyInvestmentDto {
 
     @Getter
     @Builder
