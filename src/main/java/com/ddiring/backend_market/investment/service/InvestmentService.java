@@ -11,6 +11,7 @@ import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
+import com.ddiring.backend_market.investment.dto.CheckInvestmentChainlinkDto;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -29,6 +30,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -365,6 +367,23 @@ public class InvestmentService {
             investmentRepository.saveAll(allocRequested);
             return false;
         }
+    }
+
+    public CheckInvestmentChainlinkDto.Response verifyInvestments(CheckInvestmentChainlinkDto.Request requestDto) {
+        List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> {
+            return Integer.valueOf(investment.getInvestmentId());
+        }).toList();
+
+        Set<Integer> existedIdSet = investmentRepository.findByInvestmentSeqIn(investmentIdList).stream()
+                .map(Investment::getInvestmentSeq)
+                .collect(Collectors.toSet());
+
+        CheckInvestmentChainlinkDto.Response response = CheckInvestmentChainlinkDto.Response.builder().result(List.of()).build();
+        investmentIdList.forEach(investmentId -> {
+            response.getResult().add(existedIdSet.contains(investmentId));
+        });
+
+        return response;
     }
 
     private InvestmentResponse toResponse(Investment inv) {
