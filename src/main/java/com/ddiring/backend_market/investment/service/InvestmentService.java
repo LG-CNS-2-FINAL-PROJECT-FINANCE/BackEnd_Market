@@ -171,6 +171,11 @@ public class InvestmentService {
 
         Investment saved = investmentRepository.save(investment);
 
+        CancelInvestmentRequest cancelInvestmentRequest = new CancelInvestmentRequest();
+        cancelInvestmentRequest.setInvestmentSeq(investment.getInvestmentSeq());
+        cancelInvestmentRequest.setProjectId(investment.getProjectId());
+        cancelInvestmentRequest.setInvestedPrice(investment.getInvestedPrice());
+
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(investment.getInvestmentSeq());
         marketBuyDto.setProjectId(investment.getProjectId());
@@ -187,7 +192,8 @@ public class InvestmentService {
                     .amount(calcToken)
                     .build());
         } catch (Exception e) {
-            saved.setInvStatus(InvestmentStatus.CANCELLED);
+            saved.setInvStatus(InvestmentStatus.PENDING);
+            cancelInvestment(userSeq, role, cancelInvestmentRequest);
             saved.setUpdatedAt(LocalDateTime.now());
             investmentRepository.save(saved);
 

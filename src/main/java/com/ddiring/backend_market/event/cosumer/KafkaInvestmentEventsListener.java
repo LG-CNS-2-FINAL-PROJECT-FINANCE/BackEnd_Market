@@ -111,18 +111,23 @@ public class KafkaInvestmentEventsListener {
         }
     }
 
-    private void handleInvestSucceeded(InvestSucceededEvent event) {
+    public void handleInvestSucceeded(InvestSucceededEvent event) {
         Long id = event.getPayload().getInvestmentId();
         investmentRepository.findById(id.intValue()).ifPresent(inv -> {
             if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
+                Long tokenAmount = event.getPayload().getTokenAmount();
+                if (tokenAmount != null) {
+                    inv.setTokenQuantity(tokenAmount.intValue());
+                }
                 inv.setInvStatus(InvestmentStatus.COMPLETED);
                 inv.setUpdatedAt(LocalDateTime.now());
                 investmentRepository.save(inv);
+                log.info("[INVEST] 투자 완료 처리 investmentId={} tokenQuantity={}", id, inv.getTokenQuantity());
             }
         });
     }
 
-    private void handleInvestFailed(InvestFailedEvent event) {
+    public void handleInvestFailed(InvestFailedEvent event) {
         Long id = event.getPayload().getInvestmentId();
         investmentRepository.findById(id.intValue()).ifPresent(inv -> {
             if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {

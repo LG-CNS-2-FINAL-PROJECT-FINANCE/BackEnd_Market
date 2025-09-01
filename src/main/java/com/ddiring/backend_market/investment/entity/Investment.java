@@ -33,6 +33,7 @@ public class Investment {
     private Integer investedPrice;
 
     @Column(name = "token_quantity")
+    @Setter
     private Integer tokenQuantity;
 
     @Column(name = "invested_at")
