@@ -1,5 +1,6 @@
 package com.ddiring.backend_market.trade.controller;
 
+import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.trade.dto.*;
@@ -86,5 +87,11 @@ public class TradeController {
     public ApiResponseDto<List<TradeHistoryResponseDto>> tradeAdminHistroy() {
         List<TradeHistoryResponseDto> tradeAdminHistroy = tradeService.getAdminHistory();
         return ApiResponseDto.createOk(tradeAdminHistroy);
+    }
+
+    @GetMapping("/{tradeId}")
+    public ApiResponseDto<TradeInfoResponseDto> getTradeInfo(@PathVariable Long tradeId) {
+        TradeInfoResponseDto tradeInfo = tradeService.getTradeInfoById(tradeId);
+        return ApiResponseDto.createOk(tradeInfo);
     }
 }

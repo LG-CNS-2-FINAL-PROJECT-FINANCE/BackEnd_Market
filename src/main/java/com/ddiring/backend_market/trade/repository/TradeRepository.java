@@ -12,7 +12,6 @@ import java.util.Optional;
 @Repository
 public interface TradeRepository extends JpaRepository<Trade, Integer> {
     List<Trade> findTop20ByProjectIdOrderByTradedAtDesc(String projectId);
-    List<Trade> findByPurchaseIdOrSellId(Integer purchaseId, Integer sellId);
     Optional<Trade> findByTradeId(Long tradeId);
 
 }

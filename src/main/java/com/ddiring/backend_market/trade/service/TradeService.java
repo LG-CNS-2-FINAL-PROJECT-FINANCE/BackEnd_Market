@@ -58,11 +58,12 @@ public class TradeService {
                         sellOrderForLog.getOrdersId());
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
-                        .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
-                        .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
+                        .purchaseId(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
+                        .sellId(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
+                        .tokenPerPrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .tradeStatus("PENDING")
@@ -110,7 +111,7 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(1)
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -121,7 +122,7 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(0)
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -159,12 +160,11 @@ public class TradeService {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
-
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
                 .role(role)
                 .ordersType(ordersRequestDto.getOrdersType())
-                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
                 .build();
@@ -218,7 +218,7 @@ public class TradeService {
                 .role(role)
                 .walletAddress(walletAddress)
                 .ordersType(ordersRequestDto.getOrdersType())
-                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
                 .build();
@@ -231,7 +231,7 @@ public class TradeService {
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
-        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
+        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity());
         marketBuyDto.setTransType(1);
 
         try {
@@ -354,4 +354,18 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public TradeInfoResponseDto getTradeInfoById(Long tradeId) {
+        Trade trade = tradeRepository.findByTradeId(tradeId)
+                .orElseThrow(() -> new IllegalArgumentException("거래 정보를 찾을 수 없습니다: " + tradeId));
+
+        return TradeInfoResponseDto.builder()
+                .tradeId(trade.getTradeId())
+                .projectId(trade.getProjectId())
+                .price(trade.getTradePrice()) // 총 거래 금액
+                .tokenQuantity(trade.getTokenQuantity()) // 거래된 토큰 수량
+                .buyerUserSeq(trade.getPurchaseId())   // 구매자 userSeq
+                .sellerUserSeq(trade.getSellId()) // 판매자 userSeq
+                .build();
+    }
 }
