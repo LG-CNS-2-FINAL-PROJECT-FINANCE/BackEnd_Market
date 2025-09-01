@@ -1,7 +1,6 @@
 package com.ddiring.backend_market.investment.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,13 +24,13 @@ public class VerifyInvestmentDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class Investment {
-        @NotBlank
-        private String investmentId;
+        @NotNull
+        private Long investmentId;
 
         @NotBlank
         private String investorAddress;
 
-        @NotEmpty
+        @NotNull
         private Long tokenAmount;
     }
 
