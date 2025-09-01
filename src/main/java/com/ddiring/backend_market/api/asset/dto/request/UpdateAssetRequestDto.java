@@ -11,5 +11,6 @@ public class UpdateAssetRequestDto {
     private String buyAddress;
     private Long buyTokenAmount;
     private String sellAddress;
-    private Long sellPrice; // 판매자에게 입금될 최종 금액
+    private Long sellTokenAmount; // 판매자에게 입금될 최종 금액
+
 }
