@@ -141,25 +141,17 @@ public class KafkaTradeEventsListener {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        // 마켓 서비스 DB 상태 업데이트
         trade.setTradeStatus("FAILED");
         tradeRepository.save(trade);
 
-        Orders purchaseOrder = ordersRepository.findById(trade.getPurchaseId().intValue()).orElseThrow();
-        purchaseOrder.setOrdersStatus("FAILED");
-        ordersRepository.save(purchaseOrder);
 
-        Orders sellOrder = ordersRepository.findById(trade.getSellId().intValue()).orElseThrow();
-        sellOrder.setOrdersStatus("FAILED");
-        ordersRepository.save(sellOrder);
-
-        try {
-            long amount = (long) trade.getTradePrice() * trade.getTokenQuantity();
-            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), purchaseOrder.getUserSeq(), amount);
-            assetClient.refundEscrowToBuyer(request);
-            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
-        } catch (Exception e) {
-            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
-        }
+//        try {
+//            long amount = (long) trade.getTradePrice();
+//            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), amount);
+//            assetClient.refundEscrowToBuyer(request);
+//            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
+//        } catch (Exception e) {
+//            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
+//        }
     }
 }

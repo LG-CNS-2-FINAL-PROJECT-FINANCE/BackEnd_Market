@@ -49,4 +49,9 @@ public class InvestFailedEvent {
                         .build())
                 .build();
     }
+
+    public static InvestFailedEvent of(Integer investmentSeq, String errorType, String errorMessage) {
+        Long id = investmentSeq == null ? null : investmentSeq.longValue();
+        return of(id, errorType, errorMessage);
+    }
 }
