@@ -152,10 +152,19 @@ public class InvestmentService {
     public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
         ProductDTO product = productClient.getProduct(request.getProjectId());
 
+        if (product.getUserSeq().equals(userSeq)) {
+            throw new IllegalStateException("자신이 등록한 상품에는 투자할 수 없습니다.");
+        }
+
+        Integer maxInvestment = product.getGoalAmount() - product.getAmount();
         Integer minIvestment = product.getMinInvestment();
         Integer investedPrice = request.getInvestedPrice();
+
         if (investedPrice < minIvestment) {
             throw new IllegalArgumentException("최소 투자 금액 미달");
+        }
+        if (investedPrice > maxInvestment) {
+            throw new IllegalArgumentException("목표 금액 초과");
         }
 
         int calcToken = investedPrice / minIvestment;
