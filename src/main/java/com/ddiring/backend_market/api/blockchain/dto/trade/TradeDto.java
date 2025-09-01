@@ -19,4 +19,6 @@ public class TradeDto {
         this.buyInfo = new BuyInfoDto();
         this.sellInfo = new SellInfoDto();
     }
+    private Long tokenAmount;
+    private Long pricePerToken;
 }

@@ -49,7 +49,6 @@ public class TradeService {
             if (tradePossible) {
                 int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
                 int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
-                // ▼▼▼▼▼▼▼▼▼▼▼▼ 디버깅 로그 추가 ▼▼▼▼▼▼▼▼▼▼▼▼
                 log.info("거래 체결 시작. 신규 주문 ID: {}, 기존 주문 ID: {}", order.getOrdersId(), oldOrder.getOrdersId());
                 Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
                 Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
@@ -57,7 +56,6 @@ public class TradeService {
                         purchaseOrderForLog.getOrdersId());
                 log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(),
                         sellOrderForLog.getOrdersId());
-                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
                         .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
@@ -74,13 +72,11 @@ public class TradeService {
 
                 BuyInfoDto buyInfo = BuyInfoDto.builder()
                         .buyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()))
-                        .tokenAmount((long) tradedQuantity)
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
 
                 SellInfoDto sellInfo = SellInfoDto.builder()
                         .sellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()))
-                        .tokenAmount((long) tradedQuantity)
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
 
@@ -89,17 +85,19 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .buyInfo(buyInfo)
                         .sellInfo(sellInfo)
+                        .tokenAmount((long) tradedQuantity)
+                        .pricePerToken((long) (tradePrice / tradedQuantity))
                         .build();
                 log.info(
-                        "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
+                        "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={},  buyerAddress={}], sellInfo=[sellId={}, sellerAddress={}], tokenAmount={}, price={}",
                         tradeDto.getTradeId(),
                         tradeDto.getProjectId(),
                         tradeDto.getBuyInfo().getBuyId(),
-                        tradeDto.getBuyInfo().getTokenAmount(),
                         tradeDto.getBuyInfo().getBuyerAddress(),
                         tradeDto.getSellInfo().getSellId(),
-                        tradeDto.getSellInfo().getTokenAmount(),
-                        tradeDto.getSellInfo().getSellerAddress());
+                        tradeDto.getSellInfo().getSellerAddress(),
+                        tradeDto.getTokenAmount(),
+                        tradeDto.getPricePerToken());
 
                 // blockchainClient.requestTradeTokenMove(tradeDto);
 
