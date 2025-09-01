@@ -370,20 +370,27 @@ public class InvestmentService {
     }
 
     public CheckInvestmentChainlinkDto.Response verifyInvestments(CheckInvestmentChainlinkDto.Request requestDto) {
-        List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> {
-            return Integer.valueOf(investment.getInvestmentId());
-        }).toList();
+        try {
+            List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> {
+                return Integer.valueOf(investment.getInvestmentId());
+            }).toList();
 
-        Set<Integer> existedIdSet = investmentRepository.findByInvestmentSeqIn(investmentIdList).stream()
-                .map(Investment::getInvestmentSeq)
-                .collect(Collectors.toSet());
+            Set<Integer> existedIdSet = investmentRepository.findByInvestmentSeqIn(investmentIdList).stream()
+                    .map(Investment::getInvestmentSeq)
+                    .collect(Collectors.toSet());
 
-        CheckInvestmentChainlinkDto.Response response = CheckInvestmentChainlinkDto.Response.builder().result(List.of()).build();
-        investmentIdList.forEach(investmentId -> {
-            response.getResult().add(existedIdSet.contains(investmentId));
-        });
+            CheckInvestmentChainlinkDto.Response response = CheckInvestmentChainlinkDto.Response.builder().result(List.of()).build();
+            investmentIdList.forEach(investmentId -> {
+                response.getResult().add(existedIdSet.contains(investmentId));
+            });
 
-        return response;
+            log.info("[Investment] 검증 결과 : {}", response.getResult());
+
+            return response;
+        } catch (Exception e) {
+            log.error("[Investment] 체인링크 검증 중 오류 발생 : {}", e.getMessage());
+            throw new RuntimeException("[Investment] 체인링크 검증 중 오류 발생 : " + e.getMessage());
+        }
     }
 
     private InvestmentResponse toResponse(Investment inv) {
