@@ -33,4 +33,6 @@ public interface AssetClient {
     @PostMapping("/api/asset/title")
     String getMarketTitle(@RequestBody TitleRequestDto titleRequestDto);
 
+    @PostMapping("/api/asset/get/token")
+    void getToken(@RequestBody MarketTokenDto marketTokenDto);
 }

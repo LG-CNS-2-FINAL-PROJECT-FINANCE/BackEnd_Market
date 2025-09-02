@@ -3,6 +3,7 @@ package com.ddiring.backend_market.investment.service;
 import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketDto;
+import com.ddiring.backend_market.api.asset.dto.request.MarketTokenDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.blockchain.BlockchainClient;
@@ -213,6 +214,15 @@ public class InvestmentService {
         saved.setInvStatus(InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
+
+        MarketTokenDto marketTokenDto = MarketTokenDto.builder()
+                .userSeq(userSeq)
+                .perPrice(minIvestment)
+                .tokenQuantity(calcToken)
+                .projectId(projectId).build();
+
+        assetClient.getToken(marketTokenDto);
+
         return toResponse(saved);
     }
 
