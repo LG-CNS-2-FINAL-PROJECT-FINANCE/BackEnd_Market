@@ -95,6 +95,7 @@ public class TradeController {
         VerifyTradeDto.Response response = tradeService.verifyTrade(requestDto);
 
         return ApiResponseDto.createOk(response);
+    }
   
     @GetMapping("/{tradeId}")
     public ApiResponseDto<TradeInfoResponseDto> getTradeInfo(@PathVariable Long tradeId) {

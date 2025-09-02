@@ -367,6 +367,7 @@ public class TradeService {
         log.info("[Trade] 검증 결과 : {}", isExisted);
 
         return VerifyTradeDto.Response.builder().result(isExisted).build();
+    }
 
     @Transactional
     public TradeInfoResponseDto getTradeInfoById(Long tradeId) {
