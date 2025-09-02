@@ -2,6 +2,7 @@ package com.ddiring.backend_market.api.asset;
 
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
+import com.ddiring.backend_market.api.asset.dto.request.MarketDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,7 +13,7 @@ public interface AssetClient {
     ApiResponseDto<String> getWalletAddress(@RequestHeader("userSeq") String userSeq);
 
     @PostMapping("/api/asset/escrow/withdrawal")
-    ApiResponseDto<Integer> requestWithdrawal(@RequestBody SaveRecordRequest saveRecordRequest);
+    ApiResponseDto<Integer> requestWithdrawal(@RequestBody MarketDto marketDto);
 
     @PostMapping("/api/asset/escrow/refund")
     ApiResponseDto<Void> refundEscrowToBuyer(@RequestBody AssetEscrowRequest request);

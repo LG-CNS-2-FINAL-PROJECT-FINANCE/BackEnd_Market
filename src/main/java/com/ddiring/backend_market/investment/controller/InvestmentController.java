@@ -80,20 +80,17 @@ public class InvestmentController {
         return ResponseEntity.ok(sent ? "REQUEST_SENT" : "NOT_ELIGIBLE");
     }
 
-<<<<<<< HEAD
-    @PostMapping("/send")
-    public String postMethodName(@RequestBody String entity) {
-        // TODO: process POST request
-
-        return entity;
+    // (CREATOR) 출금 요청
+    @PostMapping("/{projectId}/withdrawal")
+    public ApiResponseDto<Integer> requestWithdrawal(@PathVariable String projectId) {
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        return investmentService.requestWithdrawal(projectId, userSeq, role);
     }
 
-=======
     @PostMapping("/verify")
     public ApiResponseDto<?> verifyInvestmentChainlink(@RequestBody VerifyInvestmentDto.Request requestDto) {
         VerifyInvestmentDto.Response response = investmentService.verifyInvestments(requestDto);
-
         return ApiResponseDto.createOk(response);
     }
->>>>>>> 744595e37e019ebea19319edd3eb73c84fd3de90
 }
