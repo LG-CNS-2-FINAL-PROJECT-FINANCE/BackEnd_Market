@@ -11,9 +11,6 @@ public interface AssetClient {
     @GetMapping("/api/asset/wallet/search")
     ApiResponseDto<String> getWalletAddress(@RequestHeader("userSeq") String userSeq);
 
-    @PostMapping("/api/asset/escrow/deposit")
-    ApiResponseDto<Integer> requestDeposit(@RequestBody AssetRequest request);
-
     @PostMapping("/api/asset/escrow/withdrawal")
     ApiResponseDto<Integer> requestWithdrawal(@RequestBody SaveRecordRequest saveRecordRequest);
 
