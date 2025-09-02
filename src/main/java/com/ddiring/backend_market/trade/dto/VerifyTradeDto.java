@@ -22,7 +22,7 @@ public class VerifyTradeDto {
         private Integer sellId;
 
         @NotNull
-        private Integer tokenAmount;
+        private Integer tradeAmount;
     }
 
     @Getter

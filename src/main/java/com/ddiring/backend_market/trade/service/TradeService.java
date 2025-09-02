@@ -362,7 +362,7 @@ public class TradeService {
                 requestDto.getTradeId(),
                 requestDto.getBuyId(),
                 requestDto.getSellId(),
-                requestDto.getTokenAmount()
+                requestDto.getTradeAmount()
         );
 
         return VerifyTradeDto.Response.builder().result(isExisted).build();
