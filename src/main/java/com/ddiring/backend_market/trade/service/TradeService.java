@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -173,7 +174,7 @@ public class TradeService {
         marketSellDto.setOrdersId(savedOrder.getOrdersId());
         marketSellDto.setProjectId(ordersRequestDto.getProjectId());
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
-        marketSellDto.setTransType(1);
+        marketSellDto.setTransType(2);
         try {
             ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
             String walletAddress = response.getData();
@@ -351,6 +352,21 @@ public class TradeService {
         return tradeAllHistory.stream()
                 .map(TradeHistoryResponseDto::new)
                 .collect(Collectors.toList());
+    }
+
+    public VerifyTradeDto.Response verifyTrade(VerifyTradeDto.Request requestDto) {
+        log.info("[Trade] 검증 데이터 - TradeID: {}, BuyID: {}, SellID: {}, TradeAmount: {}", requestDto.getTradeId(), requestDto.getBuyId(), requestDto.getSellId(), requestDto.getTradeAmount());
+
+        Boolean isExisted = tradeRepository.existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(
+                requestDto.getTradeId(),
+                requestDto.getBuyId(),
+                requestDto.getSellId(),
+                requestDto.getTradeAmount()
+        );
+
+        log.info("[Trade] 검증 결과 : {}", isExisted);
+
+        return VerifyTradeDto.Response.builder().result(isExisted).build();
     }
 
     @Transactional

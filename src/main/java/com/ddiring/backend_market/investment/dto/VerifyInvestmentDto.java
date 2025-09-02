@@ -1,0 +1,45 @@
+package com.ddiring.backend_market.investment.dto;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import java.util.List;
+
+public class VerifyInvestmentDto {
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Request {
+        @NotNull
+        private List<Investment> investments;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Investment {
+        @NotNull
+        private Long investmentId;
+
+        @NotBlank
+        private String investorAddress;
+
+        @NotNull
+        private Long tokenAmount;
+    }
+
+    @Getter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class Response {
+        @NotNull
+        private List<Boolean> result;
+    }
+}

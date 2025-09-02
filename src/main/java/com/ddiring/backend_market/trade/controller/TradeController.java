@@ -6,12 +6,14 @@ import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.trade.dto.*;
 import com.ddiring.backend_market.trade.entity.Orders;
 import com.ddiring.backend_market.trade.service.TradeService;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @RestController
@@ -88,7 +90,13 @@ public class TradeController {
         List<TradeHistoryResponseDto> tradeAdminHistroy = tradeService.getAdminHistory();
         return ApiResponseDto.createOk(tradeAdminHistroy);
     }
+    @PostMapping("/verify")
+    public ApiResponseDto<?> checkTradeChainlink(@RequestBody VerifyTradeDto.Request requestDto) {
+        VerifyTradeDto.Response response = tradeService.verifyTrade(requestDto);
 
+        return ApiResponseDto.createOk(response);
+    }
+  
     @GetMapping("/{tradeId}")
     public ApiResponseDto<TradeInfoResponseDto> getTradeInfo(@PathVariable Long tradeId) {
         TradeInfoResponseDto tradeInfo = tradeService.getTradeInfoById(tradeId);
