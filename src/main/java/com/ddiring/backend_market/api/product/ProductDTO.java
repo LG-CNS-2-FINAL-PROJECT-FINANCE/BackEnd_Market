@@ -20,6 +20,7 @@ public class ProductDTO {
     private String account; // 모집 계좌
     private Integer goalAmount; // 목표금액
     private Integer amount; // 모금액
+    private LocalDate startDate; // 시작일
     private LocalDate endDate; // 종료일
     private Integer deadline; // 마감 기한
     private Integer percent; // 달성률

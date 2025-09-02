@@ -169,6 +169,14 @@ public class InvestmentService {
             throw new IllegalStateException("자신이 등록한 상품에는 투자할 수 없습니다.");
         }
 
+        if (product.getStartDate().isAfter(LocalDate.now())) {
+            throw new IllegalStateException("해당 상품은 투자 기간이 아닙니다.");
+        }
+
+        if (product.getEndDate().isBefore(LocalDate.now())) {
+            throw new IllegalStateException("투자가 종료된 상품입니다.");
+        }
+
         Integer maxInvestment = product.getGoalAmount() - product.getAmount();
         Integer minIvestment = product.getMinInvestment();
         Integer investedPrice = request.getInvestedPrice();
