@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -45,8 +44,7 @@ public class TradeFailedEvent {
                         .status("FAILED")
                         .errorType(errorType)
                         .errorMessage(errorMessage)
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }
