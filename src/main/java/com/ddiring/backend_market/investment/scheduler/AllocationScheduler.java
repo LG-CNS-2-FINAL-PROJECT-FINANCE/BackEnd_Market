@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 // 토큰 할당 스케줄러
 @Slf4j
@@ -26,7 +27,9 @@ public class AllocationScheduler {
         LocalDate today = LocalDate.now();
         List<ProductDTO> products;
         try {
-            products = productClient.getAllProduct();
+            products = Optional.ofNullable(productClient.getAllProduct())
+                    .map(r -> r.getData())
+                    .orElse(List.of());
         } catch (Exception e) {
             log.error("[AllocationScheduler] 상품 전체 조회 실패 reason={}", e.getMessage());
             return;

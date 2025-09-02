@@ -112,25 +112,6 @@ public class KafkaTradeEventsListener {
         trade.setTradeStatus("SUCCEEDED");
         tradeRepository.save(trade);
 
-        try {
-
-            UpdateAssetRequestDto requestDto = UpdateAssetRequestDto.builder()
-                    .tradeId(trade.getTradeId())
-                    .projectId(trade.getProjectId())
-                    .buyAddress(payload.getBuyerAddress())
-                    .buyTokenAmount(payload.getBuyerTokenAmount())
-                    .sellAddress(payload.getSellerAddress())
-                    .sellPrice(trade.getTradePrice().longValue())
-                    .build();
-
-            assetClient.updateAssetsAfterTrade(requestDto);
-
-            log.info("Asset 서비스에 자산 변경 요청 완료. tradeId={}", trade.getTradeId());
-
-        } catch (Exception e) {
-            log.error("Asset 서비스 호출 중 심각한 오류 발생. tradeId={}", payload.getTradeId(), e);
-            throw new RuntimeException("Asset 서비스 호출 실패", e);
-        }
     }
 
     @Transactional
@@ -144,14 +125,5 @@ public class KafkaTradeEventsListener {
         trade.setTradeStatus("FAILED");
         tradeRepository.save(trade);
 
-
-//        try {
-//            long amount = (long) trade.getTradePrice();
-//            AssetEscrowRequest request = new AssetEscrowRequest(trade.getTradeId(), amount);
-//            assetClient.refundEscrowToBuyer(request);
-//            log.info("Asset 서비스에 예치금({}) 환불 요청 완료. tradeId={}", amount, trade.getTradeId());
-//        } catch (Exception e) {
-//            log.error("Asset 서비스 호출(예치금 환불) 실패. tradeId={}", trade.getTradeId(), e);
-//        }
     }
 }

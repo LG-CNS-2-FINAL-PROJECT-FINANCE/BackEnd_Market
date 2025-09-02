@@ -50,22 +50,21 @@ public class TradeService {
             if (tradePossible) {
                 int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
                 int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
-                // ▼▼▼▼▼▼▼▼▼▼▼▼ 디버깅 로그 추가 ▼▼▼▼▼▼▼▼▼▼▼▼
-                log.info("거래 체결 시작. 신규 주문 ID: {}, 기존 주문 ID: {}", order.getOrdersId(), oldOrder.getOrdersId());
+                log.info("거래 체결 시작. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
                 Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
                 Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
                 log.info("구매 주문 정보: userSeq={}, ordersId={}", purchaseOrderForLog.getUserSeq(),
                         purchaseOrderForLog.getOrdersId());
                 log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(),
                         sellOrderForLog.getOrdersId());
-                // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
-                        .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
-                        .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
+                        .purchaseId(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
+                        .sellId(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
+                        .tokenPerPrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .tradeStatus("PENDING")
@@ -75,13 +74,11 @@ public class TradeService {
 
                 BuyInfoDto buyInfo = BuyInfoDto.builder()
                         .buyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()))
-                        .tokenAmount((long) tradedQuantity)
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
 
                 SellInfoDto sellInfo = SellInfoDto.builder()
                         .sellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()))
-                        .tokenAmount((long) tradedQuantity)
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
 
@@ -90,17 +87,10 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .buyInfo(buyInfo)
                         .sellInfo(sellInfo)
+                        .tokenAmount((long) tradedQuantity)
+                        .pricePerToken((long) (tradePrice / tradedQuantity))
                         .build();
-                log.info(
-                        "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={}, tokenAmount={}, buyerAddress={}], sellInfo=[sellId={}, tokenAmount={}, sellerAddress={}]",
-                        tradeDto.getTradeId(),
-                        tradeDto.getProjectId(),
-                        tradeDto.getBuyInfo().getBuyId(),
-                        tradeDto.getBuyInfo().getTokenAmount(),
-                        tradeDto.getBuyInfo().getBuyerAddress(),
-                        tradeDto.getSellInfo().getSellId(),
-                        tradeDto.getSellInfo().getTokenAmount(),
-                        tradeDto.getSellInfo().getSellerAddress());
+
 
                 // blockchainClient.requestTradeTokenMove(tradeDto);
 
@@ -108,12 +98,13 @@ public class TradeService {
                 titleRequestDto.setProjectId(order.getProjectId());
                 String title = assetClient.getMarketTitle(titleRequestDto);
 
+                log.info("거래 체결 완료. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
                 History purchaseHistory = History.builder()
                         .title(title)
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(1)
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -124,7 +115,7 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(0)
-                        .tradePrice(tradePrice)
+                        .tradePrice(tradePrice * tradedQuantity)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -149,6 +140,9 @@ public class TradeService {
                     break;
                 }
             }
+            else {
+                log.info("거래 체결 실패. 구매 주문 ID: {}, 판매 주문 ID: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()));
+            }
         }
     }
 
@@ -162,12 +156,11 @@ public class TradeService {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
         Orders order = Orders.builder()
-
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
                 .role(role)
                 .ordersType(ordersRequestDto.getOrdersType())
-                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
                 .build();
@@ -190,6 +183,7 @@ public class TradeService {
 
             order.setWalletAddress(walletAddress);
             ordersRepository.save(order);
+            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
 
         } catch (Exception e) {
             log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
@@ -221,7 +215,7 @@ public class TradeService {
                 .role(role)
                 .walletAddress(walletAddress)
                 .ordersType(ordersRequestDto.getOrdersType())
-                .purchasePrice(ordersRequestDto.getPurchasePrice())
+                .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
                 .build();
@@ -234,10 +228,11 @@ public class TradeService {
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
-        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice());
+        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity());
         marketBuyDto.setTransType(1);
 
         try {
+            log.info("구매 주문 접수: 구매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
             assetClient.marketBuy(userSeq, role, marketBuyDto);
             log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
         } catch (Exception e) {
@@ -270,6 +265,8 @@ public class TradeService {
             assetClient.marketRefund(userSeq, role, marketRefundDto);
         }
         ordersRepository.delete(order);
+        log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrdersId(), order.getProjectId(), orderDeleteDto.getOrdersId());
+
     }
 
     @Transactional
@@ -370,5 +367,19 @@ public class TradeService {
         log.info("[Trade] 검증 결과 : {}", isExisted);
 
         return VerifyTradeDto.Response.builder().result(isExisted).build();
+
+    @Transactional
+    public TradeInfoResponseDto getTradeInfoById(Long tradeId) {
+        Trade trade = tradeRepository.findByTradeId(tradeId)
+                .orElseThrow(() -> new IllegalArgumentException("거래 정보를 찾을 수 없습니다: " + tradeId));
+
+        return TradeInfoResponseDto.builder()
+                .tradeId(trade.getTradeId())
+                .projectId(trade.getProjectId())
+                .price(trade.getTradePrice()) // 총 거래 금액
+                .tokenQuantity(trade.getTokenQuantity()) // 거래된 토큰 수량
+                .buyerUserSeq(trade.getPurchaseId())   // 구매자 userSeq
+                .sellerUserSeq(trade.getSellId()) // 판매자 userSeq
+                .build();
     }
 }

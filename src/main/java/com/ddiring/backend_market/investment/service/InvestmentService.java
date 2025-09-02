@@ -47,7 +47,9 @@ public class InvestmentService {
 
     // 투자 상품 전체 조회
     public List<ProductDTO> getAllProduct() {
-        return productClient.getAllProduct();
+        return Optional.ofNullable(productClient.getAllProduct())
+                .map(r -> r.getData())
+                .orElse(List.of());
     }
 
     // 개인 투자 내역 조회
@@ -60,7 +62,9 @@ public class InvestmentService {
 
         List<ProductDTO> allProducts;
         try {
-            allProducts = productClient.getAllProduct();
+            allProducts = Optional.ofNullable(productClient.getAllProduct())
+                    .map(r -> r.getData())
+                    .orElse(List.of());
         } catch (Exception e) {
             log.warn("상품 불러오기 실패. reason={}", e.getMessage());
             return myList.stream()
@@ -151,20 +155,31 @@ public class InvestmentService {
 
     // 주문
     @Transactional
-    public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
-        ProductDTO product = productClient.getProduct(request.getProjectId());
+    public InvestmentResponse buyInvestment(String projectId, String userSeq, String role, InvestmentRequest request) {
+        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+                .map(r -> r.getData())
+                .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
+        if (product.getUserSeq().equals(userSeq)) {
+            throw new IllegalStateException("자신이 등록한 상품에는 투자할 수 없습니다.");
+        }
+
+        Integer maxInvestment = product.getGoalAmount() - product.getAmount();
         Integer minIvestment = product.getMinInvestment();
         Integer investedPrice = request.getInvestedPrice();
+
         if (investedPrice < minIvestment) {
             throw new IllegalArgumentException("최소 투자 금액 미달");
+        }
+        if (investedPrice > maxInvestment) {
+            throw new IllegalArgumentException("목표 금액 초과");
         }
 
         int calcToken = investedPrice / minIvestment;
 
         Investment investment = Investment.builder()
                 .userSeq(userSeq)
-                .projectId(request.getProjectId())
+                .projectId(projectId)
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(calcToken)
                 .investedAt(LocalDateTime.now())
@@ -189,11 +204,11 @@ public class InvestmentService {
                     .amount(calcToken)
                     .build());
         } catch (Exception e) {
-            saved.setInvStatus(InvestmentStatus.CANCELLED);
-            saved.setUpdatedAt(LocalDateTime.now());
-            investmentRepository.save(saved);
-
-            return toResponse(saved);
+            CancelInvestmentRequest cancelInvestmentRequest = new CancelInvestmentRequest();
+            cancelInvestmentRequest.setInvestmentSeq(investment.getInvestmentSeq());
+            cancelInvestmentRequest.setProjectId(investment.getProjectId());
+            cancelInvestmentRequest.setInvestedPrice(investment.getInvestedPrice());
+            cancelInvestment(userSeq, role, cancelInvestmentRequest);
         }
 
         // 입금 성공 => 펀딩 진행 상태로 변경
@@ -258,7 +273,9 @@ public class InvestmentService {
     // 토큰 할당 요청 트리거
     @Transactional
     public boolean triggerAllocationIfEligible(String projectId) {
-        ProductDTO product = productClient.getProduct(projectId);
+        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+                .map(r -> r.getData())
+                .orElse(null);
         if (product == null) {
             log.warn("프로젝트 없음 projectId={}", projectId);
             return false;
