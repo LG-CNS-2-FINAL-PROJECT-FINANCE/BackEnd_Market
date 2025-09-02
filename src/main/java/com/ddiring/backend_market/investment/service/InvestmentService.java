@@ -161,7 +161,9 @@ public class InvestmentService {
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(String projectId, String userSeq, String role, InvestmentRequest request) {
-        ProductDTO product = fetchProductOrThrow(projectId);
+        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+                .map(ResponseEntity::getBody)
+                .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
         if (product.getUserSeq().equals(userSeq)) {
             throw new IllegalStateException("자신이 등록한 상품에는 투자할 수 없습니다.");
@@ -444,30 +446,6 @@ public class InvestmentService {
         } catch (Exception e) {
             log.error("[Investment] 체인링크 검증 중 오류 발생 : {}", e.getMessage());
             throw new RuntimeException("[Investment] 체인링크 검증 중 오류 발생 : " + e.getMessage());
-        }
-    }
-
-    // 상품 정보 조회 및 검증
-    private ProductDTO fetchProductOrThrow(String projectId) {
-        try {
-            log.debug("[BUY] 상품 정보 조회 시도 projectId={}", projectId);
-            var resp = productClient.getProduct(projectId);
-            if (resp == null) {
-                log.error("[BUY] 상품 서비스 응답 null projectId={}", projectId);
-                throw new IllegalStateException("상품 서비스 응답이 없습니다.");
-            }
-            ProductDTO dto = resp.getBody();
-            if (dto == null) {
-                log.error("[BUY] 상품 데이터 null projectId={} status={} ", projectId, resp.getStatusCode());
-                throw new IllegalStateException("상품 데이터를 가져올 수 없습니다. status=" + resp.getStatusCode());
-            }
-            return dto;
-        } catch (IllegalStateException e) {
-            throw e; // 그대로 전달
-        } catch (Exception e) {
-            log.error("[BUY] 상품 조회 실패 projectId={} type={} msg={}", projectId, e.getClass().getSimpleName(),
-                    e.getMessage());
-            throw new IllegalStateException("상품 정보를 가져올 수 없습니다. (원인: " + e.getClass().getSimpleName() + ")");
         }
     }
 
