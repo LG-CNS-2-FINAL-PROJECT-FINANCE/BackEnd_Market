@@ -1,4 +1,4 @@
-package com.ddiring.backend_market.investment.dto;
+package com.ddiring.backend_market.api.asset.dto.request;
 
 import lombok.*;
 
@@ -8,7 +8,9 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class MarketDto {
-    private String productId;
+
+    private Integer investmentSeq;
+    private String projectId;
     private String userSeq;
     private Integer price;
 }
