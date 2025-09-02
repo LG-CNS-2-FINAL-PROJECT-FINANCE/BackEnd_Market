@@ -60,11 +60,19 @@ public class InvestmentService {
 
     // 개인 투자 내역 조회
     public List<MyInvestmentResponse> getMyInvestment(String userSeq) {
-        List<Investment> myList = investmentRepository.findByUserSeq(userSeq);
-
+        // 투자 중인 상품 목록 조회
+        List<Investment> myList = investmentRepository.findByUserSeq(userSeq).stream()
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
+                        || inv.getInvStatus() == InvestmentStatus.PENDING)
+                .toList();
         if (myList.isEmpty()) {
             return List.of();
         }
+
+        // 한 상품의 투자 내역 그룹화
+        Map<String, List<Investment>> grouped = myList.stream()
+                .collect(Collectors.groupingBy(Investment::getProjectId));
+        Set<String> neededIds = grouped.keySet();
 
         List<ProductDTO> allProducts;
         try {
@@ -73,18 +81,19 @@ public class InvestmentService {
                     .orElse(List.of());
         } catch (Exception e) {
             log.warn("상품 불러오기 실패. reason={}", e.getMessage());
-            return myList.stream()
-                    .map(investment -> MyInvestmentResponse.builder()
-                            .product(null)
-                            .investedPrice(investment.getInvestedPrice())
-                            .tokenQuantity(investment.getTokenQuantity())
-                            .build())
+            return grouped.entrySet().stream()
+                    .map(e2 -> {
+                        int totalInvest = e2.getValue().stream().mapToInt(Investment::getInvestedPrice).sum();
+                        int totalTokens = e2.getValue().stream().mapToInt(Investment::getTokenQuantity).sum();
+                        return MyInvestmentResponse.builder()
+                                .product(null)
+                                .investedPrice(totalInvest)
+                                .tokenQuantity(totalTokens)
+                                .invStatus(InvestmentStatus.FUNDING.name())
+                                .build();
+                    })
                     .toList();
         }
-
-        Set<String> neededIds = myList.stream()
-                .map(Investment::getProjectId)
-                .collect(Collectors.toSet());
 
         Map<String, ProductDTO> productMap = allProducts.stream()
                 .filter(p -> p != null && p.getProjectId() != null && neededIds.contains(p.getProjectId()))
@@ -93,16 +102,34 @@ public class InvestmentService {
                         Function.identity(),
                         (a, b) -> a));
 
-        return myList.stream()
-                .map(investment -> {
-                    ProductDTO product = productMap.get(investment.getProjectId());
-                    return MyInvestmentResponse.builder()
-                            .product(product)
-                            .investedPrice(investment.getInvestedPrice())
-                            .tokenQuantity(investment.getTokenQuantity())
-                            .invStatus(investment.getInvStatus() == null ? null : investment.getInvStatus().name())
-                            .build();
+        return grouped.entrySet().stream()
+                .map(entry -> {
+                    String projectId = entry.getKey();
+                    List<Investment> list = entry.getValue();
+                    int totalInvest = list.stream().mapToInt(Investment::getInvestedPrice).sum();
+                    int totalTokens = list.stream().mapToInt(Investment::getTokenQuantity).sum();
+                    LocalDateTime latest = list.stream()
+                            .map(Investment::getInvestedAt)
+                            .filter(Objects::nonNull)
+                            .max(LocalDateTime::compareTo)
+                            .orElse(null);
+                    return new AbstractMap.SimpleEntry<>(latest, MyInvestmentResponse.builder()
+                            .product(productMap.get(projectId))
+                            .investedPrice(totalInvest)
+                            .tokenQuantity(totalTokens)
+                            .invStatus(InvestmentStatus.FUNDING.name())
+                            .build());
                 })
+                .sorted((a, b) -> {
+                    if (a.getKey() == null && b.getKey() == null)
+                        return 0;
+                    if (a.getKey() == null)
+                        return 1;
+                    if (b.getKey() == null)
+                        return -1;
+                    return b.getKey().compareTo(a.getKey());
+                })
+                .map(AbstractMap.SimpleEntry::getValue)
                 .toList();
     }
 
