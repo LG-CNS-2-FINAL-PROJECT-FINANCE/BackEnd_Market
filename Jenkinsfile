@@ -43,7 +43,7 @@ pipeline {
                 }
             }
         }
-
+	    
         stage('Set Version') {
             steps {
                 script {
@@ -116,7 +116,7 @@ pipeline {
                         def imageRepo = "${REGISTRY_HOST}/${APP_NAME}"
                         def imageTag = "${APP_VERSION}"
                         def MANIFEST_REPO = "https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/LG-CNS-2-FINAL-PROJECT-FINANCE/Backend_Manifests.git"
-
+												
 												// master/main 브랜취용 매니페스트 분리
                         if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main'){
                             HELM_VALUES = 'values-prod'
