@@ -358,12 +358,16 @@ public class TradeService {
     }
 
     public VerifyTradeDto.Response verifyTrade(VerifyTradeDto.Request requestDto) {
+        log.info("[Trade] 검증 데이터 - TradeID: {}, BuyID: {}, SellID: {}, TradeAmount: {}", requestDto.getTradeId(), requestDto.getBuyId(), requestDto.getSellId(), requestDto.getTradeAmount());
+
         Boolean isExisted = tradeRepository.existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(
                 requestDto.getTradeId(),
                 requestDto.getBuyId(),
                 requestDto.getSellId(),
                 requestDto.getTradeAmount()
         );
+
+        log.info("[Trade] 검증 결과 : {}", isExisted);
 
         return VerifyTradeDto.Response.builder().result(isExisted).build();
     }
