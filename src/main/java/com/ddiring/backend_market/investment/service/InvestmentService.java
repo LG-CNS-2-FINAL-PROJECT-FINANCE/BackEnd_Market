@@ -18,8 +18,6 @@ import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
-import com.ddiring.backend_market.market.repository.MarketRepository;
-import com.ddiring.backend_market.market.entity.Market;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,7 +39,6 @@ public class InvestmentService {
     private final ProductClient productClient;
     private final AssetClient assetClient;
     private final BlockchainClient blockchainClient;
-    private final MarketRepository marketRepository;
 
     // 투자 상품 전체 조회
     public List<ProductDTO> getAllProduct() {
@@ -194,13 +191,6 @@ public class InvestmentService {
 
         try {
             assetClient.marketBuy(userSeq, role, marketBuyDto);
-            marketRepository.save(Market.builder()
-                    .projectId(investment.getProjectId())
-                    .userSeq(userSeq)
-                    .transSeq(investment.getInvestmentSeq())
-                    .transType(0)
-                    .amount(calcToken)
-                    .build());
         } catch (Exception e) {
             CancelInvestmentRequest cancelInvestmentRequest = new CancelInvestmentRequest();
             cancelInvestmentRequest.setInvestmentSeq(investment.getInvestmentSeq());
@@ -249,13 +239,6 @@ public class InvestmentService {
 
             try {
                 assetClient.marketRefund(userSeq, role, marketRefundDto);
-                marketRepository.save(Market.builder()
-                        .projectId(investment.getProjectId())
-                        .userSeq(userSeq)
-                        .transSeq(investment.getInvestmentSeq())
-                        .transType(-1)
-                        .amount(investment.getTokenQuantity())
-                        .build());
             } catch (Exception e) {
                 throw new IllegalStateException("환불 요청 실패");
             }
@@ -306,7 +289,7 @@ public class InvestmentService {
             return false;
         }
 
-        // 이벤트 생성 및 발행 (상태 전환은 ACCEPTED 이벤트 시점에 수행)
+        // 이벤트 생성 및 발행
         List<InvestRequestEvent.InvestmentItem> items = funding.stream()
                 .map(inv -> InvestRequestEvent.InvestmentItem.builder()
                         .investmentSeq(inv.getInvestmentSeq())

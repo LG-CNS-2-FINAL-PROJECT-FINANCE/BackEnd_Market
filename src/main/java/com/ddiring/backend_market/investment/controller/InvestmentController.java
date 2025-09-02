@@ -51,7 +51,8 @@ public class InvestmentController {
 
     // 주문
     @PostMapping("/{projectId}/buy")
-    public ResponseEntity<InvestmentResponse> buyInvestment(@PathVariable String projectId, @RequestBody InvestmentRequest request) {
+    public ResponseEntity<InvestmentResponse> buyInvestment(@PathVariable String projectId,
+            @RequestBody InvestmentRequest request) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
         InvestmentResponse response = investmentService.buyInvestment(projectId, userSeq, role, request);
@@ -74,4 +75,12 @@ public class InvestmentController {
         boolean sent = investmentService.triggerAllocationIfEligible(projectId);
         return ResponseEntity.ok(sent ? "REQUEST_SENT" : "NOT_ELIGIBLE");
     }
+
+    @PostMapping("/send")
+    public String postMethodName(@RequestBody String entity) {
+        // TODO: process POST request
+
+        return entity;
+    }
+
 }
