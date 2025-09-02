@@ -153,8 +153,8 @@ public class InvestmentService {
 
     // 주문
     @Transactional
-    public InvestmentResponse buyInvestment(String userSeq, String role, InvestmentRequest request) {
-        ProductDTO product = Optional.ofNullable(productClient.getProduct(request.getProjectId()))
+    public InvestmentResponse buyInvestment(String projectId, String userSeq, String role, InvestmentRequest request) {
+        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(r -> r.getData())
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
@@ -177,7 +177,7 @@ public class InvestmentService {
 
         Investment investment = Investment.builder()
                 .userSeq(userSeq)
-                .projectId(request.getProjectId())
+                .projectId(projectId)
                 .investedPrice(request.getInvestedPrice())
                 .tokenQuantity(calcToken)
                 .investedAt(LocalDateTime.now())
