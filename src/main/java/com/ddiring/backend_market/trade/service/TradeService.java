@@ -18,10 +18,10 @@ import com.ddiring.backend_market.trade.entity.Trade;
 import com.ddiring.backend_market.trade.repository.HistoryRepository;
 import com.ddiring.backend_market.trade.repository.OrdersRepository;
 import com.ddiring.backend_market.trade.repository.TradeRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -141,7 +141,9 @@ public class TradeService {
                 }
             }
             else {
-                log.info("거래 체결 실패. 구매 주문 ID: {}, 판매 주문 ID: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()));
+                log.info("바보임?");
+//                log.info("거래 체결 실패. 구매 주문 ID: {}, 판매 주문 ID: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()));
+
             }
         }
     }
@@ -256,26 +258,26 @@ public class TradeService {
         Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrdersId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
-        if (order.getOrdersType() == 1) {
             MarketRefundDto marketRefundDto = new MarketRefundDto();
             marketRefundDto.setOrdersId(orderDeleteDto.getOrdersId());
             marketRefundDto.setProjectId(order.getProjectId());
             marketRefundDto.setRefundPrice(order.getPurchasePrice());
-
+            marketRefundDto.setRefundAmount(order.getTokenQuantity());
+            marketRefundDto.setOrderType(order.getOrdersType());
             assetClient.marketRefund(userSeq, role, marketRefundDto);
-        }
-        ordersRepository.delete(order);
+
+            ordersRepository.delete(order);
         log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrdersId(), order.getProjectId(), orderDeleteDto.getOrdersId());
 
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<OrderHistoryResponseDto> getTradeHistory(String projectId) {
         if (projectId == null) {
             throw new BadParameter("번호 내놔");
         }
         List<Trade> trades = tradeRepository.findTop20ByProjectIdOrderByTradedAtDesc(projectId);
-        if (trades == null || trades.isEmpty()) {
+        if (trades.isEmpty()) {
             return List.of();
         }
         return trades.stream()
@@ -283,7 +285,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<OrdersResponseDto> getPurchaseOrders(String projectId) {
         if (projectId == null) {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
@@ -296,7 +298,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<OrdersResponseDto> getSellOrders(String projectId) {
         if (projectId == null) {
             throw new BadParameter("프로젝트 번호가 필요합니다.");
@@ -309,7 +311,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<OrderUserHistory> getUserOrder(String userSeq, String projectId) {
         if (userSeq == null || projectId == null) {
             throw new BadParameter("이제 그만");
@@ -321,7 +323,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<TradeHistoryResponseDto> getTradeHistory(String userSeq, String projectId) {
         if (userSeq == null || projectId == null) {
             throw new BadParameter("이제 그만");
@@ -333,7 +335,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<TradeHistoryResponseDto> getTradeAllHistory(String userSeq) {
         if (userSeq == null) {
             throw new BadParameter("이제 그만");
@@ -345,7 +347,7 @@ public class TradeService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<TradeHistoryResponseDto> getAdminHistory() {
         List<History> tradeAllHistory = historyRepository.findAllByOrderByTradedAtDesc();
 
@@ -369,7 +371,7 @@ public class TradeService {
         return VerifyTradeDto.Response.builder().result(isExisted).build();
     }
 
-    @Transactional
+    @Transactional(readOnly = true)
     public TradeInfoResponseDto getTradeInfoById(Long tradeId) {
         Trade trade = tradeRepository.findByTradeId(tradeId)
                 .orElseThrow(() -> new IllegalArgumentException("거래 정보를 찾을 수 없습니다: " + tradeId));
