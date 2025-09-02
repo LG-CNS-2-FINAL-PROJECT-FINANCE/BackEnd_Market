@@ -9,8 +9,10 @@ import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
+import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
+import com.ddiring.backend_market.investment.dto.VerifyInvestmentDto;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -381,6 +383,28 @@ public class InvestmentService {
                     });
             investmentRepository.saveAll(allocRequested);
             return false;
+        }
+    }
+
+    public VerifyInvestmentDto.Response verifyInvestments(VerifyInvestmentDto.Request requestDto) {
+        try {
+            List<Integer> investmentIdList = requestDto.getInvestments().stream().map(investment -> investment.getInvestmentId().intValue()).toList();
+
+            Set<Integer> existedIdSet = investmentRepository.findByInvestmentSeqIn(investmentIdList).stream()
+                    .map(Investment::getInvestmentSeq)
+                    .collect(Collectors.toSet());
+
+            VerifyInvestmentDto.Response response = VerifyInvestmentDto.Response.builder().result(new ArrayList<>()).build();
+            investmentIdList.forEach(investmentId -> {
+                response.getResult().add(existedIdSet.contains(investmentId));
+            });
+
+            log.info("[Investment] 검증 결과 : {}", response.getResult());
+
+            return response;
+        } catch (Exception e) {
+            log.error("[Investment] 체인링크 검증 중 오류 발생 : {}", e.getMessage());
+            throw new RuntimeException("[Investment] 체인링크 검증 중 오류 발생 : " + e.getMessage());
         }
     }
 

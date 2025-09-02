@@ -1,6 +1,8 @@
 package com.ddiring.backend_market.investment.controller;
 
 import com.ddiring.backend_market.api.product.ProductDTO;
+import com.ddiring.backend_market.common.dto.ApiResponseDto;
+import com.ddiring.backend_market.investment.dto.VerifyInvestmentDto;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
@@ -10,7 +12,9 @@ import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -73,5 +77,12 @@ public class InvestmentController {
     public ResponseEntity<String> triggerAllocation(@PathVariable String projectId) {
         boolean sent = investmentService.triggerAllocationIfEligible(projectId);
         return ResponseEntity.ok(sent ? "REQUEST_SENT" : "NOT_ELIGIBLE");
+    }
+
+    @PostMapping("/verify")
+    public ApiResponseDto<?> verifyInvestmentChainlink(@RequestBody VerifyInvestmentDto.Request requestDto) {
+        VerifyInvestmentDto.Response response = investmentService.verifyInvestments(requestDto);
+
+        return ApiResponseDto.createOk(response);
     }
 }
