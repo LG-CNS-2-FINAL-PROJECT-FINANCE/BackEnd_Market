@@ -41,26 +41,43 @@ public class KafkaInvestmentEventsListener {
             log.info("[INVEST] 이벤트 수신: {}", eventType);
             switch (eventType) {
                 case "INVESTMENT.REQUEST.ACCEPTED": {
-                    InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap.get("payload"),
+                    // 전체 메시지를 이벤트 클래스로 매핑 (payload 필드 포함)
+                    InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap,
                             InvestRequestAcceptedEvent.class);
+                    if (accepted.getPayload() == null) {
+                        log.warn("ACCEPTED 이벤트 payload 누락: {}", message);
+                        return;
+                    }
                     handleRequestAccepted(accepted);
                     break;
                 }
                 case "INVESTMENT.REQUEST.REJECTED": {
-                    InvestRequestRejectedEvent rejected = objectMapper.convertValue(messageMap.get("payload"),
+                    InvestRequestRejectedEvent rejected = objectMapper.convertValue(messageMap,
                             InvestRequestRejectedEvent.class);
+                    if (rejected.getPayload() == null) {
+                        log.warn("REJECTED 이벤트 payload 누락: {}", message);
+                        return;
+                    }
                     handleRequestRejected(rejected);
                     break;
                 }
                 case "INVESTMENT.SUCCEEDED": {
-                    InvestSucceededEvent succeeded = objectMapper.convertValue(messageMap.get("payload"),
+                    InvestSucceededEvent succeeded = objectMapper.convertValue(messageMap,
                             InvestSucceededEvent.class);
+                    if (succeeded.getPayload() == null) {
+                        log.warn("SUCCEEDED 이벤트 payload 누락: {}", message);
+                        return;
+                    }
                     handleInvestSucceeded(succeeded);
                     break;
                 }
                 case "INVESTMENT.FAILED": {
-                    InvestFailedEvent failed = objectMapper.convertValue(messageMap.get("payload"),
+                    InvestFailedEvent failed = objectMapper.convertValue(messageMap,
                             InvestFailedEvent.class);
+                    if (failed.getPayload() == null) {
+                        log.warn("FAILED 이벤트 payload 누락: {}", message);
+                        return;
+                    }
                     handleInvestFailed(failed);
                     break;
                 }

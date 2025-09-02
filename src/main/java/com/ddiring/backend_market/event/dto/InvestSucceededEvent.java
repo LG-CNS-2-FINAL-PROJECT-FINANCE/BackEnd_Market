@@ -28,12 +28,15 @@ public class InvestSucceededEvent {
     @AllArgsConstructor
     public static class InvestSucceededPayload {
         private Long investmentId;
+        private String projectId;
         private String status;
         private String investorAddress;
+        private Long price;
         private Long tokenAmount;
     }
 
-    public static InvestSucceededEvent of(Long investmentId, String investorAddress, Long tokenAmount) {
+    public static InvestSucceededEvent of(Long investmentId, String projectId, String investorAddress,
+            Long price, Long tokenAmount) {
         String uuid = java.util.UUID.randomUUID().toString();
         String eventType = PREFIX + ".SUCCEEDED";
 
@@ -43,16 +46,19 @@ public class InvestSucceededEvent {
                 .timestamp(Instant.now())
                 .payload(InvestSucceededPayload.builder()
                         .investmentId(investmentId)
+                        .projectId(projectId)
                         .status("SUCCEEDED")
                         .investorAddress(investorAddress)
+                        .price(price)
                         .tokenAmount(tokenAmount)
                         .build())
                 .build();
     }
 
-    public static InvestSucceededEvent of(Integer investmentSeq, String investorAddress, Integer tokenQuantity) {
+    public static InvestSucceededEvent of(Integer investmentSeq, String projectId, String investorAddress, Long price,
+            Integer tokenQuantity) {
         Long id = investmentSeq == null ? null : investmentSeq.longValue();
         Long tokenAmount = tokenQuantity == null ? null : tokenQuantity.longValue();
-        return of(id, investorAddress, tokenAmount);
+        return of(id, projectId, investorAddress, price, tokenAmount);
     }
 }
