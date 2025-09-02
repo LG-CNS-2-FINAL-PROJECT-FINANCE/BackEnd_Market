@@ -41,7 +41,6 @@ public class KafkaInvestmentEventsListener {
             log.info("[INVEST] 이벤트 수신: {}", eventType);
             switch (eventType) {
                 case "INVESTMENT.REQUEST.ACCEPTED": {
-                    // 전체 메시지를 이벤트 클래스로 매핑 (payload 필드 포함)
                     InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap,
                             InvestRequestAcceptedEvent.class);
                     if (accepted.getPayload() == null) {
