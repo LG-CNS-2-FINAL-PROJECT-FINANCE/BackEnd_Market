@@ -49,7 +49,7 @@ public class TradeService {
             if (tradePossible) {
                 int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
                 int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
-                log.info("거래 체결 시작. 신규 주문 ID: {}, 기존 주문 ID: {}", order.getOrdersId(), oldOrder.getOrdersId());
+                log.info("거래 체결 시작. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
                 Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
                 Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
                 log.info("구매 주문 정보: userSeq={}, ordersId={}", purchaseOrderForLog.getUserSeq(),
@@ -89,16 +89,7 @@ public class TradeService {
                         .tokenAmount((long) tradedQuantity)
                         .pricePerToken((long) (tradePrice / tradedQuantity))
                         .build();
-                log.info(
-                        "Trade Info: tradeId={}, projectId={}, buyInfo=[buyId={},  buyerAddress={}], sellInfo=[sellId={}, sellerAddress={}], tokenAmount={}, price={}",
-                        tradeDto.getTradeId(),
-                        tradeDto.getProjectId(),
-                        tradeDto.getBuyInfo().getBuyId(),
-                        tradeDto.getBuyInfo().getBuyerAddress(),
-                        tradeDto.getSellInfo().getSellId(),
-                        tradeDto.getSellInfo().getSellerAddress(),
-                        tradeDto.getTokenAmount(),
-                        tradeDto.getPricePerToken());
+
 
                 // blockchainClient.requestTradeTokenMove(tradeDto);
 
@@ -106,6 +97,7 @@ public class TradeService {
                 titleRequestDto.setProjectId(order.getProjectId());
                 String title = assetClient.getMarketTitle(titleRequestDto);
 
+                log.info("거래 체결 완료. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
                 History purchaseHistory = History.builder()
                         .title(title)
                         .projectId(order.getProjectId())
@@ -147,6 +139,9 @@ public class TradeService {
                     break;
                 }
             }
+            else {
+                log.info("거래 체결 실패. 구매 주문 ID: {}, 판매 주문 ID: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()));
+            }
         }
     }
 
@@ -187,6 +182,7 @@ public class TradeService {
 
             order.setWalletAddress(walletAddress);
             ordersRepository.save(order);
+            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
 
         } catch (Exception e) {
             log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
@@ -235,6 +231,7 @@ public class TradeService {
         marketBuyDto.setTransType(1);
 
         try {
+            log.info("구매 주문 접수: 구매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
             assetClient.marketBuy(userSeq, role, marketBuyDto);
             log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
         } catch (Exception e) {
@@ -267,6 +264,8 @@ public class TradeService {
             assetClient.marketRefund(userSeq, role, marketRefundDto);
         }
         ordersRepository.delete(order);
+        log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrdersId(), order.getProjectId(), orderDeleteDto.getOrdersId());
+
     }
 
     @Transactional
