@@ -11,4 +11,6 @@ public class MarketRefundDto {
     private Integer ordersId;
     private String projectId;
     private Integer refundPrice;
+    private Integer refundAmount;
+    private Integer orderType;
 }
