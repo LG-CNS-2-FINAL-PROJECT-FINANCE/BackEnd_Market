@@ -5,6 +5,8 @@ import com.ddiring.backend_market.api.product.ProductDTO;
 import com.ddiring.backend_market.investment.service.InvestmentService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -28,7 +30,7 @@ public class AllocationScheduler {
         List<ProductDTO> products;
         try {
             products = Optional.ofNullable(productClient.getAllProduct())
-                    .map(r -> r.getData())
+                    .map(ResponseEntity::getBody)
                     .orElse(List.of());
         } catch (Exception e) {
             log.error("[AllocationScheduler] 상품 전체 조회 실패 reason={}", e.getMessage());

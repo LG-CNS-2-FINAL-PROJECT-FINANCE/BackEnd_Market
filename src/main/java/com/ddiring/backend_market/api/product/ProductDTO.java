@@ -16,7 +16,7 @@ public class ProductDTO {
     private String title; // 제목
     private String content; // 본문
     private String summary; // 요약
-    private Integer minInvestment;
+    private Integer minInvestment; // 최소 투자 금액
     private String account; // 모집 계좌
     private Integer goalAmount; // 목표금액
     private Integer amount; // 모금액

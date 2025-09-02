@@ -22,6 +22,8 @@ import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,9 +47,14 @@ public class InvestmentService {
 
     // 투자 상품 전체 조회
     public List<ProductDTO> getAllProduct() {
-        return Optional.ofNullable(productClient.getAllProduct())
-                .map(r -> r.getData())
-                .orElse(List.of());
+        try {
+            return Optional.ofNullable(productClient.getAllProduct())
+                    .map(ResponseEntity::getBody)
+                    .orElse(List.of());
+        } catch (Exception e) {
+            log.error("[PRODUCT] 전체 조회 실패: {}", e.getMessage());
+            return List.of();
+        }
     }
 
     // 개인 투자 내역 조회
@@ -61,7 +68,7 @@ public class InvestmentService {
         List<ProductDTO> allProducts;
         try {
             allProducts = Optional.ofNullable(productClient.getAllProduct())
-                    .map(r -> r.getData())
+                    .map(ResponseEntity::getBody)
                     .orElse(List.of());
         } catch (Exception e) {
             log.warn("상품 불러오기 실패. reason={}", e.getMessage());
@@ -103,8 +110,8 @@ public class InvestmentService {
         List<Investment> myInvestments = investmentRepository.findByUserSeqAndProjectId(userSeq, projectId);
 
         return myInvestments.stream()
-                .filter(inv -> inv.getInvStatus() == Investment.InvestmentStatus.FUNDING
-                        || inv.getInvStatus() == Investment.InvestmentStatus.PENDING)
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
+                        || inv.getInvStatus() == InvestmentStatus.PENDING)
                 .map(investment -> MyInvestmentByProductResponse.builder()
                         .investmentSeq(investment.getInvestmentSeq())
                         .investedPrice(investment.getInvestedPrice())
@@ -256,7 +263,7 @@ public class InvestmentService {
     @Transactional
     public boolean triggerAllocationIfEligible(String projectId) {
         ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
-                .map(r -> r.getData())
+                .map(org.springframework.http.ResponseEntity::getBody)
                 .orElse(null);
         if (product == null) {
             log.warn("프로젝트 없음 projectId={}", projectId);
@@ -372,7 +379,7 @@ public class InvestmentService {
     @Transactional(readOnly = false)
     public ApiResponseDto<Integer> requestWithdrawal(String projectId, String userSeq, String role) {
         ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
-                .map(r -> r.getData())
+                .map(ResponseEntity::getBody)
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
         if (!Objects.equals(product.getUserSeq(), userSeq)) {
@@ -400,7 +407,7 @@ public class InvestmentService {
         }
 
         MarketDto marketDto = MarketDto.builder()
-                .investmentSeq(0) // 출금 요청은 0
+                .investmentSeq(0) // TODO: 출금 요청을 따로 저장하지 않음
                 .projectId(projectId)
                 .userSeq(product.getUserSeq())
                 .price(totalAmount)
@@ -449,11 +456,10 @@ public class InvestmentService {
                 log.error("[BUY] 상품 서비스 응답 null projectId={}", projectId);
                 throw new IllegalStateException("상품 서비스 응답이 없습니다.");
             }
-            ProductDTO dto = resp.getData();
+            ProductDTO dto = resp.getBody();
             if (dto == null) {
-                log.error("[BUY] 상품 데이터 null projectId={} rawCode={} rawMsg={}", projectId, resp.getCode(),
-                        resp.getMessage());
-                throw new IllegalStateException("상품 데이터를 가져올 수 없습니다. code=" + resp.getCode());
+                log.error("[BUY] 상품 데이터 null projectId={} status={} ", projectId, resp.getStatusCode());
+                throw new IllegalStateException("상품 데이터를 가져올 수 없습니다. status=" + resp.getStatusCode());
             }
             return dto;
         } catch (IllegalStateException e) {
