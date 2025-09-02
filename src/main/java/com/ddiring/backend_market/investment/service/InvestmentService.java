@@ -154,17 +154,38 @@ public class InvestmentService {
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(String projectId, String userSeq, String role, InvestmentRequest request) {
+        // 1. 메소드 시작 및 초기 파라미터 확인
+        log.info(">>>>> 투자 시작: projectId={}, userSeq={}, role={}", projectId, userSeq, role);
+        log.debug(">>>>> 요청 데이터(body): {}", request);
+
+        // null 가능성이 있는 파라미터들을 명시적으로 검사
+        if (projectId == null || userSeq == null || request == null || request.getInvestedPrice() == null) {
+            log.error("!!!!! 투자 요청 필수 파라미터 누락: projectId={}, userSeq={}, request={}", projectId, userSeq, request);
+            throw new IllegalArgumentException("투자 요청 정보가 올바르지 않습니다.");
+        }
+
+        // 2. 외부 API(productClient) 호출 전후 데이터 확인
+        log.debug("상품 정보 조회 시작: projectId={}", projectId);
         ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(r -> r.getData())
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
+        log.debug("상품 정보 조회 완료: product={}", product);
+
+        // 조회된 ProductDTO 내부 필드가 null인지 확인
+        if (product.getUserSeq() == null || product.getGoalAmount() == null || product.getAmount() == null || product.getMinInvestment() == null) {
+            log.error("!!!!! 상품 정보에 필수 데이터가 누락되었습니다: product={}", product);
+            throw new IllegalStateException("조회된 상품 정보가 올바르지 않습니다.");
+        }
 
         if (product.getUserSeq().equals(userSeq)) {
             throw new IllegalStateException("자신이 등록한 상품에는 투자할 수 없습니다.");
         }
 
+        // 3. 투자 금액 계산 전 변수 값 확인
         Integer maxInvestment = product.getGoalAmount() - product.getAmount();
         Integer minIvestment = product.getMinInvestment();
         Integer investedPrice = request.getInvestedPrice();
+        log.debug("투자 금액 검증 시작: maxInvestment={}, minInvestment={}, investedPrice={}", maxInvestment, minIvestment, investedPrice);
 
         if (investedPrice < minIvestment) {
             throw new IllegalArgumentException("최소 투자 금액 미달");
@@ -175,6 +196,7 @@ public class InvestmentService {
 
         int calcToken = investedPrice / minIvestment;
 
+        // 4. DB 저장(Investment) 전 엔티티 데이터 확인
         Investment investment = Investment.builder()
                 .userSeq(userSeq)
                 .projectId(projectId)
@@ -183,36 +205,54 @@ public class InvestmentService {
                 .investedAt(LocalDateTime.now())
                 .invStatus(InvestmentStatus.PENDING)
                 .build();
+        log.debug("Investment 엔티티 생성: {}", investment);
 
         Investment saved = investmentRepository.save(investment);
+        log.info("Investment 저장 완료 (PENDING 상태): investmentSeq={}", saved.getInvestmentSeq());
 
+        // 5. 외부 API(assetClient) 호출 전 DTO 확인
         MarketBuyDto marketBuyDto = new MarketBuyDto();
-        marketBuyDto.setOrdersId(investment.getInvestmentSeq());
-        marketBuyDto.setProjectId(investment.getProjectId());
-        marketBuyDto.setBuyPrice(investment.getInvestedPrice());
+        marketBuyDto.setOrdersId(saved.getInvestmentSeq()); // 저장 후 생성된 investmentSeq 사용
+        marketBuyDto.setProjectId(saved.getProjectId());
+        marketBuyDto.setBuyPrice(saved.getInvestedPrice());
         marketBuyDto.setTransType(0);
+        log.debug("MarketBuyDto 생성 (to assetClient): {}", marketBuyDto);
 
         try {
             assetClient.marketBuy(userSeq, role, marketBuyDto);
+            log.info("assetClient.marketBuy 호출 성공");
+
             marketRepository.save(Market.builder()
-                    .projectId(investment.getProjectId())
+                    .projectId(saved.getProjectId())
                     .userSeq(userSeq)
-                    .transSeq(investment.getInvestmentSeq())
+                    .transSeq(saved.getInvestmentSeq())
                     .transType(0)
                     .amount(calcToken)
                     .build());
+            log.info("Market 저장 완료");
+
         } catch (Exception e) {
+            // 6. 예외 발생 시 롤백 로직 확인
+            log.error("!!!!! assetClient.marketBuy 호출 중 예외 발생. 투자 취소를 시작합니다.", e); // 예외 스택 트레이스 포함
             CancelInvestmentRequest cancelInvestmentRequest = new CancelInvestmentRequest();
-            cancelInvestmentRequest.setInvestmentSeq(investment.getInvestmentSeq());
-            cancelInvestmentRequest.setProjectId(investment.getProjectId());
-            cancelInvestmentRequest.setInvestedPrice(investment.getInvestedPrice());
+            cancelInvestmentRequest.setInvestmentSeq(saved.getInvestmentSeq());
+            cancelInvestmentRequest.setProjectId(saved.getProjectId());
+            cancelInvestmentRequest.setInvestedPrice(saved.getInvestedPrice());
+            log.debug("투자 취소 요청 데이터: {}", cancelInvestmentRequest);
+
+            // 보상 트랜잭션 실행
             cancelInvestment(userSeq, role, cancelInvestmentRequest);
+
+            // 중요: 예외를 다시 던져서 @Transactional에 의한 전체 롤백을 유도
+            throw new RuntimeException("자산 처리 중 오류가 발생하여 투자를 롤백합니다.", e);
         }
 
-        // 입금 성공 => 펀딩 진행 상태로 변경
+        // 7. 최종 상태 변경 및 반환 전 확인
+        log.debug("투자 상태 변경 시도: {} -> {}", saved.getInvStatus(), InvestmentStatus.FUNDING);
         saved.setInvStatus(InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
-        investmentRepository.save(saved);
+        investmentRepository.save(saved); // 상태 변경 후 다시 저장
+        log.info(">>>>> 투자 최종 성공: investmentSeq={}", saved.getInvestmentSeq());
         return toResponse(saved);
     }
 
