@@ -14,6 +14,6 @@ public interface TradeRepository extends JpaRepository<Trade, Integer> {
     List<Trade> findTop20ByProjectIdOrderByTradedAtDesc(String projectId);
     Optional<Trade> findByTradeId(Long tradeId);
 
-    Boolean existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(Long tradeId, Integer purchaseId, Integer sellId, Integer tokenQuantity);
+    Boolean existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(Long tradeId, String purchaseId, String sellId, Integer tokenQuantity);
 
 }
