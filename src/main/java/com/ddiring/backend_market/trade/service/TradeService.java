@@ -173,7 +173,7 @@ public class TradeService {
         marketSellDto.setOrdersId(savedOrder.getOrdersId());
         marketSellDto.setProjectId(ordersRequestDto.getProjectId());
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
-        marketSellDto.setTransType(1);
+        marketSellDto.setTransType(2);
         try {
             ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
             String walletAddress = response.getData();
