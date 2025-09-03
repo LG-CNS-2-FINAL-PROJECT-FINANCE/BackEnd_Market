@@ -252,6 +252,7 @@ public class InvestmentService {
         investmentRepository.save(saved);
 
         log.info("Investment successful: userSeq={}", userSeq);
+        log.info("projectId: {}", projectId);
         MarketTokenDto marketTokenDto = MarketTokenDto.builder()
                 .perPrice(minIvestment)
                 .tokenQuantity(calcToken)
