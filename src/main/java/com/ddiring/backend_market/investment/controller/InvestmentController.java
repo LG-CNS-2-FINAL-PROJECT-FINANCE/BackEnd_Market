@@ -69,7 +69,7 @@ public class InvestmentController {
             @RequestBody CancelInvestmentRequest request) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
-        InvestmentResponse response = investmentService.cancelInvestment(userSeq, role, investmentSeq, request);
+        InvestmentResponse response = investmentService.cancelInvestment(userSeq, role, request);
         return ResponseEntity.ok(response);
     }
 

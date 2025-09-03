@@ -243,7 +243,7 @@ public class InvestmentService {
             cancelInvestmentRequest.setInvestmentSeq(investment.getInvestmentSeq());
             cancelInvestmentRequest.setProjectId(investment.getProjectId());
             cancelInvestmentRequest.setInvestedPrice(investment.getInvestedPrice());
-            cancelInvestment(userSeq, role, investment.getInvestmentSeq(), cancelInvestmentRequest);
+            cancelInvestment(userSeq, role, cancelInvestmentRequest);
         }
 
         // 입금 성공 => 펀딩 진행 상태로 변경
@@ -267,10 +267,9 @@ public class InvestmentService {
 
     // 주문 취소
     @Transactional
-    public InvestmentResponse cancelInvestment(String userSeq, String role, Integer investmentSeq,
-            CancelInvestmentRequest request) {
-        Investment investment = investmentRepository.findById(investmentSeq)
-                .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + investmentSeq));
+    public InvestmentResponse cancelInvestment(String userSeq, String role, CancelInvestmentRequest request) {
+        Investment investment = investmentRepository.findById(request.getInvestmentSeq())
+                .orElseThrow(() -> new IllegalArgumentException("없는 주문입니다: " + request.getInvestmentSeq()));
 
         // 이미 취소된 경우 그대로 반환
         if (investment.isCancelled()) {
@@ -298,7 +297,7 @@ public class InvestmentService {
             marketRefundDto.setRefundPrice(investment.getInvestedPrice());
 
             try {
-                assetClient.marketRefund(marketRefundDto);
+                assetClient.marketRefund(userSeq, role, marketRefundDto);
             } catch (Exception e) {
                 throw new IllegalStateException("환불 요청 실패");
             }
