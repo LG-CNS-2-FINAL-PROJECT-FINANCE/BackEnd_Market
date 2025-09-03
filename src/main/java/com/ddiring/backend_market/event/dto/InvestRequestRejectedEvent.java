@@ -9,7 +9,7 @@ import java.time.Instant;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestRequestRejectedEvent {
-    public static final String PREFIX = "INVESTMENT.REQUEST";
+    public static final String TOPIC = "INVESTMENT";
 
     // --- Header ---
     private String eventId;
@@ -25,13 +25,16 @@ public class InvestRequestRejectedEvent {
     @AllArgsConstructor
     public static class InvestRequestRejectedPayload {
         private String projectId;
+        private Long investmentId;
+        private String investorAddress;
+        private Long tokenAmount;
         private String status;
         private String reason;
     }
 
-    public static InvestRequestRejectedEvent of(String projectId, String reason) {
+    public static InvestRequestRejectedEvent of(String projectId, Long investmentId, String investorAddress, Long tokenAmount, String reason) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = PREFIX + ".REJECTED";
+        String eventType = TOPIC + ".REQUEST.REJECTED";
 
         return InvestRequestRejectedEvent.builder()
                 .eventId(uuid)
@@ -39,9 +42,13 @@ public class InvestRequestRejectedEvent {
                 .timestamp(Instant.now())
                 .payload(InvestRequestRejectedPayload.builder()
                         .projectId(projectId)
+                        .investmentId(investmentId)
+                        .investorAddress(investorAddress)
+                        .tokenAmount(tokenAmount)
                         .status("REJECTED")
                         .reason(reason)
-                        .build())
+                        .build()
+                )
                 .build();
     }
 }

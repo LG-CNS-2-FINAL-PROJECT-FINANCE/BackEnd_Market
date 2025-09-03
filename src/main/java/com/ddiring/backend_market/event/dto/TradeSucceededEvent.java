@@ -26,16 +26,15 @@ public class TradeSucceededEvent {
     @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class TradeSucceededPayload {
+        private String projectId;
         private Long tradeId;
         private String status;
         private String buyerAddress;
-        private Long buyerTokenAmount;
         private String sellerAddress;
-        private Long sellerTokenAmount;
+        private Long tradeAmount;
     }
 
-    public static TradeSucceededEvent of(Long tradeId, String buyerAddress, Long buyerTokenAmount,
-                                         String sellerAddress, Long sellerTokenAmount) {
+    public static TradeSucceededEvent of(String projectId, Long tradeId, String buyerAddress, String sellerAddress, Long tradeAmount) {
         String uuid = java.util.UUID.randomUUID().toString();
         String eventType = TOPIC + ".SUCCEEDED";
 
@@ -44,12 +43,12 @@ public class TradeSucceededEvent {
                 .eventType(eventType)
                 .timestamp(Instant.now())
                 .payload(TradeSucceededPayload.builder()
+                        .projectId(projectId)
                         .tradeId(tradeId)
                         .status("SUCCEEDED")
                         .buyerAddress(buyerAddress)
-                        .buyerTokenAmount(buyerTokenAmount)
                         .sellerAddress(sellerAddress)
-                        .sellerTokenAmount(sellerTokenAmount)
+                        .tradeAmount(tradeAmount)
                         .build()
                 )
                 .build();

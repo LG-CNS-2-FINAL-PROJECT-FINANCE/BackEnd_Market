@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class TradeRequestAcceptedEvent {
-    public static final String TOPIC = "TRADE.REQUEST";
+    public static final String TOPIC = "TRADE";
 
     private String eventId;
     private String eventType;
@@ -26,21 +26,29 @@ public class TradeRequestAcceptedEvent {
     @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class TradeRequestAcceptedPayload {
+        private String projectId;
         private Long tradeId;
+        private String buyerAddress;
+        private String sellerAddress;
+        private Long tradeAmount;
         private String status;
     }
 
-    public static TradeRequestAcceptedEvent of(Long tradeId) {
+    public static TradeRequestAcceptedEvent of(String projectId, Long tradeId, String buyerAddress, String sellerAddress, Long tradeAmount) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = TOPIC + ".ACCEPTED";
+        String eventType = TOPIC + ".REQUEST.ACCEPTED";
 
         return TradeRequestAcceptedEvent.builder()
                 .eventId(uuid)
                 .eventType(eventType)
                 .timestamp(Instant.now())
                 .payload(TradeRequestAcceptedPayload.builder()
+                        .projectId(projectId)
                         .tradeId(tradeId)
                         .status("ACCEPTED")
+                        .buyerAddress(buyerAddress)
+                        .sellerAddress(sellerAddress)
+                        .tradeAmount(tradeAmount)
                         .build()
                 )
                 .build();

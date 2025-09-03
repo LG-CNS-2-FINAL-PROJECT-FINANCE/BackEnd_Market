@@ -26,8 +26,6 @@ import java.util.Map;
 public class KafkaTradeEventsListener {
 
     private final TradeRepository tradeRepository;
-    private final OrdersRepository ordersRepository;
-    private final AssetClient  assetClient;
     private final ObjectMapper objectMapper; // JSON 파싱을 위해 ObjectMapper 주입
 
     @KafkaListener(topics = "TRADE", groupId = "market-service-group")

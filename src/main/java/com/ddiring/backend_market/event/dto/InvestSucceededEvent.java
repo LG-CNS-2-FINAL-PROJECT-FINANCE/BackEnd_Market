@@ -6,13 +6,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Builder
 @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
 @AllArgsConstructor
 public class InvestSucceededEvent {
-    public static final String PREFIX = "INVESTMENT";
+    public static final String TOPIC = "INVESTMENT";
 
     // --- Header ---
     private String eventId;
@@ -27,38 +28,31 @@ public class InvestSucceededEvent {
     @NoArgsConstructor(access = lombok.AccessLevel.PROTECTED)
     @AllArgsConstructor
     public static class InvestSucceededPayload {
-        private Long investmentId;
         private String projectId;
+        private Long investmentId;
         private String status;
         private String investorAddress;
-        private Long price;
         private Long tokenAmount;
+        private Long initialAmountPerToken;
     }
 
-    public static InvestSucceededEvent of(Long investmentId, String projectId, String investorAddress,
-            Long price, Long tokenAmount) {
+    public static InvestSucceededEvent of(String projectId, Long investmentId, String investorAddress, Long tokenAmount, Long initialAmountPerToken) {
         String uuid = java.util.UUID.randomUUID().toString();
-        String eventType = PREFIX + ".SUCCEEDED";
+        String eventType = TOPIC + ".SUCCEEDED";
 
         return InvestSucceededEvent.builder()
                 .eventId(uuid)
                 .eventType(eventType)
                 .timestamp(Instant.now())
                 .payload(InvestSucceededPayload.builder()
-                        .investmentId(investmentId)
                         .projectId(projectId)
+                        .investmentId(investmentId)
                         .status("SUCCEEDED")
                         .investorAddress(investorAddress)
-                        .price(price)
                         .tokenAmount(tokenAmount)
-                        .build())
+                        .initialAmountPerToken(initialAmountPerToken)
+                        .build()
+                )
                 .build();
-    }
-
-    public static InvestSucceededEvent of(Integer investmentSeq, String projectId, String investorAddress, Long price,
-            Integer tokenQuantity) {
-        Long id = investmentSeq == null ? null : investmentSeq.longValue();
-        Long tokenAmount = tokenQuantity == null ? null : tokenQuantity.longValue();
-        return of(id, projectId, investorAddress, price, tokenAmount);
     }
 }
