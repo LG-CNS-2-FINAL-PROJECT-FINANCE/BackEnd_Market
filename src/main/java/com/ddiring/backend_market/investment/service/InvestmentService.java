@@ -255,7 +255,7 @@ public class InvestmentService {
                 .tokenQuantity(calcToken)
                 .build();
 
-        assetClient.getToken(projectId, marketTokenDto);
+        assetClient.getToken(projectId, userSeq, marketTokenDto);
 
         return toResponse(saved);
     }
