@@ -7,6 +7,8 @@ import com.ddiring.backend_market.api.blockchain.BlockchainClient;
 import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfoDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfoDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
+import com.ddiring.backend_market.api.user.SignDto;
+import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
@@ -35,6 +37,7 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
+    private final UserClient userClient;
     private final BlockchainClient blockchainClient;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
@@ -148,7 +151,7 @@ public class TradeService {
     }
 
     @Transactional
-    public OrderDeleteDto sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public void sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
                 || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
@@ -156,6 +159,11 @@ public class TradeService {
         if (ordersRequestDto.getOrdersType() == 1) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
+
+        ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
+        String walletAddress = response.getData();
+        log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
+
         Orders order = Orders.builder()
                 .userSeq(userSeq)
                 .projectId(ordersRequestDto.getProjectId())
@@ -163,6 +171,7 @@ public class TradeService {
                 .ordersType(ordersRequestDto.getOrdersType())
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
+                .walletAddress(walletAddress)
                 .registedAt(LocalDateTime.now())
                 .build();
 
@@ -176,27 +185,29 @@ public class TradeService {
         marketSellDto.setProjectId(ordersRequestDto.getProjectId());
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
         marketSellDto.setTransType(2);
-        try {
-            ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
-            String walletAddress = response.getData();
-            log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-            assetClient.marketSell(userSeq, marketSellDto);
 
-            order.setWalletAddress(walletAddress);
+        SignDto signDto = new SignDto();
+        signDto.setProjectId(ordersRequestDto.getProjectId());
+        signDto.setUserAddress(walletAddress);
+        signDto.setTokenQuantity(ordersRequestDto.getTokenQuantity());
+
+        log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
+        try {
+
+            assetClient.marketSell(userSeq, marketSellDto);
+            userClient.sign(signDto);
             ordersRepository.save(order);
 
             logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
 //            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
 
         } catch (Exception e) {
-            log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
         }
         List<Orders> purchaseOrder = ordersRepository
                 .findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
         matchAndExecuteTrade(savedOrder, purchaseOrder);
 
-        return orderDeleteDto;
     }
 
     @Transactional
