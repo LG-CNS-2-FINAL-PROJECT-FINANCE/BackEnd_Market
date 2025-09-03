@@ -10,7 +10,6 @@ import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
-import com.ddiring.backend_market.event.dto.*;
 import com.ddiring.backend_market.trade.dto.*;
 import com.ddiring.backend_market.trade.entity.History;
 import com.ddiring.backend_market.trade.entity.Orders;
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -200,7 +198,7 @@ public class TradeService {
     }
 
     @Transactional
-    public OrderDeleteDto buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
                 || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
@@ -230,7 +228,7 @@ public class TradeService {
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
         marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
-        marketBuyDto.setBuyPrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity());
+        marketBuyDto.setBuyPrice((int) (ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity() + (ordersRequestDto.getTokenQuantity() * ordersRequestDto.getTokenQuantity() * 0.03)));
         marketBuyDto.setTransType(1);
 
         try {
@@ -246,7 +244,6 @@ public class TradeService {
                 .findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
         matchAndExecuteTrade(savedOrder, sellOrder);
 
-        return orderDeleteDto;
     }
 
     @Transactional
