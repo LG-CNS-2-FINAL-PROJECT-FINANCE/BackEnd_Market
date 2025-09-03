@@ -250,13 +250,15 @@ public class InvestmentService {
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
 
+        log.info("Investment successful: userSeq={}", userSeq);
         MarketTokenDto marketTokenDto = MarketTokenDto.builder()
                 .userSeq(userSeq)
                 .perPrice(minIvestment)
                 .tokenQuantity(calcToken)
                 .projectId(projectId).build();
 
-        assetClient.getToken(marketTokenDto);
+        log.info("MarketTokenDto: {}", marketTokenDto);
+        assetClient.getToken(projectId, marketTokenDto);
 
         return toResponse(saved);
     }
