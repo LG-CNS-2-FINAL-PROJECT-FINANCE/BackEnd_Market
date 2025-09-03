@@ -19,6 +19,7 @@ import com.ddiring.backend_market.trade.repository.OrdersRepository;
 import com.ddiring.backend_market.trade.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -183,13 +184,14 @@ public class TradeService {
 
             order.setWalletAddress(walletAddress);
             ordersRepository.save(order);
-            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
+
+            logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
+//            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
 
         } catch (Exception e) {
             log.error("Asset 서비스 지갑 주소 조회 실패: {}", e.getMessage());
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
         }
-
         List<Orders> purchaseOrder = ordersRepository
                 .findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
         matchAndExecuteTrade(savedOrder, purchaseOrder);
@@ -232,9 +234,10 @@ public class TradeService {
         marketBuyDto.setTransType(1);
 
         try {
-            log.info("구매 주문 접수: 구매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
+//            log.info("구매 주문 접수: 구매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
             assetClient.marketBuy(userSeq, role, marketBuyDto);
-            log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
+            logSales(userSeq, true, savedOrder.getOrdersId(), ordersRequestDto);
+//            log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
         } catch (Exception e) {
             log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
@@ -381,5 +384,26 @@ public class TradeService {
                 .buyerUserSeq(trade.getPurchaseId())   // 구매자 userSeq
                 .sellerUserSeq(trade.getSellId()) // 판매자 userSeq
                 .build();
+    }
+
+    public void logSales(String userSeq, Boolean isPurchaseFlag, Integer orderId, OrdersRequestDto requestDto) {
+        try {
+            MDC.put("userSeq", userSeq);
+            MDC.put("orderId", orderId.toString());
+            MDC.put("projectId", requestDto.getProjectId());
+            MDC.put("purchasePrice", requestDto.getPurchasePrice().toString());
+            MDC.put("tokenQuantity", requestDto.getTokenQuantity().toString());
+            MDC.put("ordersType", requestDto.getOrdersType().toString());
+
+            if(isPurchaseFlag){
+                log.info("purchase log captured.");
+            }
+            else{
+                log.info("sales log captured.");
+            }
+        }
+        finally {
+            MDC.clear();
+        }
     }
 }

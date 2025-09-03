@@ -1,36 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <springProfile name="!test">
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
 
-        <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <customFields>{"service":"market-service"}</customFields>
-            </encoder>
-            <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
-                <providers>
-                    <timestamp>
-                        <fieldName>timestamp</fieldName>
-                    </timestamp>
-                    <logLevel>
-                        <fieldName>level</fieldName>
-                    </logLevel>
-                    <loggerName>
-                        <fieldName>logger</fieldName>
-                    </loggerName>
-                    <threadName>
-                        <fieldName>thread</fieldName>
-                    </threadName>
-                    <message/>
-                    <stackTrace/>
-                </providers>
-            </encoder>
-        </appender>
+            <customFields>{"application":"com.ddiring.backend_market"}</customFields>
 
-        <root level="INFO">
-            <appender-ref ref="STDOUT"/>
-        </root>
+            <fieldNames>
+                <timestamp>timestamp</timestamp>
+                <levelValue>level_value</levelValue>
+                <thread>thread_name</thread>
+                <logger>logger_name</logger>
+                <message>message</message>
+            </fieldNames>
 
-    </springProfile>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
+
+    <logger name="com.ddiring.backend_market" level="DEBUG" />
 
 </configuration>
