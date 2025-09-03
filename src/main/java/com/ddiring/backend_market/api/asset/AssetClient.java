@@ -27,9 +27,7 @@ public interface AssetClient {
                         @RequestBody MarketSellDto marketSellDto);
 
         @PostMapping("/api/asset/market/refund")
-        ApiResponseDto<String> marketRefund(@RequestHeader("userSeq") String userSeq,
-                        @RequestHeader("role") String role,
-                        @RequestBody MarketRefundDto marketRefundDto);
+        ApiResponseDto<String> marketRefund(@RequestBody MarketRefundDto marketRefundDto);
 
         @PostMapping("/api/asset/title")
         String getMarketTitle(@RequestBody TitleRequestDto titleRequestDto);
