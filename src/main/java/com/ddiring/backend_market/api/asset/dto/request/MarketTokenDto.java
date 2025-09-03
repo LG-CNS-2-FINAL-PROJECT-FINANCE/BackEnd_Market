@@ -8,8 +8,6 @@ import lombok.*;
 @AllArgsConstructor
 @Builder
 public class MarketTokenDto {
-    private String userSeq;
-    private String projectId;
     private Integer tokenQuantity;
     private Integer perPrice;
 }

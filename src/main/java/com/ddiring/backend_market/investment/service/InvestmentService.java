@@ -251,12 +251,11 @@ public class InvestmentService {
         investmentRepository.save(saved);
 
         MarketTokenDto marketTokenDto = MarketTokenDto.builder()
-                .userSeq(userSeq)
                 .perPrice(minIvestment)
                 .tokenQuantity(calcToken)
-                .projectId(projectId).build();
+                .build();
 
-        assetClient.getToken(marketTokenDto);
+        assetClient.getToken(projectId, marketTokenDto);
 
         return toResponse(saved);
     }
