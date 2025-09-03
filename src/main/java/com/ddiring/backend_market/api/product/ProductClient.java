@@ -13,5 +13,5 @@ public interface ProductClient {
     ResponseEntity<List<ProductDTO>> getAllProduct();
 
     @GetMapping("/api/product/{projectId}")
-    ResponseEntity<ProductDTO> getProduct(@PathVariable("projectId") String projectId);
+    ResponseEntity<ProductDetailDTO> getProduct(@PathVariable("projectId") String projectId);
 }
