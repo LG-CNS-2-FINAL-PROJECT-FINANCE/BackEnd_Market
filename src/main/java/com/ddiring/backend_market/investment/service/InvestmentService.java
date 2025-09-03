@@ -249,13 +249,13 @@ public class InvestmentService {
         saved.setInvStatus(InvestmentStatus.FUNDING);
         saved.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(saved);
-
+        log.info("asdlsad ; {}", userSeq);
         MarketTokenDto marketTokenDto = MarketTokenDto.builder()
                 .perPrice(minIvestment)
                 .tokenQuantity(calcToken)
                 .userSeq(userSeq)
                 .build();
-
+        log.info("asdlsad ; {}", marketTokenDto.getUserSeq());
         assetClient.getToken(projectId, marketTokenDto);
 
         return toResponse(saved);
