@@ -35,5 +35,5 @@ public interface AssetClient {
         String getMarketTitle(@RequestBody TitleRequestDto titleRequestDto);
 
         @PostMapping("/api/asset/get/token/{projectId}")
-        void getToken(@PathVariable String projectId, @RequestBody MarketTokenDto marketTokenDto);
+        void getToken(@PathVariable String projectId, String userSeq, @RequestBody MarketTokenDto marketTokenDto);
 }

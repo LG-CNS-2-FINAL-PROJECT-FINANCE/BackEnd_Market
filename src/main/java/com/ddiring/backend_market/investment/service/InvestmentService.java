@@ -252,13 +252,12 @@ public class InvestmentService {
 
         log.info("Investment successful: userSeq={}", userSeq);
         MarketTokenDto marketTokenDto = MarketTokenDto.builder()
-                .userSeq(userSeq)
                 .perPrice(minIvestment)
                 .tokenQuantity(calcToken)
-                .projectId(projectId).build();
+                .build();
 
         log.info("MarketTokenDto: {}", marketTokenDto);
-        assetClient.getToken(projectId, marketTokenDto);
+        assetClient.getToken(projectId, userSeq, marketTokenDto);
 
         return toResponse(saved);
     }
