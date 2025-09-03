@@ -428,7 +428,7 @@ public class InvestmentService {
     // 투자금 송금 요청
     @Transactional(readOnly = false)
     public ApiResponseDto<Integer> requestWithdrawal(String projectId, String userSeq, String role) {
-        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+        ProductDetailDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(ResponseEntity::getBody)
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
