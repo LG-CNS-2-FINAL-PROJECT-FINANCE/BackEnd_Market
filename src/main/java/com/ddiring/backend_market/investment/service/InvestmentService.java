@@ -11,6 +11,7 @@ import com.ddiring.backend_market.api.blockchain.dto.request.InvestmentDto;
 import com.ddiring.backend_market.api.product.ProductClient;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.api.product.ProductDTO;
+import com.ddiring.backend_market.api.product.ProductDetailDTO;
 import com.ddiring.backend_market.api.user.UserDTO;
 import com.ddiring.backend_market.event.dto.InvestRequestEvent;
 import com.ddiring.backend_market.event.producer.InvestmentEventProducer;
@@ -189,7 +190,7 @@ public class InvestmentService {
     // 주문
     @Transactional
     public InvestmentResponse buyInvestment(String projectId, String userSeq, String role, InvestmentRequest request) {
-        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+        ProductDetailDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(ResponseEntity::getBody)
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
@@ -311,7 +312,7 @@ public class InvestmentService {
     // 토큰 할당 요청 트리거
     @Transactional
     public boolean triggerAllocationIfEligible(String projectId) {
-        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+        ProductDetailDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(org.springframework.http.ResponseEntity::getBody)
                 .orElse(null);
         if (product == null) {
@@ -427,7 +428,7 @@ public class InvestmentService {
     // 투자금 송금 요청
     @Transactional(readOnly = false)
     public ApiResponseDto<Integer> requestWithdrawal(String projectId, String userSeq, String role) {
-        ProductDTO product = Optional.ofNullable(productClient.getProduct(projectId))
+        ProductDetailDTO product = Optional.ofNullable(productClient.getProduct(projectId))
                 .map(ResponseEntity::getBody)
                 .orElseThrow(() -> new IllegalStateException("상품 정보를 가져올 수 없습니다."));
 
