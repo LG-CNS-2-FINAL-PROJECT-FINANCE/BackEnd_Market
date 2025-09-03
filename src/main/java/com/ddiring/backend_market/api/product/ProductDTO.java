@@ -3,6 +3,7 @@ package com.ddiring.backend_market.api.product;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Getter
 @Setter
@@ -11,6 +12,7 @@ import java.time.LocalDate;
 @Builder
 public class ProductDTO {
 
+    private List<String> image;
     private String projectId; // 상품 번호
     private String userSeq; // 사용자 번호 (등록자)
     private String title; // 제목
