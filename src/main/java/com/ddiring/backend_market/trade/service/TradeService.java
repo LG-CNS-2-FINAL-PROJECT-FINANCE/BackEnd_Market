@@ -169,7 +169,7 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrdersId(savedOrder.getOrdersId());
+        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
 
         MarketSellDto marketSellDto = new MarketSellDto();
         marketSellDto.setOrdersId(savedOrder.getOrdersId());
@@ -225,7 +225,7 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
 
         OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrdersId(savedOrder.getOrdersId());
+        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
 
         MarketBuyDto marketBuyDto = new MarketBuyDto();
         marketBuyDto.setOrdersId(savedOrder.getOrdersId());
@@ -251,15 +251,15 @@ public class TradeService {
 
     @Transactional
     public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
-        if (orderDeleteDto.getOrdersId() == null || userSeq == null || role == null) {
+        if (orderDeleteDto.getOrderId() == null || userSeq == null || role == null) {
             throw new BadParameter("필요한 거 누락되었습니다.");
         }
 
-        Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrdersId())
+        Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrderId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
             MarketRefundDto marketRefundDto = new MarketRefundDto();
-            marketRefundDto.setOrdersId(orderDeleteDto.getOrdersId());
+            marketRefundDto.setOrdersId(orderDeleteDto.getOrderId());
             marketRefundDto.setProjectId(order.getProjectId());
             marketRefundDto.setRefundPrice(order.getPurchasePrice());
             marketRefundDto.setRefundAmount(order.getTokenQuantity());
@@ -267,7 +267,7 @@ public class TradeService {
             assetClient.marketRefund(userSeq, role, marketRefundDto);
 
             ordersRepository.delete(order);
-        log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrdersId(), order.getProjectId(), orderDeleteDto.getOrdersId());
+        log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrderId(), order.getProjectId(), orderDeleteDto.getOrderId());
 
     }
 

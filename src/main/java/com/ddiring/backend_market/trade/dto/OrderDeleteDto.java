@@ -8,5 +8,5 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 public class OrderDeleteDto {
-    private Integer ordersId;
+    private Integer orderId;
 }
