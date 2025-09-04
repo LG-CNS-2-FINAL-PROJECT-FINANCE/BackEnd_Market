@@ -40,16 +40,16 @@ public class Trade {
     @Column(name = "seller_address")
     private String sellerAddress;
 
-    @Column(name = "trade_price", nullable = false)
+    @Column(name = "trade_price")
     private Integer tradePrice;
 
     @Column(name = "token_Per_Price")
     private Integer tokenPerPrice;
 
-    @Column(name = "token_quantity", nullable = false)
+    @Column(name = "token_quantity")
     private Integer tokenQuantity;
 
-    @Column(name = "traded_at", nullable = false)
+    @Column(name = "traded_at")
     private LocalDateTime tradedAt;
 
     @Column(name = "created_id")

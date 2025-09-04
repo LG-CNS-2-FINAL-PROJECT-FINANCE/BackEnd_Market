@@ -18,31 +18,31 @@ public class History {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "history_seq", nullable = false)
+    @Column(name = "history_seq" , nullable = false)
     private Integer historySeq;
 
-    @Column(name = "project_id", nullable = false)
+    @Column(name = "project_id" )
     private String projectId;
 
-    @Column(name = "user_Seq", nullable = false)
+    @Column(name = "user_Seq" )
     private String userSeq;
 
-    @Column(name = "title", nullable = false)
+    @Column(name = "title" )
     private String title;
 
-    @Column(name = "trade_type", nullable = false)
+    @Column(name = "trade_type" )
     private Integer tradeType;
 
-    @Column(name = "trade_price", nullable = false)
+    @Column(name = "trade_price" )
     private Integer tradePrice;
 
-    @Column(name = "token_quantity", nullable = false)
+    @Column(name = "token_quantity" )
     private Integer tokenQuantity;
 
-    @Column(name = "per_price", nullable = false)
+    @Column(name = "per_price" )
     private Integer perPrice;
 
-    @Column(name = "traded_at", nullable = false)
+    @Column(name = "traded_at")
     private LocalDateTime tradedAt;
 
     @Column(name = "created_id")

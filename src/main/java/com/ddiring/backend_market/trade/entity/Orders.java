@@ -30,19 +30,19 @@ public class Orders {
     @Column(name = "title")
     private String title;
 
-    @Column(name = "orders_type", nullable = false)
+    @Column(name = "orders_type")
     private Integer ordersType;           // 구매||판매
 
-    @Column(name = "purchase_price", nullable = false)
+    @Column(name = "purchase_price")
     private Integer purchasePrice;       // 주문희망가
 
-    @Column(name = "per_price", nullable = false)
+    @Column(name = "per_price")
     private Integer perPrice;
 
-    @Column(name = "token_quantity", nullable = false)
+    @Column(name = "token_quantity")
     private Integer tokenQuantity;       // 주문수량
 
-    @Column(name = "registed_at", nullable = false)
+    @Column(name = "registed_at")
     private LocalDateTime registedAt;// 등록일시
 
     @Column(name = "wallet_address")
