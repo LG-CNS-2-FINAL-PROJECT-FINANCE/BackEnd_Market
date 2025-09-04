@@ -411,6 +411,10 @@ public class InvestmentService {
                 .investInfoList(investInfoList)
                 .build();
 
+        investmentDto.getInvestInfoList().forEach(investmentInfo -> {
+            log.info("{}-{}-{}", investmentInfo.getInvestmentId(), investmentInfo.getInvestorAddress(), investmentInfo.getTokenAmount());
+        });
+
         try {
             blockchainClient.requestInvestmentTokenMove(investmentDto);
             log.info("블록체인 토큰 이동 요청 전송 projectId={} count={}", projectId, investInfoList.size());
