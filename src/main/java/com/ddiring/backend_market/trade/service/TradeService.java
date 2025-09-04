@@ -7,7 +7,6 @@ import com.ddiring.backend_market.api.blockchain.BlockchainClient;
 import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfoDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfoDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
-import com.ddiring.backend_market.api.user.SignDto;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
@@ -195,11 +194,6 @@ public class TradeService {
         marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
         marketSellDto.setTransType(2);
 
-        SignDto signDto = new SignDto();
-        signDto.setProjectId(ordersRequestDto.getProjectId());
-        signDto.setUserAddress(walletAddress);
-        signDto.setTokenQuantity(ordersRequestDto.getTokenQuantity());
-
         log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
         try {
 
@@ -236,6 +230,7 @@ public class TradeService {
                 .role(role)
                 .walletAddress(walletAddress)
                 .ordersType(ordersRequestDto.getOrdersType())
+                .perPrice(ordersRequestDto.getPurchasePrice())
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
