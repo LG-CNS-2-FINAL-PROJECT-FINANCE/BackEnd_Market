@@ -160,7 +160,7 @@ public class TradeService {
     }
 
     @Transactional
-    public void sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
+    public Long sellReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
                 || ordersRequestDto.getTokenQuantity() <= 0 || role == null) {
             throw new BadParameter("필수 파라미터가 누락되었습니다.");
@@ -209,7 +209,7 @@ public class TradeService {
         } catch (Exception e) {
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
         }
-
+        return (long)savedOrder.getOrdersId();
     }
 
     @Transactional

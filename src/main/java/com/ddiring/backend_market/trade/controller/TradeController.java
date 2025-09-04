@@ -23,11 +23,11 @@ public class TradeController {
     private final TradeService tradeService;
 
     @PostMapping("/sell")
-    public ApiResponseDto<String> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
+    public ApiResponseDto<Long> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
         String userSeq = GatewayRequestHeaderUtils.getUserSeq();
         String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.sellReception(userSeq, role, ordersRequestDto);
-        return ApiResponseDto.defaultOk();
+        Long orderId = tradeService.sellReception(userSeq, role, ordersRequestDto);
+        return ApiResponseDto.createOk(orderId);
     }
 
     @PostMapping("/purchase")
