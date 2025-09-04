@@ -204,7 +204,7 @@ public class TradeService {
         try {
 
             assetClient.marketSell(userSeq, marketSellDto);
-            userClient.sign(signDto);
+//            userClient.sign(signDto);
             ordersRepository.save(order);
 
             logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
