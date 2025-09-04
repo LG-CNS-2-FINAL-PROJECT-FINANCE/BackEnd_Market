@@ -411,6 +411,8 @@ public class InvestmentService {
                 .investInfoList(investInfoList)
                 .build();
 
+        log.info("[INVESTMENT] {} 프로젝트에 대한 투자 할당 요청 ....", investmentDto.getProjectId());
+        log.info("투자 할당 리스트...");
         investmentDto.getInvestInfoList().forEach(investmentInfo -> {
             log.info("{}-{}-{}", investmentInfo.getInvestmentId(), investmentInfo.getInvestorAddress(), investmentInfo.getTokenAmount());
         });
