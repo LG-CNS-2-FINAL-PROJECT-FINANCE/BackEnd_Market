@@ -288,8 +288,20 @@ public class TradeService {
 
             ordersRepository.delete(order);
         log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrderId(), order.getProjectId(), orderDeleteDto.getOrderId());
-
+        try {
+            MDC.put("userSeq", userSeq);
+            MDC.put("orderId", orderDeleteDto.toString());
+            MDC.put("projectId", order.getProjectId());
+            MDC.put("purchasePrice", order.getPurchasePrice().toString());
+            MDC.put("tokenQuantity", order.getTokenQuantity().toString());
+            MDC.put("ordersType", order.getOrdersType().toString());
+            log.info("delete log captured.");
+        }
+        finally {
+            MDC.clear();
+        }
     }
+
 
     @Transactional(readOnly = true)
     public List<OrderHistoryResponseDto> getTradeHistory(String projectId) {
