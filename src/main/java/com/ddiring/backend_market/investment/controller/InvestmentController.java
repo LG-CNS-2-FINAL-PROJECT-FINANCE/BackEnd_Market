@@ -6,6 +6,7 @@ import com.ddiring.backend_market.investment.dto.VerifyInvestmentDto;
 import com.ddiring.backend_market.investment.dto.request.CancelInvestmentRequest;
 import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.dto.response.*;
+import com.ddiring.backend_market.investment.scheduler.AllocationScheduler;
 import com.ddiring.backend_market.investment.service.InvestmentService;
 import lombok.RequiredArgsConstructor;
 import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
@@ -92,5 +93,12 @@ public class InvestmentController {
     public ApiResponseDto<?> verifyInvestmentChainlink(@RequestBody VerifyInvestmentDto.Request requestDto) {
         VerifyInvestmentDto.Response response = investmentService.verifyInvestments(requestDto);
         return ApiResponseDto.createOk(response);
+    }
+
+    private final AllocationScheduler scheduler;
+    @PostMapping("/test/allocation")
+    public ApiResponseDto<?> testAllocateInvestToken() {
+        scheduler.dailyAllocationCheck();
+        return ApiResponseDto.defaultOk();
     }
 }

@@ -24,7 +24,7 @@ public class AllocationScheduler {
     private final InvestmentService investmentService;
 
     // 매일 00:05 실행
-    @Scheduled(cron = "0 * * * * *")
+    @Scheduled(cron = "0 5 0 * * *")
     public void dailyAllocationCheck() {
         LocalDate today = LocalDate.now();
         List<ProductDTO> products;

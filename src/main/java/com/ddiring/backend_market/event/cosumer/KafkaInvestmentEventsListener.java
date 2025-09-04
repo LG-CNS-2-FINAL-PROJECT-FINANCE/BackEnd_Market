@@ -1,9 +1,9 @@
 package com.ddiring.backend_market.event.cosumer;
 
-import com.ddiring.backend_market.event.dto.InvestRequestAcceptedEvent;
-import com.ddiring.backend_market.event.dto.InvestRequestRejectedEvent;
-import com.ddiring.backend_market.event.dto.InvestSucceededEvent;
-import com.ddiring.backend_market.event.dto.InvestFailedEvent;
+import com.ddiring.backend_market.common.exception.NotFound;
+import com.ddiring.backend_market.event.dto.*;
+import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
+import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
 import com.ddiring.backend_market.investment.service.InvestmentService;
@@ -16,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -40,6 +41,15 @@ public class KafkaInvestmentEventsListener {
 
             log.info("[INVEST] 이벤트 수신: {}", eventType);
             switch (eventType) {
+                case "INVESTMENT.REQUEST" : {
+                    InvestRequestEvent request = objectMapper.convertValue(messageMap, InvestRequestEvent.class);
+                    if (request.getPayload() == null) {
+                        log.warn("REQUEST 이벤트 payload 누락: {}", message);
+                        return;
+                    }
+                    handleRequest(request);
+                    break;
+                }
                 case "INVESTMENT.REQUEST.ACCEPTED": {
                     InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap,
                             InvestRequestAcceptedEvent.class);
@@ -90,19 +100,9 @@ public class KafkaInvestmentEventsListener {
     }
 
     @Transactional
-    public void handleRequestAccepted(InvestRequestAcceptedEvent event) {
+    public void handleRequest(InvestRequestEvent event) {
         String projectId = event.getPayload().getProjectId();
-        var list = investmentRepository.findByProjectId(projectId).stream()
-                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING
-                        || inv.getInvStatus() == InvestmentStatus.PENDING)
-                .peek(inv -> {
-                    inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
-                    inv.setUpdatedAt(LocalDateTime.now());
-                })
-                .toList();
-        if (!list.isEmpty()) {
-            investmentRepository.saveAll(list);
-        }
+
         // 블록체인 토큰 이동 실제 요청 (요청 수락 후 실행)
         try {
             boolean bcRequested = investmentService.requestBlockchainTokenMove(projectId);
@@ -113,18 +113,37 @@ public class KafkaInvestmentEventsListener {
     }
 
     @Transactional
-    public void handleRequestRejected(InvestRequestRejectedEvent event) {
-        String projectId = event.getPayload().getProjectId();
-        var list = investmentRepository.findByProjectId(projectId).stream()
-                .filter(inv -> inv.getInvStatus() != InvestmentStatus.COMPLETED)
-                .peek(inv -> {
-                    inv.setInvStatus(InvestmentStatus.REJECTED);
-                    inv.setUpdatedAt(LocalDateTime.now());
-                })
-                .toList();
-        if (!list.isEmpty()) {
-            investmentRepository.saveAll(list);
+    public void handleRequestAccepted(InvestRequestAcceptedEvent event) {
+        Long invesmtmentId = event.getPayload().getInvestmentId();
+
+        Investment inv = investmentRepository.findByInvestmentSeq(invesmtmentId.intValue())
+                .orElseThrow(() -> new NotFound("찾을 수 없는 투자 번호 입니다."));
+
+        if (InvestmentStatus.PENDING.equals(inv.getInvStatus()) || InvestmentStatus.FUNDING.equals(inv.getInvStatus())) {
+            throw new IllegalStateException("이미 요청 처리 중인 투자 번호입니다.");
         }
+
+        inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
+        inv.setUpdatedAt(LocalDateTime.now());
+
+        investmentRepository.save(inv);
+    }
+
+    @Transactional
+    public void handleRequestRejected(InvestRequestRejectedEvent event) {
+        Long invesmtmentId = event.getPayload().getInvestmentId();
+
+        Investment inv = investmentRepository.findByInvestmentSeq(invesmtmentId.intValue())
+                .orElseThrow(() -> new NotFound("찾을 수 없는 투자 번호 입니다."));
+
+        if (!InvestmentStatus.ALLOC_REQUESTED.equals(inv.getInvStatus())) {
+            throw new IllegalStateException("할당 요청 중이 아닌 투자 번호입니다.");
+        }
+
+        inv.setInvStatus(InvestmentStatus.REJECTED);
+        inv.setUpdatedAt(LocalDateTime.now());
+
+        investmentRepository.save(inv);
     }
 
     public void handleInvestSucceeded(InvestSucceededEvent event) {

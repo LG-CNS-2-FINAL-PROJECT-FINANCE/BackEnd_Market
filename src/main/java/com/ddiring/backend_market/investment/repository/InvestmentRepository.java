@@ -5,6 +5,7 @@ import com.ddiring.backend_market.investment.entity.Investment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface InvestmentRepository extends JpaRepository<Investment, Integer> {
 
@@ -18,4 +19,6 @@ public interface InvestmentRepository extends JpaRepository<Investment, Integer>
     List<Investment> findByProjectId(String projectId);
 
     List<Investment> findByInvestmentSeqIn(List<Integer> investmentSeq);
+
+    Optional<Investment> findByInvestmentSeq(Integer investmentSeq);
 }

@@ -361,7 +361,7 @@ public class InvestmentService {
                 .collect(Collectors.toList());
 
         InvestRequestEvent event = InvestRequestEvent.of(projectId, items);
-        investmentEventProducer.send("INVEST", event);
+        investmentEventProducer.send("INVESTMENT", event);
         log.info("투자 요청 이벤트 발행 projectId={} investments={}", projectId, items.size());
 
         return true;
@@ -372,7 +372,7 @@ public class InvestmentService {
     public boolean requestBlockchainTokenMove(String projectId) {
         // ALLOC_REQUESTED 상태 투자 조회
         List<Investment> allocRequested = investmentRepository.findByProjectId(projectId).stream()
-                .filter(inv -> inv.getInvStatus() == InvestmentStatus.ALLOC_REQUESTED)
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.FUNDING)
                 .toList();
         if (allocRequested.isEmpty()) {
             log.info("토큰 이동 대상 없음 projectId={}", projectId);
