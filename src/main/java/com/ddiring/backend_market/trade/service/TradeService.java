@@ -97,7 +97,7 @@ public class TradeService {
                         .build();
 
 
-                // blockchainClient.requestTradeTokenMove(tradeDto);
+                 blockchainClient.requestTradeTokenMove(tradeDto);
 
                 TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
                 tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
