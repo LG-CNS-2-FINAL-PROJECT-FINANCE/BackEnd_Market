@@ -44,6 +44,7 @@ public class TradeService {
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
+            if (!"SUCCEEDED".equals(oldOrder.getOrdersStatus())) continue;
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPerPrice() >= oldOrder.getPerPrice()) {
                 tradePossible = true;
@@ -155,6 +156,7 @@ public class TradeService {
 
             }
         }
+
     }
 
     @Transactional
@@ -179,6 +181,7 @@ public class TradeService {
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .perPrice(ordersRequestDto.getPurchasePrice())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
+                .ordersStatus("PENDING")
                 .walletAddress(walletAddress)
                 .registedAt(LocalDateTime.now())
                 .build();
@@ -206,9 +209,6 @@ public class TradeService {
         } catch (Exception e) {
             throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
         }
-        List<Orders> purchaseOrder = ordersRepository
-                .findByProjectIdAndOrdersTypeOrderByPurchasePriceDescRegistedAtAsc(ordersRequestDto.getProjectId(), 1);
-        matchAndExecuteTrade(savedOrder, purchaseOrder);
 
     }
 
@@ -263,6 +263,26 @@ public class TradeService {
 
     }
 
+    @Transactional
+    public void beforeMatch(Orders order) {
+        if (order == null || !"SUCCEEDED".equals(order.getOrdersStatus())) {
+            log.warn("거래 체결을 시작할 수 없습니다. 주문이 없거나 상태가 SUCCEEDED가 아닙니다. order: {}", order);
+            return;
+        }
+
+        log.info("주문 ID {}에 대한 거래 체결 로직을 시작합니다.", order.getOrdersId());
+
+        List<Orders> purchaseOrders = ordersRepository
+                .findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceDescRegistedAtAsc(
+                        order.getProjectId(), 1, "SUCCEEDED");
+
+        if (purchaseOrders.isEmpty()) {
+            log.info("주문 ID {}에 대한 거래 상대방(구매 주문)이 없습니다.", order.getOrdersId());
+            return;
+        }
+
+        matchAndExecuteTrade(order, purchaseOrders);
+    }
     @Transactional
     public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
         if (orderDeleteDto.getOrderId() == null || userSeq == null || role == null) {
