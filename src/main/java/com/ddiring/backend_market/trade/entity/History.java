@@ -39,6 +39,9 @@ public class History {
     @Column(name = "token_quantity", nullable = false)
     private Integer tokenQuantity;
 
+    @Column(name = "per_price", nullable = false)
+    private Integer perPrice;
+
     @Column(name = "traded_at", nullable = false)
     private LocalDateTime tradedAt;
 
@@ -55,13 +58,14 @@ public class History {
     private LocalDate updatedAt;
 
     @Builder
-    public History(String projectId, String userSeq, String title, Integer tradeType, Integer tradePrice, Integer tokenQuantity, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public History(String projectId, String userSeq, String title, Integer tradeType, Integer tradePrice, Integer tokenQuantity, Integer perPrice, LocalDateTime tradedAt, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.title = title;
         this.tradeType = tradeType;
         this.tradePrice = tradePrice;
         this.tokenQuantity = tokenQuantity;
+        this.perPrice = perPrice;
         this.tradedAt = tradedAt;
         this.createdId = createdId;
         this.createdAt = createdAt;

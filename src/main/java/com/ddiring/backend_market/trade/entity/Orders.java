@@ -36,6 +36,9 @@ public class Orders {
     @Column(name = "purchase_price", nullable = false)
     private Integer purchasePrice;       // 주문희망가
 
+    @Column(name = "per_price", nullable = false)
+    private Integer perPrice;
+
     @Column(name = "token_quantity", nullable = false)
     private Integer tokenQuantity;       // 주문수량
 
@@ -61,9 +64,10 @@ public class Orders {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(String projectId, String userSeq, String role, Integer ordersType, String walletAddress, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Orders(String projectId, String userSeq, Integer perPrice, String role, Integer ordersType, String walletAddress, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
+        this.perPrice = perPrice;
         this.role = role;
         this.walletAddress = walletAddress;
         this.ordersType = ordersType;

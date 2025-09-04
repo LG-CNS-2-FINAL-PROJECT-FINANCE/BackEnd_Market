@@ -12,6 +12,8 @@ import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
+import com.ddiring.backend_market.event.dto.TradePriceUpdateEvent;
+import com.ddiring.backend_market.event.producer.TradeEventProducer;
 import com.ddiring.backend_market.trade.dto.*;
 import com.ddiring.backend_market.trade.entity.History;
 import com.ddiring.backend_market.trade.entity.Orders;
@@ -38,20 +40,21 @@ public class TradeService {
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
     private final UserClient userClient;
+    private final TradeEventProducer tradeEventProducer;
     private final BlockchainClient blockchainClient;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
             boolean tradePossible = false;
-            if (order.getOrdersType() == 1 && order.getPurchasePrice() >= oldOrder.getPurchasePrice()) {
+            if (order.getOrdersType() == 1 && order.getPerPrice() >= oldOrder.getPerPrice()) {
                 tradePossible = true;
-            } else if (order.getOrdersType() == 0 && order.getPurchasePrice() <= oldOrder.getPurchasePrice()) {
+            } else if (order.getOrdersType() == 0 && order.getPerPrice() <= oldOrder.getPerPrice()) {
                 tradePossible = true;
             }
 
             if (tradePossible) {
                 int tradedQuantity = Math.min(order.getTokenQuantity(), oldOrder.getTokenQuantity());
-                int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPurchasePrice() : order.getPurchasePrice();
+                int tradePrice = order.getOrdersType() == 1 ? oldOrder.getPerPrice() : order.getPerPrice();
                 log.info("거래 체결 시작. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
                 Orders purchaseOrderForLog = order.getOrdersType() == 1 ? order : oldOrder;
                 Orders sellOrderForLog = order.getOrdersType() == 0 ? order : oldOrder;
@@ -96,6 +99,9 @@ public class TradeService {
 
                 // blockchainClient.requestTradeTokenMove(tradeDto);
 
+                TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
+                tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
+
                 TitleRequestDto titleRequestDto = new TitleRequestDto();
                 titleRequestDto.setProjectId(order.getProjectId());
                 String title = assetClient.getMarketTitle(titleRequestDto);
@@ -107,6 +113,7 @@ public class TradeService {
                         .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(1)
                         .tradePrice(tradePrice * tradedQuantity)
+                        .perPrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -118,6 +125,7 @@ public class TradeService {
                         .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
                         .tradeType(0)
                         .tradePrice(tradePrice * tradedQuantity)
+                        .perPrice(tradePrice)
                         .tokenQuantity(tradedQuantity)
                         .tradedAt(LocalDateTime.now())
                         .build();
@@ -170,6 +178,7 @@ public class TradeService {
                 .role(role)
                 .ordersType(ordersRequestDto.getOrdersType())
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
+                .perPrice(ordersRequestDto.getPurchasePrice())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .walletAddress(walletAddress)
                 .registedAt(LocalDateTime.now())
