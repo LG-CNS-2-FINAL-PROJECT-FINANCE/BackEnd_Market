@@ -4,8 +4,8 @@ import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.blockchain.BlockchainClient;
-import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfoDto;
-import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfoDto;
+import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfo;
+import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfo;
 import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
@@ -76,12 +76,12 @@ public class TradeService {
 
                 tradeRepository.save(trade);
 
-                BuyInfoDto buyInfo = BuyInfoDto.builder()
+                BuyInfo buyInfo = BuyInfo.builder()
                         .buyId(Long.valueOf(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId()))
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
 
-                SellInfoDto sellInfo = SellInfoDto.builder()
+                SellInfo sellInfo = SellInfo.builder()
                         .sellId(Long.valueOf(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId()))
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .build();
@@ -91,7 +91,7 @@ public class TradeService {
                         .projectId(order.getProjectId())
                         .buyInfo(buyInfo)
                         .sellInfo(sellInfo)
-                        .tokenAmount((long) tradedQuantity)
+                        .tradeAmount((long) tradedQuantity)
                         .pricePerToken((long) (tradePrice / tradedQuantity))
                         .build();
 
