@@ -26,8 +26,11 @@ import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.web3j.crypto.Sign;
+import org.web3j.utils.Numeric;
 
+import java.math.BigInteger;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -215,14 +218,12 @@ public class TradeService {
         Orders savedOrder = ordersRepository.save(order);
         try {
 
-            // 1. `blockchain` 서비스에 서명할 데이터 요청
             PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
                     .projectId(ordersRequestDto.getProjectId())
                     .userAddress(walletAddress)
                     .tokenAmount((long) ordersRequestDto.getTokenQuantity())
                     .build();
 
-            // 💡 반환 타입을 PermitSignatureDto.Response로 받습니다.
             ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
             PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
 
@@ -230,12 +231,35 @@ public class TradeService {
                 throw new IllegalStateException("Blockchain 서비스로부터 서명 데이터를 받지 못했습니다.");
             }
 
-            // 2. 받아온 데이터로 `SignatureService`를 통해 직접 서명
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-
-            // 3. 생성된 서명을 `blockchain` 서비스의 다른 API(예: execute)로 제출
             log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
+
+            order.setV(v);
+            order.setR(r);
+            order.setS(s);
+            ordersRepository.save(order);
+
+            BigInteger deadline = dataToSign.getMessage().getDeadline();
+            DepositDto depositDto = DepositDto.builder()
+                    .projectId(ordersRequestDto.getProjectId())
+                    .sellerAddress(walletAddress)
+                    .sellId(Long.valueOf(order.getOrdersId()))
+                    .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
+                    .deadline(deadline)
+
+                    .r(Arrays.toString(signature.getR()))
+                    .s(Arrays.toString(signature.getS()))
+                    .build();
+            blockchainClient.requestDeposit(depositDto);
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
         } catch (Exception e) {
             log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
             throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
@@ -346,6 +370,28 @@ public class TradeService {
 
         Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrderId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
+
+        if (order.getOrdersType() == 0 && order.getV() != null) {
+
+            // DB에 저장된 서명을 사용하여 DepositDto를 만듭니다.
+            DepositDto depositDto = DepositDto.builder()
+                    .projectId(order.getProjectId())
+                    .sellerAddress(order.getWalletAddress())
+                    .sellId(Long.valueOf(order.getOrdersId()))
+                    .tokenAmount(BigInteger.valueOf(order.getTokenQuantity()))
+                    .deadline(BigInteger.valueOf(0))
+                    .v(order.getV())
+                    .r(order.getR())
+                    .s(order.getS())
+                    .build();
+
+            try {
+                blockchainClient.requestDepositCancel(depositDto);
+                log.info("판매 주문 ID {}에 대한 블록체인 취소 요청 완료", order.getOrdersId());
+            } catch (Exception e) {
+                log.error("주문 ID {} 블록체인 취소 요청 실패: {}", order.getOrdersId(), e.getMessage());
+            }
+        }
 
             MarketRefundDto marketRefundDto = new MarketRefundDto();
             marketRefundDto.setOrdersId(orderDeleteDto.getOrderId());
