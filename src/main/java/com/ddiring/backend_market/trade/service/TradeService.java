@@ -41,6 +41,7 @@ public class TradeService {
     private final AssetClient assetClient;
     private final TradeEventProducer tradeEventProducer;
     private final BlockchainClient blockchainClient;
+    private final SignatureService signatureService;
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
@@ -212,7 +213,25 @@ public class TradeService {
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
+        try {
+            // TODO: spender 주소와 nonce는 실제 스마트 컨트랙트의 요구사항에 맞게 가져와야 합니다.
+            long nonce = 0; // 예시: 컨트랙트에서 사용자의 nonce 조회 필요
+            String tokenAmount = String.valueOf(ordersRequestDto.getTokenQuantity()); // TODO: Decimal 처리 필요 시 수정
 
+            // 1. 서버가 직접 서명 생성
+            Sign.SignatureData signature = signatureService.createAndSignPermit(userSeq, tokenAmount, nonce);
+
+            // 2. 서명 결과를 BlockchainClient를 통해 제출
+            // blockchainClient.submitPermitTransaction(
+            //     savedOrder.getOrdersId(), signature.getV(), signature.getR(), signature.getS()
+            // );
+            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
+
+        } catch (Exception e) {
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage());
+            // TODO: 서명 실패 시 보상 트랜잭션(Saga 롤백 등) 처리 필요
+            throw new RuntimeException("블록체인 서명 처리에 실패했습니다.");
+        }
         tradeEventProducer.send("SELL_ORDER_INITIATED", savedOrder);
         log.info("판매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
         logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);

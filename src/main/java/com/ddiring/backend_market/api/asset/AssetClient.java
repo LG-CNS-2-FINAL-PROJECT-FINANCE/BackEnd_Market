@@ -36,4 +36,7 @@ public interface AssetClient {
 
         @PostMapping("/api/asset/get/token/{projectId}")
         void getToken(@PathVariable String projectId, @RequestBody MarketTokenDto marketTokenDto);
+
+        @GetMapping("/api/asset/wallet/private-key")
+        ApiResponseDto<String> getDecryptedPrivateKey(@RequestHeader("userSeq") String userSeq);
 }
