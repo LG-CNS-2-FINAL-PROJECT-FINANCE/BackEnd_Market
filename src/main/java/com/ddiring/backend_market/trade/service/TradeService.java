@@ -4,6 +4,7 @@ import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.blockchain.BlockchainClient;
+import com.ddiring.backend_market.api.blockchain.dto.signature.PermitSignatureDto;
 import com.ddiring.backend_market.api.blockchain.dto.trade.*;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
@@ -215,27 +216,29 @@ public class TradeService {
         try {
 
             // 1. `blockchain` 서비스에 서명할 데이터 요청
-            PermitRequestDto permitRequest = new PermitRequestDto(
-                    ordersRequestDto.getProjectId(),
-                    walletAddress, // userAddress는 지갑 주소를 보내야 합니다.
-                    (long) ordersRequestDto.getTokenQuantity()
-            );
+            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
+                    .projectId(ordersRequestDto.getProjectId())
+                    .userAddress(walletAddress)
+                    .tokenAmount((long) ordersRequestDto.getTokenQuantity())
+                    .build();
 
-            ApiResponseDto<Eip712DataDto> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
-            Eip712DataDto dataToSign = signatureDataResponse.getData();
+            // 💡 반환 타입을 PermitSignatureDto.Response로 받습니다.
+            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
+            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
+
+            if (dataToSign == null) {
+                throw new IllegalStateException("Blockchain 서비스로부터 서명 데이터를 받지 못했습니다.");
+            }
 
             // 2. 받아온 데이터로 `SignatureService`를 통해 직접 서명
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
 
-            // 3. 생성된 서명을 `blockchain` 서비스의 다른 API로 제출 (예시)
-            // TradeDto tradeDto = TradeDto.builder() ... (v, r, s 값 포함) ...
-            // blockchainClient.requestTradeTokenMove(tradeDto);
+            // 3. 생성된 서명을 `blockchain` 서비스의 다른 API(예: execute)로 제출
             log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
         } catch (Exception e) {
-            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage());
-            // TODO: 실패 시 보상 트랜잭션 (Saga 롤백 등) 처리 필요
-            throw new RuntimeException("블록체인 서명 처리에 실패했습니다.");
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
+            throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
         }
 
         return (long)savedOrder.getOrdersId();
