@@ -4,9 +4,7 @@ import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.*;
 import com.ddiring.backend_market.api.asset.dto.request.MarketRefundDto;
 import com.ddiring.backend_market.api.blockchain.BlockchainClient;
-import com.ddiring.backend_market.api.blockchain.dto.trade.BuyInfo;
-import com.ddiring.backend_market.api.blockchain.dto.trade.SellInfo;
-import com.ddiring.backend_market.api.blockchain.dto.trade.TradeDto;
+import com.ddiring.backend_market.api.blockchain.dto.trade.*;
 import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
@@ -215,31 +213,34 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
         try {
-            // TODO: spender 주소와 nonce는 실제 스마트 컨트랙트의 요구사항에 맞게 가져와야 합니다.
-            long nonce = 0; // 예시: 컨트랙트에서 사용자의 nonce 조회 필요
-            String tokenAmount = String.valueOf(ordersRequestDto.getTokenQuantity()); // TODO: Decimal 처리 필요 시 수정
 
-            // 1. 서버가 직접 서명 생성
-            Sign.SignatureData signature = signatureService.createAndSignPermit(userSeq, tokenAmount, nonce);
+            // 1. `blockchain` 서비스에 서명할 데이터 요청
+            PermitRequestDto permitRequest = new PermitRequestDto(
+                    ordersRequestDto.getProjectId(),
+                    walletAddress, // userAddress는 지갑 주소를 보내야 합니다.
+                    (long) ordersRequestDto.getTokenQuantity()
+            );
 
-            // 2. 서명 결과를 BlockchainClient를 통해 제출
-            // blockchainClient.submitPermitTransaction(
-            //     savedOrder.getOrdersId(), signature.getV(), signature.getR(), signature.getS()
-            // );
+            ApiResponseDto<Eip712DataDto> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
+            Eip712DataDto dataToSign = signatureDataResponse.getData();
+
+            // 2. 받아온 데이터로 `SignatureService`를 통해 직접 서명
+            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
+
+            // 3. 생성된 서명을 `blockchain` 서비스의 다른 API로 제출 (예시)
+            // TradeDto tradeDto = TradeDto.builder() ... (v, r, s 값 포함) ...
+            // blockchainClient.requestTradeTokenMove(tradeDto);
             log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
         } catch (Exception e) {
             log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage());
-            // TODO: 서명 실패 시 보상 트랜잭션(Saga 롤백 등) 처리 필요
+            // TODO: 실패 시 보상 트랜잭션 (Saga 롤백 등) 처리 필요
             throw new RuntimeException("블록체인 서명 처리에 실패했습니다.");
         }
-        tradeEventProducer.send("SELL_ORDER_INITIATED", savedOrder);
-        log.info("판매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
-        logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
 
         return (long)savedOrder.getOrdersId();
-
     }
+
     @Transactional
     public void sellOrderRefund(Integer orderId) {
         ordersRepository.findByOrdersId(orderId).ifPresent(order -> {
