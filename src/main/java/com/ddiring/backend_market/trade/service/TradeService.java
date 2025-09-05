@@ -11,6 +11,7 @@ import com.ddiring.backend_market.api.user.UserClient;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
 import com.ddiring.backend_market.common.exception.BadParameter;
 import com.ddiring.backend_market.common.exception.NotFound;
+import com.ddiring.backend_market.event.dto.TradeFailedEvent;
 import com.ddiring.backend_market.event.dto.TradePriceUpdateEvent;
 import com.ddiring.backend_market.event.producer.TradeEventProducer;
 import com.ddiring.backend_market.trade.dto.*;
@@ -38,7 +39,6 @@ public class TradeService {
     private final TradeRepository tradeRepository;
     private final HistoryRepository historyRepository;
     private final AssetClient assetClient;
-    private final UserClient userClient;
     private final TradeEventProducer tradeEventProducer;
     private final BlockchainClient blockchainClient;
 
@@ -97,66 +97,91 @@ public class TradeService {
                         .build();
 
 
-                 blockchainClient.requestTradeTokenMove(tradeDto);
+                try {
+                    blockchainClient.requestTradeTokenMove(tradeDto);
+                } catch (Exception e) {
+                    log.error("블록체인 통신 실패. Trade ID: {}", trade.getTradeId(), e);
+                    // 블록체인 통신 실패 시 보상 트랜잭션 이벤트 발행
+                    tradeEventProducer.send(TradeFailedEvent.TOPIC, TradeFailedEvent.of(
+                            trade.getProjectId(),
+                            trade.getTradeId(),
+                            trade.getBuyerAddress(),
+                            trade.getSellerAddress(),
+                            (long) trade.getTokenQuantity(),
+                            "BLOCKCHAIN_ERROR",
+                            e.getMessage()
+                    ));
+                    // 거래 상태 FAILED로 변경
+                    trade.setTradeStatus("FAILED");
+                    tradeRepository.save(trade);
 
-                TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
-                tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
+                    // 연관된 주문들도 보상 처리 (환불)
+                    buyOrderRefund(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId());
+                    sellOrderRefund(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId());
 
-                TitleRequestDto titleRequestDto = new TitleRequestDto();
-                titleRequestDto.setProjectId(order.getProjectId());
-                String title = assetClient.getMarketTitle(titleRequestDto);
-
-                log.info("거래 체결 완료. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
-                History purchaseHistory = History.builder()
-                        .title(title)
-                        .projectId(order.getProjectId())
-                        .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
-                        .tradeType(1)
-                        .tradePrice(tradePrice * tradedQuantity)
-                        .perPrice(tradePrice)
-                        .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDateTime.now())
-                        .build();
-                historyRepository.save(purchaseHistory);
-
-                History sellHistory = History.builder()
-                        .title(title)
-                        .projectId(order.getProjectId())
-                        .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
-                        .tradeType(0)
-                        .tradePrice(tradePrice * tradedQuantity)
-                        .perPrice(tradePrice)
-                        .tokenQuantity(tradedQuantity)
-                        .tradedAt(LocalDateTime.now())
-                        .build();
-                historyRepository.save(sellHistory);
-
-                order.updateOrder(null, order.getTokenQuantity() - tradedQuantity);
-                oldOrder.updateOrder(null, oldOrder.getTokenQuantity() - tradedQuantity);
-
-                if (order.getTokenQuantity() == 0) {
-                    ordersRepository.delete(order);
-                } else {
-                    ordersRepository.save(order);
+                    return; // 매칭 중단
                 }
 
-                if (oldOrder.getTokenQuantity() == 0) {
-                    ordersRepository.delete(oldOrder);
-                } else {
-                    ordersRepository.save(oldOrder);
+                    TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
+                    tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
+
+                    TitleRequestDto titleRequestDto = new TitleRequestDto();
+                    titleRequestDto.setProjectId(order.getProjectId());
+                    String title = assetClient.getMarketTitle(titleRequestDto);
+
+                    log.info("거래 체결 완료. 구매 주문 ID: {}, 판매 주문 ID: {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()), tradePrice, tradePrice * tradedQuantity, tradedQuantity);
+                    History purchaseHistory = History.builder()
+                            .title(title)
+                            .projectId(order.getProjectId())
+                            .userSeq(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
+                            .tradeType(1)
+                            .tradePrice(tradePrice * tradedQuantity)
+                            .perPrice(tradePrice)
+                            .tokenQuantity(tradedQuantity)
+                            .tradedAt(LocalDateTime.now())
+                            .build();
+                    historyRepository.save(purchaseHistory);
+
+                    History sellHistory = History.builder()
+                            .title(title)
+                            .projectId(order.getProjectId())
+                            .userSeq(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
+                            .tradeType(0)
+                            .tradePrice(tradePrice * tradedQuantity)
+                            .perPrice(tradePrice)
+                            .tokenQuantity(tradedQuantity)
+                            .tradedAt(LocalDateTime.now())
+                            .build();
+                    historyRepository.save(sellHistory);
+
+                    order.updateOrder(null, order.getTokenQuantity() - tradedQuantity);
+                    oldOrder.updateOrder(null, oldOrder.getTokenQuantity() - tradedQuantity);
+
+                    if (order.getTokenQuantity() == 0) {
+                        ordersRepository.delete(order);
+                    } else {
+                        ordersRepository.save(order);
+                    }
+
+                    if (oldOrder.getTokenQuantity() == 0) {
+                        ordersRepository.delete(oldOrder);
+                    } else {
+                        ordersRepository.save(oldOrder);
+                    }
+
+                    if (order.getTokenQuantity() == 0) {
+                        break;
+                    }
                 }
 
-                if (order.getTokenQuantity() == 0) {
-                    break;
-                }
-            }
-            else {
-                log.info("바보임?");
+            else{
+                    log.info("바보임?");
 //                log.info("거래 체결 실패. 구매 주문 ID: {}, 판매 주문 ID: {}", (order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq()), (order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq()));
 
-            }
-        }
 
+            }
+
+        }
     }
 
     @Transactional
@@ -188,30 +213,32 @@ public class TradeService {
 
         Orders savedOrder = ordersRepository.save(order);
 
-        OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
+        tradeEventProducer.send("SELL_ORDER_INITIATED", savedOrder);
+        log.info("판매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
+        logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
 
-        MarketSellDto marketSellDto = new MarketSellDto();
-        marketSellDto.setOrdersId(savedOrder.getOrdersId());
-        marketSellDto.setProjectId(ordersRequestDto.getProjectId());
-        marketSellDto.setSellToken(ordersRequestDto.getTokenQuantity());
-        marketSellDto.setTransType(2);
-
-        log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
-        try {
-
-            assetClient.marketSell(userSeq, marketSellDto);
-            ordersRepository.save(order);
-
-            logSales(userSeq, false, savedOrder.getOrdersId(), ordersRequestDto);
-//            log.info("판매 주문 접수: 판매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
-
-        } catch (Exception e) {
-            throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-        }
         return (long)savedOrder.getOrdersId();
-    }
 
+    }
+    @Transactional
+    public void sellOrderRefund(Integer orderId) {
+        ordersRepository.findByOrdersId(orderId).ifPresent(order -> {
+            if ("PENDING".equals(order.getOrdersStatus())) {
+                log.info("판매 주문 보상 트랜잭션 시작. 주문 ID: {}", orderId);
+
+                MarketRefundDto marketRefundDto = new MarketRefundDto();
+                marketRefundDto.setOrdersId(order.getOrdersId());
+                marketRefundDto.setProjectId(order.getProjectId());
+                marketRefundDto.setRefundAmount(order.getTokenQuantity());
+                marketRefundDto.setOrderType(order.getOrdersType());
+                assetClient.marketRefund(order.getUserSeq(), order.getRole(), marketRefundDto);
+
+                order.setOrdersStatus("FAILED");
+                ordersRepository.save(order);
+                log.info("판매 주문 상태 FAILED로 변경. 주문 ID: {}", orderId);
+            }
+        });
+    }
     @Transactional
     public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
@@ -223,6 +250,7 @@ public class TradeService {
         }
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
         String walletAddress = response.getData();
+
         log.info("구매접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
         Orders order = Orders.builder()
                 .userSeq(userSeq)
@@ -234,33 +262,36 @@ public class TradeService {
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
+                .ordersStatus("PENDING")
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
 
-        OrderDeleteDto orderDeleteDto = new OrderDeleteDto();
-        orderDeleteDto.setOrderId(savedOrder.getOrdersId());
+        tradeEventProducer.send("BUY_ORDER_INITIATED", savedOrder);
+        log.info("구매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
+        logSales(userSeq, true, savedOrder.getOrdersId(), ordersRequestDto);
 
-        MarketBuyDto marketBuyDto = new MarketBuyDto();
-        marketBuyDto.setOrdersId(savedOrder.getOrdersId());
-        marketBuyDto.setProjectId(ordersRequestDto.getProjectId());
-        marketBuyDto.setBuyPrice((int) (ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity() + (ordersRequestDto.getTokenQuantity() * ordersRequestDto.getTokenQuantity() * 0.03)));
-        marketBuyDto.setTransType(1);
+    }
 
-        try {
-//            log.info("구매 주문 접수: 구매 주문 ID: {},프로젝트 ID {}, 체결 가격: {}, 총 가격: {}, 토큰 갯수: {}", userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getPurchasePrice(), ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity(), ordersRequestDto.getTokenQuantity());
-            assetClient.marketBuy(userSeq, role, marketBuyDto);
-            logSales(userSeq, true, savedOrder.getOrdersId(), ordersRequestDto);
-//            log.info("구매 주문 접수: Asset 서비스에 예치금 요청 완료. userSeq={}", userSeq);
-        } catch (Exception e) {
-            log.error("Asset 서비스 입금 요청 실패: {}", e.getMessage());
-            throw new RuntimeException("Asset 서비스 통신 중 오류가 발생했습니다.", e);
-        }
+    @Transactional
+    public void buyOrderRefund(Integer orderId) {
+        ordersRepository.findByOrdersId(orderId).ifPresent(order -> {
+            if ("PENDING".equals(order.getOrdersStatus())) {
+                log.info("구매 주문 보상 트랜잭션 시작. 주문 ID: {}", orderId);
+                // Asset 서비스에 환불 요청
+                MarketRefundDto marketRefundDto = new MarketRefundDto();
+                marketRefundDto.setOrdersId(order.getOrdersId());
+                marketRefundDto.setProjectId(order.getProjectId());
+                marketRefundDto.setRefundPrice(order.getPurchasePrice());
+                marketRefundDto.setRefundAmount(order.getTokenQuantity());
+                marketRefundDto.setOrderType(order.getOrdersType()); // 구매 타입
+                assetClient.marketRefund(order.getUserSeq(), order.getRole(), marketRefundDto);
 
-        List<Orders> sellOrder = ordersRepository
-                .findByProjectIdAndOrdersTypeOrderByPurchasePriceAscRegistedAtAsc(ordersRequestDto.getProjectId(), 0);
-        matchAndExecuteTrade(savedOrder, sellOrder);
-
+                order.setOrdersStatus("FAILED");
+                ordersRepository.save(order);
+                log.info("구매 주문 상태 FAILED로 변경. 주문 ID: {}", orderId);
+            }
+        });
     }
 
     @Transactional
@@ -425,10 +456,10 @@ public class TradeService {
         return TradeInfoResponseDto.builder()
                 .tradeId(trade.getTradeId())
                 .projectId(trade.getProjectId())
-                .price(trade.getTradePrice()) // 총 거래 금액
-                .tokenQuantity(trade.getTokenQuantity()) // 거래된 토큰 수량
-                .buyerUserSeq(trade.getPurchaseId())   // 구매자 userSeq
-                .sellerUserSeq(trade.getSellId()) // 판매자 userSeq
+                .price(trade.getTradePrice())
+                .tokenQuantity(trade.getTokenQuantity())
+                .buyerUserSeq(trade.getPurchaseId())
+                .sellerUserSeq(trade.getSellId())
                 .build();
     }
 
