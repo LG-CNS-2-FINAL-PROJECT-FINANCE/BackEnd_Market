@@ -234,19 +234,6 @@ public class TradeService {
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
             log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
-            byte[] v_bytes = signature.getV();
-            byte[] r_bytes = signature.getR();
-            byte[] s_bytes = signature.getS();
-
-            Integer v = (int) v_bytes[0];
-            String r = Numeric.toHexString(r_bytes);
-            String s = Numeric.toHexString(s_bytes);
-
-            order.setV(v);
-            order.setR(r);
-            order.setS(s);
-            ordersRepository.save(order);
-
             BigInteger deadline = dataToSign.getMessage().getDeadline();
             DepositDto depositDto = DepositDto.builder()
                     .projectId(ordersRequestDto.getProjectId())
@@ -371,18 +358,35 @@ public class TradeService {
         Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrderId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
-        if (order.getOrdersType() == 0 && order.getV() != null) {
+        if (order.getOrdersType() == 0) {
+            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
+                    .projectId(order.getProjectId())
+                    .userAddress(order.getWalletAddress())
+                    .tokenAmount((long) order.getTokenQuantity())
+                    .build();
+            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
+            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
 
-            // DB에 저장된 서명을 사용하여 DepositDto를 만듭니다.
+            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
+            log.info("판매 주문 취소 ID {}에 대한 서버 서명 및 제출 완료", orderDeleteDto.getOrderId());
+
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
+
             DepositDto depositDto = DepositDto.builder()
                     .projectId(order.getProjectId())
                     .sellerAddress(order.getWalletAddress())
                     .sellId(Long.valueOf(order.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(order.getTokenQuantity()))
                     .deadline(BigInteger.valueOf(0))
-                    .v(order.getV())
-                    .r(order.getR())
-                    .s(order.getS())
+                    .v(v)
+                    .r(r)
+                    .s(s)
                     .build();
 
             try {

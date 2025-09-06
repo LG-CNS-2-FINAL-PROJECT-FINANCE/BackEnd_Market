@@ -51,16 +51,6 @@ public class Orders {
     @Column(name = "orders_status")
     private String ordersStatus;
 
-    // 💡 (신규) 서명(v, r, s)을 저장할 필드를 추가합니다.
-    @Column(name = "v")
-    private Integer v;
-
-    @Column(name = "r")
-    private String r;
-
-    @Column(name = "s")
-    private String s;
-
     @Column(name = "created_id")
     private Integer createdId;           // 생성자
 
@@ -74,13 +64,10 @@ public class Orders {
     private LocalDate updatedAt;         // 수정일자
 
     @Builder
-    public Orders(String projectId, String userSeq, Integer perPrice, Integer v, String r, String s, String role, Integer ordersType, String walletAddress, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Orders(String projectId, String userSeq, Integer perPrice, String role, Integer ordersType, String walletAddress, Integer purchasePrice, Integer tokenQuantity, LocalDateTime registedAt, String ordersStatus, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.userSeq = userSeq;
         this.perPrice = perPrice;
-        this.v = v;
-        this.r = r;
-        this.s = s;
         this.role = role;
         this.walletAddress = walletAddress;
         this.ordersType = ordersType;

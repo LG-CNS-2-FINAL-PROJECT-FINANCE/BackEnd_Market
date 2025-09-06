@@ -12,7 +12,6 @@ import java.util.Map;
 
 public class PermitSignatureDto {
 
-    // 요청 시 사용할 DTO
     @Getter
     @Builder
     @NoArgsConstructor
@@ -23,7 +22,6 @@ public class PermitSignatureDto {
         private Long tokenAmount;
     }
 
-    // 응답으로 받을 DTO
     @Getter
     @NoArgsConstructor
     public static class Response {
