@@ -77,7 +77,7 @@ public class InvestmentService {
 
         List<ProductDTO> allProducts;
         try {
-            allProducts = Optional.ofNullable(productClient.getAllProduct())
+            allProducts = Optional.ofNullable(productClient.getAllUnOpenProduct())
                     .map(ResponseEntity::getBody)
                     .orElse(List.of());
         } catch (Exception e) {

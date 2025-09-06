@@ -12,6 +12,9 @@ public interface ProductClient {
     @GetMapping("/api/product/open")
     ResponseEntity<List<ProductDTO>> getAllProduct();
 
+    @GetMapping("/api/product/unopen")
+    ResponseEntity<List<ProductDTO>> getAllUnOpenProduct();
+
     @GetMapping("/api/product/{projectId}")
     ResponseEntity<ProductDetailDTO> getProduct(@PathVariable("projectId") String projectId);
 }

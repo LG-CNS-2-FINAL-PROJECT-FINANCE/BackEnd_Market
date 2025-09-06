@@ -29,7 +29,7 @@ public class AllocationScheduler {
         LocalDate today = LocalDate.now();
         List<ProductDTO> products;
         try {
-            products = Optional.ofNullable(productClient.getAllProduct())
+            products = Optional.ofNullable(productClient.getAllUnOpenProduct())
                     .map(ResponseEntity::getBody)
                     .orElse(List.of());
         } catch (Exception e) {
