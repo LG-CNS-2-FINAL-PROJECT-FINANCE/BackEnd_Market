@@ -6,7 +6,7 @@ import com.ddiring.backend_market.api.asset.dto.request.MarketDto;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.*;
 
-@FeignClient(name = "assetClient", url = "${asset.base-url}")
+@FeignClient(name = "assetClient", url = "http://localhost:8082")
 public interface AssetClient {
 
         @GetMapping("/api/asset/wallet/search")

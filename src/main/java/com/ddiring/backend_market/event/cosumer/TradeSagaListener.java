@@ -23,7 +23,7 @@ public class TradeSagaListener {
     private final OrdersRepository ordersRepository;
 
 
-    @KafkaListener(topics = "BUY_ORDER_INITIATED")
+    @KafkaListener(topics = "BUY_ORDER_INITIATED", groupId = "saga-service-group")
     public void handleBuyOrderInitiated(Orders order) {
         log.info("Saga: BUY_ORDER_INITIATED 수신. 주문 ID: {}", order.getOrdersId());
         try {
@@ -41,7 +41,7 @@ public class TradeSagaListener {
     }
 
 
-    @KafkaListener(topics = "SELL_ORDER_INITIATED")
+    @KafkaListener(topics = "SELL_ORDER_INITIATED", groupId = "saga-service-group")
     public void handleSellOrderInitiated(Orders order) {
         log.info("Saga: SELL_ORDER_INITIATED 수신. 주문 ID: {}", order.getOrdersId());
         try {

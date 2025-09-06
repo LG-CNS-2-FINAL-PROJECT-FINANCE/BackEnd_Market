@@ -8,7 +8,7 @@ spring:
     password: 1234
     driver-class-name: org.mariadb.jdbc.Driver
     hikari:
-      connection-test-query: SELECT 1 # HikariCP 유효성 검사 추가
+      connection-test-query: SELECT 1
       validation-timeout: 5000
 
   jpa:
@@ -19,10 +19,23 @@ spring:
     open-in-view: false
 
   kafka:
+    listener:
+      ackMode: manual_immediate
+    consumer:
+      keyDeserializer: org.apache.kafka.common.serialization.StringDeserializer
+      valueDeserializer: org.apache.kafka.common.serialization.StringDeserializer
+      enableAutoCommit: false
+      autoOffsetReset: latest
+      maxPollRecords: 10
+      properties:
+        springJsonTrustedPackages: \"*\"
+        springJsonUseTypeHeaders: false
     producer:
-      bootstrap-servers: localhost:9092 # 카프카 브로커 주소
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer # JSON 직렬화 사용
+      keySerializer: org.apache.kafka.common.serialization.StringSerializer
+      valueSerializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        springJsonAddTypeHeaders: false
+    bootstrapServers: http://localhost:9092
 
 user:
   base-url: http://localhost:8081
