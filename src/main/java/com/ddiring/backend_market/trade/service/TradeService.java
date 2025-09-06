@@ -215,7 +215,7 @@ public class TradeService {
                 .registedAt(LocalDateTime.now())
                 .build();
 
-        Orders savedOrder = ordersRepository.save(order);
+        ordersRepository.save(order);
         try {
 
             PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
@@ -232,7 +232,7 @@ public class TradeService {
             }
 
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", order.getOrdersId());
 
             byte[] v_bytes = signature.getV();
             byte[] r_bytes = signature.getR();
@@ -254,13 +254,13 @@ public class TradeService {
                     .s(s)
                     .build();
             blockchainClient.requestDeposit(depositDto);
-            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
         } catch (Exception e) {
-            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", order.getOrdersId(), e.getMessage(), e);
             throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
         }
 
-        return (long)savedOrder.getOrdersId();
+        return (long)order.getOrdersId();
     }
 
     @Transactional
