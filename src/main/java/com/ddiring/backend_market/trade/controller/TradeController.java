@@ -24,17 +24,17 @@ public class TradeController {
 
     @PostMapping("/sell")
     public ApiResponseDto<Long> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-//        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-//        String role = GatewayRequestHeaderUtils.getRole();
-        Long orderId = tradeService.sellReception("userSeq", "USER", ordersRequestDto);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        Long orderId = tradeService.sellReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.createOk(orderId);
     }
 
     @PostMapping("/purchase")
     public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-//        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-//        String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.buyReception("userSeq", "USER", ordersRequestDto);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        tradeService.buyReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
 
@@ -58,16 +58,16 @@ public class TradeController {
 
     @PostMapping("/order/delete")
     public ApiResponseDto<String> editPurchase(@RequestBody OrderDeleteDto orderDeleteDto) {
-//        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-//        String role = GatewayRequestHeaderUtils.getRole();
-        tradeService.deleteOrder("userSeq", "USER", orderDeleteDto);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        String role = GatewayRequestHeaderUtils.getRole();
+        tradeService.deleteOrder(userSeq, role, orderDeleteDto);
         return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
     @GetMapping("/{projectId}/user/list")
     public ApiResponseDto<List<OrderUserHistory>> tradeSearch(@PathVariable String projectId) {
-//        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        List<OrderUserHistory> orderUserHistory = tradeService.getUserOrder("userSeq", projectId);
+        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+        List<OrderUserHistory> orderUserHistory = tradeService.getUserOrder(userSeq, projectId);
         return ApiResponseDto.createOk(orderUserHistory);
     }
 
