@@ -9,7 +9,7 @@ import java.util.List;
 @FeignClient(name = "productClient", url = "${product.base-url}")
 public interface ProductClient {
 
-    @GetMapping("/api/product")
+    @GetMapping("/api/product/open")
     ResponseEntity<List<ProductDTO>> getAllProduct();
 
     @GetMapping("/api/product/{projectId}")

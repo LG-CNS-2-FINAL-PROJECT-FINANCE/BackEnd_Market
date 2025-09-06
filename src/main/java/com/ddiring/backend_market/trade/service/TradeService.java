@@ -48,7 +48,6 @@ public class TradeService {
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
-            if (!"SUCCEEDED".equals(oldOrder.getOrdersStatus())) continue;
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPerPrice() >= oldOrder.getPerPrice()) {
                 tradePossible = true;
@@ -215,7 +214,7 @@ public class TradeService {
                 .registedAt(LocalDateTime.now())
                 .build();
 
-        Orders savedOrder = ordersRepository.save(order);
+        ordersRepository.save(order);
         try {
 
             PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
@@ -232,7 +231,15 @@ public class TradeService {
             }
 
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", order.getOrdersId());
+
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
 
             BigInteger deadline = dataToSign.getMessage().getDeadline();
             DepositDto depositDto = DepositDto.builder()
@@ -241,18 +248,18 @@ public class TradeService {
                     .sellId(Long.valueOf(order.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
                     .deadline(deadline)
-
-                    .r(Arrays.toString(signature.getR()))
-                    .s(Arrays.toString(signature.getS()))
+                    .v(v)
+                    .r(r)
+                    .s(s)
                     .build();
             blockchainClient.requestDeposit(depositDto);
-            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
         } catch (Exception e) {
-            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", order.getOrdersId(), e.getMessage(), e);
             throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
         }
 
-        return (long)savedOrder.getOrdersId();
+        return (long)order.getOrdersId();
     }
 
     @Transactional
@@ -283,6 +290,7 @@ public class TradeService {
         if (ordersRequestDto.getOrdersType() == 0) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
+
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
         String walletAddress = response.getData();
 
@@ -297,7 +305,6 @@ public class TradeService {
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
-                .ordersStatus("PENDING")
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
