@@ -234,6 +234,14 @@ public class TradeService {
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
             log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
+
             BigInteger deadline = dataToSign.getMessage().getDeadline();
             DepositDto depositDto = DepositDto.builder()
                     .projectId(ordersRequestDto.getProjectId())
@@ -241,9 +249,9 @@ public class TradeService {
                     .sellId(Long.valueOf(order.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
                     .deadline(deadline)
-
-                    .r(Arrays.toString(signature.getR()))
-                    .s(Arrays.toString(signature.getS()))
+                    .v(v)
+                    .r(r)
+                    .s(s)
                     .build();
             blockchainClient.requestDeposit(depositDto);
             log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
