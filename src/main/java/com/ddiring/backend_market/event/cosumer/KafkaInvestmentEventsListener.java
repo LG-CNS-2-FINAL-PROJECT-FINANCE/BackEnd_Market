@@ -2,7 +2,6 @@ package com.ddiring.backend_market.event.cosumer;
 
 import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.*;
-import com.ddiring.backend_market.investment.dto.request.InvestmentRequest;
 import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
 import com.ddiring.backend_market.investment.repository.InvestmentRepository;
@@ -16,7 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -41,7 +39,7 @@ public class KafkaInvestmentEventsListener {
 
             log.info("[INVEST] 이벤트 수신: {}", eventType);
             switch (eventType) {
-                case "INVESTMENT.REQUEST" : {
+                case "INVESTMENT.REQUEST": {
                     InvestRequestEvent request = objectMapper.convertValue(messageMap, InvestRequestEvent.class);
                     if (request.getPayload() == null) {
                         log.warn("REQUEST 이벤트 payload 누락: {}", message);
@@ -119,8 +117,10 @@ public class KafkaInvestmentEventsListener {
         Investment inv = investmentRepository.findByInvestmentSeq(invesmtmentId.intValue())
                 .orElseThrow(() -> new NotFound("찾을 수 없는 투자 번호 입니다."));
 
-        if (InvestmentStatus.PENDING.equals(inv.getInvStatus()) || InvestmentStatus.FUNDING.equals(inv.getInvStatus())) {
-            throw new IllegalStateException("이미 요청 처리 중인 투자 번호입니다.");
+        if (!InvestmentStatus.FUNDING.equals(inv.getInvStatus())) {
+            log.warn("잘못된 상태의 투자에 대한 할당 수락 이벤트 수신. investmentId={}, status={}", inv.getInvestmentSeq(),
+                    inv.getInvStatus());
+            throw new IllegalStateException("할당 요청을 수락하기에 올바르지 않은 투자 상태입니다: " + inv.getInvStatus());
         }
 
         inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
