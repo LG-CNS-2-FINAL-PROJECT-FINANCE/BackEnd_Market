@@ -27,13 +27,13 @@ public class KafkaInvestmentEventsListener {
     private final InvestmentService investmentService;
 
     @KafkaListener(topics = "INVESTMENT", groupId = "market-service-group")
-    public void listenInvestmentEvents(String message) {
+    public void listenInvestmentEvents(Map<String, Object> messageMap) {
         try {
-            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {
-            });
+//            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {
+//            });
             String eventType = (String) messageMap.get("eventType");
             if (eventType == null) {
-                log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
+                log.warn("eventType 필드를 찾을 수 없습니다: {}", messageMap);
                 return;
             }
 
@@ -42,7 +42,7 @@ public class KafkaInvestmentEventsListener {
                 case "INVESTMENT.REQUEST": {
                     InvestRequestEvent request = objectMapper.convertValue(messageMap, InvestRequestEvent.class);
                     if (request.getPayload() == null) {
-                        log.warn("REQUEST 이벤트 payload 누락: {}", message);
+                        log.warn("REQUEST 이벤트 payload 누락: {}",messageMap);
                         return;
                     }
                     handleRequest(request);
@@ -52,7 +52,7 @@ public class KafkaInvestmentEventsListener {
                     InvestRequestAcceptedEvent accepted = objectMapper.convertValue(messageMap,
                             InvestRequestAcceptedEvent.class);
                     if (accepted.getPayload() == null) {
-                        log.warn("ACCEPTED 이벤트 payload 누락: {}", message);
+                        log.warn("ACCEPTED 이벤트 payload 누락: {}", messageMap);
                         return;
                     }
                     handleRequestAccepted(accepted);
@@ -62,7 +62,7 @@ public class KafkaInvestmentEventsListener {
                     InvestRequestRejectedEvent rejected = objectMapper.convertValue(messageMap,
                             InvestRequestRejectedEvent.class);
                     if (rejected.getPayload() == null) {
-                        log.warn("REJECTED 이벤트 payload 누락: {}", message);
+                        log.warn("REJECTED 이벤트 payload 누락: {}", messageMap);
                         return;
                     }
                     handleRequestRejected(rejected);
@@ -72,7 +72,7 @@ public class KafkaInvestmentEventsListener {
                     InvestSucceededEvent succeeded = objectMapper.convertValue(messageMap,
                             InvestSucceededEvent.class);
                     if (succeeded.getPayload() == null) {
-                        log.warn("SUCCEEDED 이벤트 payload 누락: {}", message);
+                        log.warn("SUCCEEDED 이벤트 payload 누락: {}", messageMap);
                         return;
                     }
                     handleInvestSucceeded(succeeded);
@@ -82,7 +82,7 @@ public class KafkaInvestmentEventsListener {
                     InvestFailedEvent failed = objectMapper.convertValue(messageMap,
                             InvestFailedEvent.class);
                     if (failed.getPayload() == null) {
-                        log.warn("FAILED 이벤트 payload 누락: {}", message);
+                        log.warn("FAILED 이벤트 payload 누락: {}", messageMap);
                         return;
                     }
                     handleInvestFailed(failed);
@@ -93,7 +93,7 @@ public class KafkaInvestmentEventsListener {
                     break;
             }
         } catch (Exception e) {
-            log.error("투자 이벤트 처리 실패: {}", message, e);
+            log.error("투자 이벤트 처리 실패: {}", messageMap, e);
         }
     }
 

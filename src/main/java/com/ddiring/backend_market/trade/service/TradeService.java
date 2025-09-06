@@ -291,6 +291,7 @@ public class TradeService {
         if (ordersRequestDto.getOrdersType() == 0) {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
+
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
         String walletAddress = response.getData();
 

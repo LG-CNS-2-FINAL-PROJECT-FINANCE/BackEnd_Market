@@ -29,14 +29,14 @@ public class KafkaTradeEventsListener {
     private final ObjectMapper objectMapper; // JSON 파싱을 위해 ObjectMapper 주입
 
     @KafkaListener(topics = "TRADE", groupId = "market-service-group")
-    public void listenTradeEvents(String message) {
+    public void listenTradeEvents(Map<String, Object> messageMap) {
         try {
 
-            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {});
+//            Map<String, Object> messageMap = objectMapper.readValue(message, new TypeReference<>() {});
 
             String eventType = (String) messageMap.get("eventType");
             if (eventType == null) {
-                log.warn("eventType 필드를 찾을 수 없습니다: {}", message);
+                log.warn("eventType 필드를 찾을 수 없습니다: {}", messageMap);
                 return;
             }
 
@@ -71,7 +71,7 @@ public class KafkaTradeEventsListener {
                     break;
             }
         } catch (Exception e) {
-            log.error("Kafka 메시지 처리 중 오류 발생: {}", message, e);
+            log.error("Kafka 메시지 처리 중 오류 발생: {}", messageMap, e);
         }
     }
 
