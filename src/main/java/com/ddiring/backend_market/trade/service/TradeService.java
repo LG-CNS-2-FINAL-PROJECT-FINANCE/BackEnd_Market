@@ -48,7 +48,6 @@ public class TradeService {
 
     private void matchAndExecuteTrade(Orders order, List<Orders> oldOrders) {
         for (Orders oldOrder : oldOrders) {
-            if (!"SUCCEEDED".equals(oldOrder.getOrdersStatus())) continue;
             boolean tradePossible = false;
             if (order.getOrdersType() == 1 && order.getPerPrice() >= oldOrder.getPerPrice()) {
                 tradePossible = true;
@@ -306,7 +305,6 @@ public class TradeService {
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
                 .registedAt(LocalDateTime.now())
-                .ordersStatus("PENDING")
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
