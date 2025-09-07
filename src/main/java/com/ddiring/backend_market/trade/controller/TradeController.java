@@ -1,19 +1,14 @@
 package com.ddiring.backend_market.trade.controller;
 
-import com.ddiring.backend_market.api.asset.dto.request.AssetEscrowRequest;
 import com.ddiring.backend_market.common.dto.ApiResponseDto;
-import com.ddiring.backend_market.common.util.GatewayRequestHeaderUtils;
 import com.ddiring.backend_market.trade.dto.*;
-import com.ddiring.backend_market.trade.entity.Orders;
 import com.ddiring.backend_market.trade.service.TradeService;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -23,17 +18,17 @@ public class TradeController {
     private final TradeService tradeService;
 
     @PostMapping("/sell")
-    public ApiResponseDto<Long> sellOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        String role = GatewayRequestHeaderUtils.getRole();
+    public ApiResponseDto<Long> sellOrder(@RequestHeader("userSeq") String userSeq,
+                                          @RequestHeader("role") String role,
+                                          @RequestBody OrdersRequestDto ordersRequestDto) {
         Long orderId = tradeService.sellReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.createOk(orderId);
     }
 
     @PostMapping("/purchase")
-    public ApiResponseDto<String> purchaseOrder(@RequestBody OrdersRequestDto ordersRequestDto) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        String role = GatewayRequestHeaderUtils.getRole();
+    public ApiResponseDto<String> purchaseOrder(@RequestHeader("userSeq") String userSeq,
+                                                @RequestHeader("role") String role,
+                                                @RequestBody OrdersRequestDto ordersRequestDto) {
         tradeService.buyReception(userSeq, role, ordersRequestDto);
         return ApiResponseDto.defaultOk();
     }
@@ -57,30 +52,29 @@ public class TradeController {
     }
 
     @PostMapping("/order/delete")
-    public ApiResponseDto<String> editPurchase(@RequestBody OrderDeleteDto orderDeleteDto) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
-        String role = GatewayRequestHeaderUtils.getRole();
+    public ApiResponseDto<String> editPurchase(@RequestHeader("userSeq") String userSeq,
+                                               @RequestHeader("role") String role,
+                                               @RequestBody OrderDeleteDto orderDeleteDto) {
         tradeService.deleteOrder(userSeq, role, orderDeleteDto);
         return ApiResponseDto.createOk("삭제되었습니다.");
     }
 
     @GetMapping("/{projectId}/user/list")
-    public ApiResponseDto<List<OrderUserHistory>> tradeSearch(@PathVariable String projectId) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+    public ApiResponseDto<List<OrderUserHistory>> tradeSearch(@RequestHeader("userSeq") String userSeq,
+                                                              @PathVariable String projectId) {
         List<OrderUserHistory> orderUserHistory = tradeService.getUserOrder(userSeq, projectId);
         return ApiResponseDto.createOk(orderUserHistory);
     }
 
     @GetMapping("/{projectId}/user/history")
-    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@PathVariable String projectId) {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeHistroy(@RequestHeader("userSeq") String userSeq,
+                                                                      @PathVariable String projectId) {
         List<TradeHistoryResponseDto> tradeHistroy = tradeService.getTradeHistory(userSeq, projectId);
         return ApiResponseDto.createOk(tradeHistroy);
     }
 
     @GetMapping("/history")
-    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeAllHistroy() {
-        String userSeq = GatewayRequestHeaderUtils.getUserSeq();
+    public ApiResponseDto<List<TradeHistoryResponseDto>> tradeAllHistroy(@RequestHeader("userSeq") String userSeq) {
         List<TradeHistoryResponseDto> tradeAllHistroy = tradeService.getTradeAllHistory(userSeq);
         return ApiResponseDto.createOk(tradeAllHistroy);
     }
@@ -96,7 +90,7 @@ public class TradeController {
 
         return ApiResponseDto.createOk(response);
     }
-  
+
     @GetMapping("/{tradeId}")
     public ApiResponseDto<TradeInfoResponseDto> getTradeInfo(@PathVariable Long tradeId) {
         TradeInfoResponseDto tradeInfo = tradeService.getTradeInfoById(tradeId);
