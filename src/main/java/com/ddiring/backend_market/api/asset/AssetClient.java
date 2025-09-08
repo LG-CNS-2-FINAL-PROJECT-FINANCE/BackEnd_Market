@@ -39,4 +39,11 @@ public interface AssetClient {
 
         @GetMapping("/api/asset/wallet/private-key")
         ApiResponseDto<String> getDecryptedPrivateKey(@RequestHeader("userSeq") String userSeq);
+
+    @PostMapping("/api/asset/market/check-balance")
+    ApiResponseDto<Boolean> checkBalance(@RequestHeader("userSeq") String userSeq, @RequestHeader("role") String role,
+                                         @RequestBody MarketBuyDto marketBuyDto);
+
+    @PostMapping("/api/asset/market/check-token")
+    ApiResponseDto<Boolean> checkToken(@RequestHeader("userSeq") String userSeq, @RequestBody MarketSellDto marketSellDto);
 }

@@ -101,30 +101,30 @@ public class TradeService {
                         .build();
 
 
-//                try {
-//                    blockchainClient.requestTradeTokenMove(tradeDto);
-//                } catch (Exception e) {
-//                    log.error("블록체인 통신 실패. Trade ID: {}", trade.getTradeId(), e);
-//                    // 블록체인 통신 실패 시 보상 트랜잭션 이벤트 발행
-//                    tradeEventProducer.send(TradeFailedEvent.TOPIC, TradeFailedEvent.of(
-//                            trade.getProjectId(),
-//                            trade.getTradeId(),
-//                            trade.getBuyerAddress(),
-//                            trade.getSellerAddress(),
-//                            (long) trade.getTokenQuantity(),
-//                            "BLOCKCHAIN_ERROR",
-//                            e.getMessage()
-//                    ));
-//                    // 거래 상태 FAILED로 변경
-//                    trade.setTradeStatus("FAILED");
-//                    tradeRepository.save(trade);
-//
-//                    // 연관된 주문들도 보상 처리 (환불)
-//                    buyOrderRefund(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId());
-//                    sellOrderRefund(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId());
-//
-//                    return; // 매칭 중단
-//                }
+                try {
+                    blockchainClient.requestTradeTokenMove(tradeDto);
+                } catch (Exception e) {
+                    log.error("블록체인 통신 실패. Trade ID: {}", trade.getTradeId(), e);
+                    // 블록체인 통신 실패 시 보상 트랜잭션 이벤트 발행
+                    tradeEventProducer.send(TradeFailedEvent.TOPIC, TradeFailedEvent.of(
+                            trade.getProjectId(),
+                            trade.getTradeId(),
+                            trade.getBuyerAddress(),
+                            trade.getSellerAddress(),
+                            (long) trade.getTokenQuantity(),
+                            "BLOCKCHAIN_ERROR",
+                            e.getMessage()
+                    ));
+                    // 거래 상태 FAILED로 변경
+                    trade.setTradeStatus("FAILED");
+                    tradeRepository.save(trade);
+
+                    // 연관된 주문들도 보상 처리 (환불)
+                    buyOrderRefund(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId());
+                    sellOrderRefund(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId());
+
+                    return; // 매칭 중단
+                }
 
                     TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
                     tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
@@ -198,6 +198,13 @@ public class TradeService {
             throw new BadParameter("이거 아이다 다른거 줘라");
         }
 
+        MarketSellDto sellCheckDto = new MarketSellDto();
+        sellCheckDto.setProjectId(ordersRequestDto.getProjectId());
+        sellCheckDto.setSellToken(ordersRequestDto.getTokenQuantity());
+        ApiResponseDto<Boolean> tokenCheckResponse = assetClient.checkToken(userSeq, sellCheckDto);
+        if (tokenCheckResponse == null || !Boolean.TRUE.equals(tokenCheckResponse.getData())) {
+            throw new BadParameter("판매할 토큰이 부족합니다.");
+        }
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
         String walletAddress = response.getData();
         log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
@@ -219,49 +226,49 @@ public class TradeService {
         tradeEventProducer.send("SELL_ORDER_INITIATED", savedOrder);
         log.info("판매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
 
-//        try {
-//
-//            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
-//                    .projectId(ordersRequestDto.getProjectId())
-//                    .userAddress(walletAddress)
-//                    .tokenAmount((long) ordersRequestDto.getTokenQuantity())
-//                    .build();
-//
-//            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
-//            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
-//
-//            if (dataToSign == null) {
-//                throw new IllegalStateException("Blockchain 서비스로부터 서명 데이터를 받지 못했습니다.");
-//            }
-//
-//            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-//            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", order.getOrdersId());
-//
-//            byte[] v_bytes = signature.getV();
-//            byte[] r_bytes = signature.getR();
-//            byte[] s_bytes = signature.getS();
-//
-//            Integer v = (int) v_bytes[0];
-//            String r = Numeric.toHexString(r_bytes);
-//            String s = Numeric.toHexString(s_bytes);
-//
-//            BigInteger deadline = dataToSign.getMessage().getDeadline();
-//            DepositDto depositDto = DepositDto.builder()
-//                    .projectId(ordersRequestDto.getProjectId())
-//                    .sellerAddress(walletAddress)
-//                    .sellId(Long.valueOf(order.getOrdersId()))
-//                    .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
-//                    .deadline(deadline)
-//                    .v(v)
-//                    .r(r)
-//                    .s(s)
-//                    .build();
-//            blockchainClient.requestDeposit(depositDto);
-//            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
-//        } catch (Exception e) {
-//            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", order.getOrdersId(), e.getMessage(), e);
-//            throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
-//        }
+        try {
+
+            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
+                    .projectId(ordersRequestDto.getProjectId())
+                    .userAddress(walletAddress)
+                    .tokenAmount((long) ordersRequestDto.getTokenQuantity())
+                    .build();
+
+            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
+            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
+
+            if (dataToSign == null) {
+                throw new IllegalStateException("Blockchain 서비스로부터 서명 데이터를 받지 못했습니다.");
+            }
+
+            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
+            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", order.getOrdersId());
+
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
+
+            BigInteger deadline = dataToSign.getMessage().getDeadline();
+            DepositDto depositDto = DepositDto.builder()
+                    .projectId(ordersRequestDto.getProjectId())
+                    .sellerAddress(walletAddress)
+                    .sellId(Long.valueOf(order.getOrdersId()))
+                    .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
+                    .deadline(deadline)
+                    .v(v)
+                    .r(r)
+                    .s(s)
+                    .build();
+            blockchainClient.requestDeposit(depositDto);
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
+        } catch (Exception e) {
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", order.getOrdersId(), e.getMessage(), e);
+            throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
+        }
 
         return (long)order.getOrdersId();
     }
@@ -292,6 +299,13 @@ public class TradeService {
         }
         if (ordersRequestDto.getOrdersType() == 0) {
             throw new BadParameter("이거 아이다 다른거 줘라");
+        }
+
+        MarketBuyDto buyCheckDto = new MarketBuyDto();
+        buyCheckDto.setBuyPrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity());
+        ApiResponseDto<Boolean> balanceCheckResponse = assetClient.checkBalance(userSeq, role, buyCheckDto);
+        if (balanceCheckResponse == null || !Boolean.TRUE.equals(balanceCheckResponse.getData())) {
+            throw new BadParameter("잔액이 부족합니다.");
         }
 
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
@@ -380,44 +394,44 @@ public class TradeService {
         Orders order = ordersRepository.findByOrdersId(orderDeleteDto.getOrderId())
                 .orElseThrow(() -> new NotFound("권한 가져와"));
 
-//        if (order.getOrdersType() == 0) {
-//            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
-//                    .projectId(order.getProjectId())
-//                    .userAddress(order.getWalletAddress())
-//                    .tokenAmount((long) order.getTokenQuantity())
-//                    .build();
-//            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
-//            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
-//
-//            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-//            log.info("판매 주문 취소 ID {}에 대한 서버 서명 및 제출 완료", orderDeleteDto.getOrderId());
-//
-//            byte[] v_bytes = signature.getV();
-//            byte[] r_bytes = signature.getR();
-//            byte[] s_bytes = signature.getS();
-//
-//            Integer v = (int) v_bytes[0];
-//            String r = Numeric.toHexString(r_bytes);
-//            String s = Numeric.toHexString(s_bytes);
-//
-//            DepositDto depositDto = DepositDto.builder()
-//                    .projectId(order.getProjectId())
-//                    .sellerAddress(order.getWalletAddress())
-//                    .sellId(Long.valueOf(order.getOrdersId()))
-//                    .tokenAmount(BigInteger.valueOf(order.getTokenQuantity()))
-//                    .deadline(BigInteger.valueOf(0))
-//                    .v(v)
-//                    .r(r)
-//                    .s(s)
-//                    .build();
-//
-//            try {
-//                blockchainClient.requestDepositCancel(depositDto);
-//                log.info("판매 주문 ID {}에 대한 블록체인 취소 요청 완료", order.getOrdersId());
-//            } catch (Exception e) {
-//                log.error("주문 ID {} 블록체인 취소 요청 실패: {}", order.getOrdersId(), e.getMessage());
-//            }
-//        }
+        if (order.getOrdersType() == 0) {
+            PermitSignatureDto.Request permitRequest = PermitSignatureDto.Request.builder()
+                    .projectId(order.getProjectId())
+                    .userAddress(order.getWalletAddress())
+                    .tokenAmount((long) order.getTokenQuantity())
+                    .build();
+            ApiResponseDto<PermitSignatureDto.Response> signatureDataResponse = blockchainClient.requestPermitSignature(permitRequest);
+            PermitSignatureDto.Response dataToSign = signatureDataResponse.getData();
+
+            Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
+            log.info("판매 주문 취소 ID {}에 대한 서버 서명 및 제출 완료", orderDeleteDto.getOrderId());
+
+            byte[] v_bytes = signature.getV();
+            byte[] r_bytes = signature.getR();
+            byte[] s_bytes = signature.getS();
+
+            Integer v = (int) v_bytes[0];
+            String r = Numeric.toHexString(r_bytes);
+            String s = Numeric.toHexString(s_bytes);
+
+            DepositDto depositDto = DepositDto.builder()
+                    .projectId(order.getProjectId())
+                    .sellerAddress(order.getWalletAddress())
+                    .sellId(Long.valueOf(order.getOrdersId()))
+                    .tokenAmount(BigInteger.valueOf(order.getTokenQuantity()))
+                    .deadline(BigInteger.valueOf(0))
+                    .v(v)
+                    .r(r)
+                    .s(s)
+                    .build();
+
+            try {
+                blockchainClient.requestDepositCancel(depositDto);
+                log.info("판매 주문 ID {}에 대한 블록체인 취소 요청 완료", order.getOrdersId());
+            } catch (Exception e) {
+                log.error("주문 ID {} 블록체인 취소 요청 실패: {}", order.getOrdersId(), e.getMessage());
+            }
+        }
 
             MarketRefundDto marketRefundDto = new MarketRefundDto();
             marketRefundDto.setOrdersId(orderDeleteDto.getOrderId());
