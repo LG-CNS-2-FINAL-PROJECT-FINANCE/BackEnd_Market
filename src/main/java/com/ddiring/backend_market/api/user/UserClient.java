@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 
 import java.util.List;
 
-@FeignClient(name = "userClient", url = "http://localhost:8081")
+@FeignClient(name = "userClient", url = "${user.base-url}")
 public interface UserClient {
 
     @PostMapping("/api/user/detail")
