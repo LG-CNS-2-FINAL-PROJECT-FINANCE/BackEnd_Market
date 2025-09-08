@@ -4,6 +4,7 @@ import com.ddiring.backend_market.api.asset.AssetClient;
 import com.ddiring.backend_market.api.asset.dto.request.MarketBuyDto;
 import com.ddiring.backend_market.api.asset.dto.request.MarketSellDto;
 import com.ddiring.backend_market.trade.entity.Orders;
+import com.ddiring.backend_market.trade.repository.OrdersRepository;
 import com.ddiring.backend_market.trade.service.TradeService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -17,11 +18,13 @@ import org.springframework.stereotype.Component;
 public class TradeSagaListener {
 
     private final AssetClient assetClient;
+    private final OrdersRepository ordersRepository;
     private final TradeService tradeService;
     private final ObjectMapper objectMapper; // ObjectMapper 주입
 
     @KafkaListener(topics = "BUY_ORDER_INITIATED", groupId = "saga-service-group")
     public void handleBuyOrderInitiated(String message) {
+        Orders buyOrder = null;
         try {
             // 1. 받은 메시지(String)를 Orders 객체로 변환
             Orders order = objectMapper.readValue(message, Orders.class);
@@ -37,17 +40,20 @@ public class TradeSagaListener {
             assetClient.marketBuy(order.getUserSeq(), order.getRole(), marketBuyDto);
             log.info("Saga: Asset 서비스에 구매 요청 성공. 주문 ID: {}", order.getOrdersId());
 
+            buyOrder = ordersRepository.findById(order.getOrdersId()).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다"));
+            tradeService.beforeMatch(buyOrder);
+
         } catch (Exception e) {
             // JSON 파싱 실패 또는 Asset 서비스 호출 실패 시
             log.error("Saga: BUY_ORDER_INITIATED 처리 실패. 메시지: {}", message, e);
-            // 실패 시 보상 트랜잭션을 호출해야 한다면 여기에 로직을 추가할 수 있습니다.
-            // 예를 들어, 메시지에서 orderId만 추출하여 환불을 시도할 수 있습니다.
+            tradeService.buyOrderRefund(buyOrder.getOrdersId());
         }
     }
 
 
     @KafkaListener(topics = "SELL_ORDER_INITIATED", groupId = "saga-service-group")
     public void handleSellOrderInitiated(String message) {
+        Orders sellOrder = null;
         try {
             // 1. 받은 메시지(String)를 Orders 객체로 변환
             Orders order = objectMapper.readValue(message, Orders.class);
@@ -62,11 +68,11 @@ public class TradeSagaListener {
 
             assetClient.marketSell(order.getUserSeq(), marketSellDto);
             log.info("Saga: Asset 서비스에 판매 요청 성공. 주문 ID: {}", order.getOrdersId());
-
+            sellOrder = ordersRepository.findById(order.getOrdersId()).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다"));
         } catch (Exception e) {
             // JSON 파싱 실패 또는 Asset 서비스 호출 실패 시
             log.error("Saga: SELL_ORDER_INITIATED 처리 실패. 메시지: {}", message, e);
-            // 실패 시 보상 트랜잭션을 호출해야 한다면 여기에 로직을 추가할 수 있습니다.
+            tradeService.sellOrderRefund(sellOrder.getOrdersId());
         }
     }
 }

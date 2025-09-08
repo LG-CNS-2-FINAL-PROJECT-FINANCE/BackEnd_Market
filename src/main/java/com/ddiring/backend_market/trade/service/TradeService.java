@@ -349,16 +349,27 @@ public class TradeService {
 
         log.info("주문 ID {}에 대한 거래 체결 로직을 시작합니다.", order.getOrdersId());
 
-        List<Orders> purchaseOrders = ordersRepository
-                .findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceDescRegistedAtAsc(
-                        order.getProjectId(), 1, "SUCCEEDED");
-
-        if (purchaseOrders.isEmpty()) {
-            log.info("주문 ID {}에 대한 거래 상대방(구매 주문)이 없습니다.", order.getOrdersId());
-            return;
+        List<Orders> orders;
+        if (order.getOrdersType() == 1) {
+            orders = ordersRepository
+                    .findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceAscRegistedAtAsc(
+                            order.getProjectId(), 0, "SUCCEEDED");
+            if (orders.isEmpty()) {
+                log.info("주문 ID {}에 대한 거래 상대방(판매 주문)이 없습니다.", order.getOrdersId());
+                return;
+            }
+        }
+        else {
+            orders = ordersRepository
+                    .findByProjectIdAndOrdersTypeAndOrdersStatusOrderByPurchasePriceDescRegistedAtAsc(
+                            order.getProjectId(), 1, "SUCCEEDED");
+            if (orders.isEmpty()) {
+                log.info("주문 ID {}에 대한 거래 상대방(구매 주문)이 없습니다.", order.getOrdersId());
+                return;
+            }
         }
 
-        matchAndExecuteTrade(order, purchaseOrders);
+        matchAndExecuteTrade(order, orders);
     }
     @Transactional
     public void deleteOrder(String userSeq, String role, OrderDeleteDto orderDeleteDto) {
@@ -415,6 +426,7 @@ public class TradeService {
             marketRefundDto.setRefundAmount(order.getTokenQuantity());
             marketRefundDto.setOrderType(order.getOrdersType());
             assetClient.marketRefund(userSeq, role, marketRefundDto);
+            log.info("환불 가격 : {}", order.getPurchasePrice());
 
             ordersRepository.delete(order);
         log.info("주문 삭제: 삭제 주문 ID: {}, 프로젝트 ID {}, 주문 번호: {}", orderDeleteDto.getOrderId(), order.getProjectId(), orderDeleteDto.getOrderId());
