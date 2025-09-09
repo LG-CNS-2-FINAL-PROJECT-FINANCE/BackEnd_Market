@@ -571,6 +571,7 @@ public class TradeService {
                 .tokenQuantity(trade.getTokenQuantity())
                 .buyerUserSeq(trade.getPurchaseId())
                 .sellerUserSeq(trade.getSellId())
+                .status(trade.getTradeStatus())
                 .build();
     }
 
