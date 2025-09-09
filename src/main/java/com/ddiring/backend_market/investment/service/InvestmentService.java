@@ -444,8 +444,8 @@ public class InvestmentService {
         for (Investment inv : allocRequested) {
             try {
                 // 지갑 주소 조회
-                String address = assetClient.getWalletAddress(inv.getUserSeq()).getData();
-                if (address == null || address.isBlank()) {
+                ApiResponseDto<String> address = assetClient.getWalletAddress(inv.getUserSeq());
+                if (address == null || address.getData().isBlank()) {
                     inv.setInvStatus(InvestmentStatus.FAILED);
                     inv.setUpdatedAt(LocalDateTime.now());
                     continue;
