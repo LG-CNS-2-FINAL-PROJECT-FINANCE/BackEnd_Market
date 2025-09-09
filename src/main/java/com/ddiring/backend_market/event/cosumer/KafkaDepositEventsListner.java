@@ -63,6 +63,7 @@ public class KafkaDepositEventsListner {
             log.error("Kafka 메시지 처리 중 오류 발생: {}", message, e);
         }
     }
+
     @Transactional
     public void handleDepositSucceeded(DepositSucceededEvent event) {
         DepositSucceededEvent.DepositSucceededPayload payload = event.getPayload();
@@ -81,6 +82,17 @@ public class KafkaDepositEventsListner {
             return;
         }
 
+        // 멱등성 체크: 이미 성공 상태인지 확인
+        if ("SUCCEEDED".equals(order.getOrdersStatus())) {
+            log.info("이미 SUCCEEDED 상태인 주문입니다. 중복 이벤트이므로 무시합니다. orderId={}", payload.getSellId());
+            return;
+        }
+
+        // 방어 코드: 다른 최종 상태일 경우 경고
+        if ("FAILED".equals(order.getOrdersStatus())) {
+            log.warn("이미 FAILED 상태인 주문에 대해 SUCCEEDED 이벤트가 수신되었습니다. orderId={}", payload.getSellId());
+        }
+
         order.setOrdersStatus("SUCCEEDED");
         Orders updatedOrder = ordersRepository.save(order);
         log.info("주문 ID {}의 상태를 SUCCEEDED로 변경했습니다.", updatedOrder.getOrdersId());
@@ -91,13 +103,20 @@ public class KafkaDepositEventsListner {
     @Transactional
     public void handleDepositFailed(DepositFailedEvent event) {
         DepositFailedEvent.DepositFailedPayload payload = event.getPayload();
-        log.info("DepositSucceededEvent 처리: sellId={}", payload.getSellId());
+        log.info("DepositFailedEvent 처리: sellId={}", payload.getSellId());
 
         Orders orders = ordersRepository.findByOrdersId(Math.toIntExact(payload.getSellId()))
-                .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
+                .orElseThrow(() -> new IllegalArgumentException("주문을 찾을 수 없습니다."));
+
+        // 멱등성 체크: 이미 해당 상태인지 확인
+        if (payload.getStatus().equals(orders.getOrdersStatus())) {
+            log.info("이미 {} 상태인 주문입니다. 중복 이벤트이므로 무시합니다. orderId={}", payload.getStatus(), payload.getSellId());
+            return;
+        }
 
         orders.setOrdersStatus(payload.getStatus());
         ordersRepository.save(orders);
+        log.info("주문 상태를 {}로 변경했습니다. orderId={}", payload.getStatus(), payload.getSellId());
     }
 
 }

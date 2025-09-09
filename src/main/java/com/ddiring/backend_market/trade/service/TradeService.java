@@ -321,7 +321,7 @@ public class TradeService {
                 .perPrice(ordersRequestDto.getPurchasePrice())
                 .purchasePrice(ordersRequestDto.getPurchasePrice() * ordersRequestDto.getTokenQuantity())
                 .tokenQuantity(ordersRequestDto.getTokenQuantity())
-                .ordersStatus("SUCCEEDED")
+                .ordersStatus("PENDING")
                 .registedAt(LocalDateTime.now())
                 .build();
 

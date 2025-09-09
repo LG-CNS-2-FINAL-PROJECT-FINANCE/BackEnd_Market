@@ -26,27 +26,51 @@ public class TradeSagaListener {
     public void handleBuyOrderInitiated(String message) {
         Orders buyOrder = null;
         try {
-            // 1. 받은 메시지(String)를 Orders 객체로 변환
-            Orders order = objectMapper.readValue(message, Orders.class);
+            // 1. 메시지에서 주문 정보 읽기
+            Orders orderFromMessage = objectMapper.readValue(message, Orders.class);
+            log.info("Saga: BUY_ORDER_INITIATED 수신. 주문 ID: {}", orderFromMessage.getOrdersId());
 
-            log.info("Saga: BUY_ORDER_INITIATED 수신. 주문 ID: {}", order.getOrdersId());
+            // 2. DB에서 최신 주문 정보 다시 조회 (매우 중요)
+            buyOrder = ordersRepository.findById(orderFromMessage.getOrdersId())
+                    .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다. ID: " + orderFromMessage.getOrdersId()));
+
+            if (!"PENDING".equals(buyOrder.getOrdersStatus())) {
+                log.info("이미 처리 시작되었거나 완료된 주문입니다. 중복 이벤트이므로 무시합니다. 주문 ID: {}, 현재 상태: {}",
+                        buyOrder.getOrdersId(), buyOrder.getOrdersStatus());
+                return;
+            }
+
+            buyOrder.setOrdersStatus("PROCESSING");
+            ordersRepository.save(buyOrder);
+            log.info("주문 처리 시작. 상태를 PROCESSING으로 변경. 주문 ID: {}", buyOrder.getOrdersId());
 
             MarketBuyDto marketBuyDto = new MarketBuyDto();
-            marketBuyDto.setOrdersId(order.getOrdersId());
-            marketBuyDto.setProjectId(order.getProjectId());
-            marketBuyDto.setBuyPrice(order.getPurchasePrice());
+            marketBuyDto.setOrdersId(buyOrder.getOrdersId());
+            marketBuyDto.setProjectId(buyOrder.getProjectId());
+            marketBuyDto.setBuyPrice(buyOrder.getPurchasePrice());
             marketBuyDto.setTransType(1);
 
-            assetClient.marketBuy(order.getUserSeq(), order.getRole(), marketBuyDto);
-            log.info("Saga: Asset 서비스에 구매 요청 성공. 주문 ID: {}", order.getOrdersId());
+            assetClient.marketBuy(buyOrder.getUserSeq(), buyOrder.getRole(), marketBuyDto);
+            log.info("Saga: Asset 서비스에 구매 요청(marketBuy) 성공. 주문 ID: {}", buyOrder.getOrdersId());
 
-            buyOrder = ordersRepository.findById(order.getOrdersId()).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다"));
             tradeService.beforeMatch(buyOrder);
 
+            buyOrder.setOrdersStatus("SUCCEEDED");
+            ordersRepository.save(buyOrder);
+            log.info("Saga: 구매 주문 최종 처리 성공. 상태를 SUCCEEDED로 변경. 주문 ID: {}", buyOrder.getOrdersId());
+
         } catch (Exception e) {
-            // JSON 파싱 실패 또는 Asset 서비스 호출 실패 시
-            log.error("Saga: BUY_ORDER_INITIATED 처리 실패. 메시지: {}", message, e);
-            tradeService.buyOrderRefund(buyOrder.getOrdersId());
+            log.error("Saga: BUY_ORDER_INITIATED 처리 실패. 주문 ID: {}. 원인: {}",
+                    (buyOrder != null ? buyOrder.getOrdersId() : "알 수 없음"), e.getMessage(), e);
+
+            if (buyOrder != null) {
+                buyOrder.setOrdersStatus("FAILED");
+                ordersRepository.save(buyOrder);
+                log.info("주문 처리 실패. 상태를 FAILED로 변경. 주문 ID: {}", buyOrder.getOrdersId());
+
+                // 환불 로직 호출
+                tradeService.buyOrderRefund(buyOrder.getOrdersId());
+            }
         }
     }
 

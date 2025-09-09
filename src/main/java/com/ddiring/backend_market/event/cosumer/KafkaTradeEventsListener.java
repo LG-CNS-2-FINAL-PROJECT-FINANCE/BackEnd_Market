@@ -83,8 +83,15 @@ public class KafkaTradeEventsListener {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
+        // 멱등성 체크: 이미 처리된 상태인지 확인
+        if ("PENDING".equals(trade.getTradeStatus())) {
+            log.info("이미 PENDING 상태인 거래입니다. 중복 이벤트이므로 무시합니다. tradeId={}", payload.getTradeId());
+            return;
+        }
+
         trade.setTradeStatus("PENDING");
         tradeRepository.save(trade);
+        log.info("거래 상태를 PENDING으로 변경했습니다. tradeId={}", payload.getTradeId());
     }
 
     @Transactional
@@ -95,8 +102,16 @@ public class KafkaTradeEventsListener {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
-        trade.setTradeStatus("PENDING");
+        // 멱등성 체크: 이미 처리된 상태인지 확인 (REJECTED로 변경하는 것을 권장하나, 기존 로직 유지)
+        if ("REJECTED".equals(trade.getTradeStatus()) || "PENDING".equals(trade.getTradeStatus())) {
+            log.info("이미 REJECTED 또는 PENDING 상태인 거래입니다. 중복 이벤트이므로 무시합니다. tradeId={}", payload.getTradeId());
+            return;
+        }
+
+        // 참고: 거절 이벤트이므로 'REJECTED' 상태로 변경하는 것이 더 명확해 보입니다.
+        trade.setTradeStatus("REJECTED");
         tradeRepository.save(trade);
+        log.info("거래 상태를 REJECTED로 변경했습니다. tradeId={}", payload.getTradeId());
     }
 
     @Transactional
@@ -107,9 +122,20 @@ public class KafkaTradeEventsListener {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다. tradeId: " + payload.getTradeId()));
 
+        // 멱등성 체크: 이미 최종 상태(성공)인지 확인
+        if ("SUCCEEDED".equals(trade.getTradeStatus())) {
+            log.info("이미 SUCCEEDED 상태인 거래입니다. 중복 이벤트이므로 무시합니다. tradeId={}", payload.getTradeId());
+            return;
+        }
+
+        // 방어 코드: 다른 최종 상태(실패)일 경우 경고 로그
+        if ("FAILED".equals(trade.getTradeStatus())) {
+            log.warn("이미 FAILED 상태인 거래에 대해 SUCCEEDED 이벤트가 수신되었습니다. tradeId={}", payload.getTradeId());
+        }
+
         trade.setTradeStatus("SUCCEEDED");
         tradeRepository.save(trade);
-
+        log.info("거래 상태를 SUCCEEDED로 변경했습니다. tradeId={}", payload.getTradeId());
     }
 
     @Transactional
@@ -120,8 +146,19 @@ public class KafkaTradeEventsListener {
         Trade trade = tradeRepository.findByTradeId(payload.getTradeId())
                 .orElseThrow(() -> new IllegalArgumentException("거래를 찾을 수 없습니다."));
 
+        // 멱등성 체크: 이미 최종 상태(실패)인지 확인
+        if ("FAILED".equals(trade.getTradeStatus())) {
+            log.info("이미 FAILED 상태인 거래입니다. 중복 이벤트이므로 무시합니다. tradeId={}", payload.getTradeId());
+            return;
+        }
+
+        // 방어 코드: 다른 최종 상태(성공)일 경우 경고 로그
+        if ("SUCCEEDED".equals(trade.getTradeStatus())) {
+            log.warn("이미 SUCCEEDED 상태인 거래에 대해 FAILED 이벤트가 수신되었습니다. tradeId={}", payload.getTradeId());
+        }
+
         trade.setTradeStatus("FAILED");
         tradeRepository.save(trade);
-
+        log.info("거래 상태를 FAILED로 변경했습니다. tradeId={}", payload.getTradeId());
     }
 }
