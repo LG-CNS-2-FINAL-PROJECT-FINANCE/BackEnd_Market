@@ -53,10 +53,10 @@ public class TradeSagaListener {
             assetClient.marketBuy(buyOrder.getUserSeq(), buyOrder.getRole(), marketBuyDto);
             log.info("Saga: Asset 서비스에 구매 요청(marketBuy) 성공. 주문 ID: {}", buyOrder.getOrdersId());
 
-            tradeService.beforeMatch(buyOrder);
-
             buyOrder.setOrdersStatus("SUCCEEDED");
             ordersRepository.save(buyOrder);
+
+            tradeService.beforeMatch(buyOrder);
             log.info("Saga: 구매 주문 최종 처리 성공. 상태를 SUCCEEDED로 변경. 주문 ID: {}", buyOrder.getOrdersId());
 
         } catch (Exception e) {
