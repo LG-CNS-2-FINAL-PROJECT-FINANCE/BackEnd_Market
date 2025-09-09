@@ -11,7 +11,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "blockchainClient", url = "${blockchain-connector.base-url}")
+@FeignClient(name = "blockchainClient", url = "${blockchain.base-url}")
 public interface BlockchainClient {
 
     @PostMapping("/api/contract/investment")
