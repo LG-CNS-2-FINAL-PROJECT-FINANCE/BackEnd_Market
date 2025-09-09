@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class InvestmentController {
 
     private final InvestmentService investmentService;
+    private final AllocationScheduler scheduler;
 
     // 투자 상품 전체 조회
     @GetMapping("/list")
@@ -95,7 +96,6 @@ public class InvestmentController {
         return ApiResponseDto.createOk(response);
     }
 
-    private final AllocationScheduler scheduler;
     @PostMapping("/test/allocation")
     public ApiResponseDto<?> testAllocateInvestToken() {
         scheduler.dailyAllocationCheck();

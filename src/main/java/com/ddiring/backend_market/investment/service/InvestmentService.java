@@ -336,7 +336,8 @@ public class InvestmentService {
         }
 
         if (percent < 80) {
-            log.info("달성률 미달 projectId={} percent={}", projectId, percent);
+            log.info("달성률 미달 - 주문 취소 절차 시작 projectId={} percent={}", projectId, percent);
+            cancelAllPendingAndFundingInvestments(projectId);
             return false;
         }
 
@@ -365,6 +366,60 @@ public class InvestmentService {
         log.info("투자 요청 이벤트 발행 projectId={} investments={}", projectId, items.size());
 
         return true;
+    }
+
+    // 달성률 미달 시 모든 투자 취소 및 환불 처리
+    @Transactional
+    private void cancelAllPendingAndFundingInvestments(String projectId) {
+        log.info("프로젝트 {} 달성률 미달로 인한 전체 투자 취소 시작", projectId);
+
+        List<Investment> investments = investmentRepository.findByProjectId(projectId).stream()
+                .filter(inv -> inv.getInvStatus() == InvestmentStatus.PENDING ||
+                        inv.getInvStatus() == InvestmentStatus.FUNDING)
+                .collect(Collectors.toList());
+
+        if (investments.isEmpty()) {
+            log.info("취소할 투자가 없습니다. projectId={}", projectId);
+            return;
+        }
+
+        log.info("취소 대상 투자 건수: {} (projectId={})", investments.size(), projectId);
+
+        for (Investment investment : investments) {
+            try {
+                // FUNDING 상태인 경우 환불 처리
+                if (investment.getInvStatus() == InvestmentStatus.FUNDING) {
+                    MarketRefundDto marketRefundDto = new MarketRefundDto();
+                    marketRefundDto.setOrdersId(investment.getInvestmentSeq());
+                    marketRefundDto.setProjectId(investment.getProjectId());
+                    marketRefundDto.setRefundPrice(investment.getInvestedPrice());
+                    marketRefundDto.setRefundAmount(investment.getTokenQuantity());
+                    marketRefundDto.setOrderType(2); // 투자 주문 타입
+
+                    try {
+                        assetClient.marketRefund(investment.getUserSeq(), "INVESTOR", marketRefundDto);
+                        log.info("환불 처리 완료 - 투자ID: {}, 사용자: {}, 금액: {}",
+                                investment.getInvestmentSeq(), investment.getUserSeq(), investment.getInvestedPrice());
+                    } catch (Exception e) {
+                        log.error("환불 처리 실패 - 투자ID: {}, 사용자: {}, 에러: {}",
+                                investment.getInvestmentSeq(), investment.getUserSeq(), e.getMessage());
+                    }
+                }
+
+                investment.setInvStatus(InvestmentStatus.CANCELLED);
+                investment.setUpdatedAt(LocalDateTime.now());
+                investmentRepository.save(investment);
+
+                log.info("투자 취소 완료 - 투자ID: {}, 사용자: {}, 상태: {} -> CANCELLED",
+                        investment.getInvestmentSeq(), investment.getUserSeq(), investment.getInvStatus());
+
+            } catch (Exception e) {
+                log.error("투자 취소 처리 중 오류 - 투자ID: {}, 에러: {}",
+                        investment.getInvestmentSeq(), e.getMessage());
+            }
+        }
+
+        log.info("프로젝트 {} 전체 투자 취소 처리 완료", projectId);
     }
 
     // 블록 체인 토큰 이동
@@ -428,7 +483,7 @@ public class InvestmentService {
         }
     }
 
-    // 투자금 송금 요청
+    // 투자금 출금 요청
     @Transactional(readOnly = false)
     public ApiResponseDto<Integer> requestWithdrawal(String projectId, String userSeq, String role) {
         ProductDetailDTO product = Optional.ofNullable(productClient.getProduct(projectId))
@@ -460,7 +515,7 @@ public class InvestmentService {
         }
 
         MarketDto marketDto = MarketDto.builder()
-                .investmentSeq(0) // TODO: 출금 요청을 따로 저장하지 않음
+                .investmentSeq(0) // TODO: 출금 요청을 따로 저장하지 않는 관계로 하드 코딩
                 .projectId(projectId)
                 .userSeq(product.getUserSeq())
                 .price(totalAmount)

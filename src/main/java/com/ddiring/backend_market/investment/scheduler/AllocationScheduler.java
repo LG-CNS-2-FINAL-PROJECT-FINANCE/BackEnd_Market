@@ -45,6 +45,8 @@ public class AllocationScheduler {
                         boolean sent = investmentService.triggerAllocationIfEligible(p.getProjectId());
                         if (sent) {
                             log.info("[AllocationScheduler] 할당 이벤트 발행 projectId={}", p.getProjectId());
+                        } else {
+                            log.info("[AllocationScheduler] 프로젝트 처리 완료 (할당 불가 또는 취소) projectId={}", p.getProjectId());
                         }
                     } catch (Exception ex) {
                         log.error("[AllocationScheduler] 할당 트리거 실패 projectId={} error={}", p.getProjectId(),

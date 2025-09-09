@@ -1,6 +1,5 @@
 package com.ddiring.backend_market.event.cosumer;
 
-import com.ddiring.backend_market.common.exception.NotFound;
 import com.ddiring.backend_market.event.dto.*;
 import com.ddiring.backend_market.investment.entity.Investment;
 import com.ddiring.backend_market.investment.entity.Investment.InvestmentStatus;
@@ -112,68 +111,141 @@ public class KafkaInvestmentEventsListener {
 
     @Transactional
     public void handleRequestAccepted(InvestRequestAcceptedEvent event) {
-        Long invesmtmentId = event.getPayload().getInvestmentId();
+        Long investmentId = event.getPayload().getInvestmentId();
 
-        Investment inv = investmentRepository.findByInvestmentSeq(invesmtmentId.intValue())
-                .orElseThrow(() -> new NotFound("찾을 수 없는 투자 번호 입니다."));
+        Investment inv = investmentRepository.findByInvestmentSeq(investmentId.intValue())
+                .orElse(null);
+
+        if (inv == null) {
+            log.warn("존재하지 않는 투자 번호에 대한 할당 수락 이벤트 수신. investmentId={}", investmentId);
+            return;
+        }
+
+        if (InvestmentStatus.ALLOC_REQUESTED.equals(inv.getInvStatus())) {
+            log.info("이미 할당 요청된 투자. 중복 이벤트 무시. investmentId={}", investmentId);
+            return;
+        }
+
+        if (InvestmentStatus.COMPLETED.equals(inv.getInvStatus()) ||
+                InvestmentStatus.REJECTED.equals(inv.getInvStatus()) ||
+                InvestmentStatus.FAILED.equals(inv.getInvStatus())) {
+            log.warn("이미 완료된 투자에 대한 할당 수락 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+            return;
+        }
 
         if (!InvestmentStatus.FUNDING.equals(inv.getInvStatus())) {
-            log.warn("잘못된 상태의 투자에 대한 할당 수락 이벤트 수신. investmentId={}, status={}", inv.getInvestmentSeq(),
-                    inv.getInvStatus());
-            throw new IllegalStateException("할당 요청을 수락하기에 올바르지 않은 투자 상태입니다: " + inv.getInvStatus());
+            log.warn("잘못된 상태의 투자에 대한 할당 수락 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+            return;
         }
 
         inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
         inv.setUpdatedAt(LocalDateTime.now());
-
         investmentRepository.save(inv);
+
+        log.info("투자 할당 요청 처리 완료. investmentId={}", investmentId);
     }
 
     @Transactional
     public void handleRequestRejected(InvestRequestRejectedEvent event) {
-        Long invesmtmentId = event.getPayload().getInvestmentId();
+        Long investmentId = event.getPayload().getInvestmentId();
 
-        Investment inv = investmentRepository.findByInvestmentSeq(invesmtmentId.intValue())
-                .orElseThrow(() -> new NotFound("찾을 수 없는 투자 번호 입니다."));
+        // 1) 투자 번호 존재 여부 확인
+        Investment inv = investmentRepository.findByInvestmentSeq(investmentId.intValue())
+                .orElse(null);
 
-        if (!InvestmentStatus.ALLOC_REQUESTED.equals(inv.getInvStatus())) {
-            throw new IllegalStateException("할당 요청 중이 아닌 투자 번호입니다.");
+        if (inv == null) {
+            log.warn("존재하지 않는 투자 번호에 대한 할당 거절 이벤트 수신. investmentId={}", investmentId);
+            return; // 예외를 발생시키지 않고 무시
         }
 
+        // 2) 상태 확인 및 멱등성 보장
+        if (InvestmentStatus.REJECTED.equals(inv.getInvStatus())) {
+            log.info("이미 거절된 투자. 중복 이벤트 무시. investmentId={}", investmentId);
+            return; // 이미 처리됨, 중복 이벤트 무시
+        }
+
+        if (InvestmentStatus.COMPLETED.equals(inv.getInvStatus()) ||
+                InvestmentStatus.FAILED.equals(inv.getInvStatus())) {
+            log.warn("이미 완료된 투자에 대한 할당 거절 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+            return; // 이미 최종 상태, 무시
+        }
+
+        if (!InvestmentStatus.ALLOC_REQUESTED.equals(inv.getInvStatus())) {
+            log.warn("할당 요청 중이 아닌 투자에 대한 거절 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+            return; // 예외 발생 대신 무시
+        }
+
+        // 3) 정상적인 상태 변경
         inv.setInvStatus(InvestmentStatus.REJECTED);
         inv.setUpdatedAt(LocalDateTime.now());
-
         investmentRepository.save(inv);
+
+        log.info("투자 할당 거절 처리 완료. investmentId={}", investmentId);
     }
 
+    @Transactional
     public void handleInvestSucceeded(InvestSucceededEvent event) {
-        Long id = event.getPayload().getInvestmentId();
-        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-            if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
-                Long tokenAmount = event.getPayload().getTokenAmount();
-                if (tokenAmount != null) {
-                    inv.setTokenQuantity(tokenAmount.intValue());
-                }
-                inv.setInvStatus(InvestmentStatus.COMPLETED);
-                inv.setUpdatedAt(LocalDateTime.now());
-                investmentRepository.save(inv);
-                log.info("[INVEST] 투자 완료 처리 investmentId={} tokenQuantity={}", id, inv.getTokenQuantity());
+        Long investmentId = event.getPayload().getInvestmentId();
+
+        investmentRepository.findById(investmentId.intValue()).ifPresentOrElse(inv -> {
+            // 1) 이미 완료된 경우 중복 이벤트 무시
+            if (InvestmentStatus.COMPLETED.equals(inv.getInvStatus())) {
+                log.info("이미 완료된 투자. 중복 이벤트 무시. investmentId={}", investmentId);
+                return;
             }
+
+            // 2) 이미 다른 최종 상태인 경우 경고
+            if (InvestmentStatus.REJECTED.equals(inv.getInvStatus()) ||
+                    InvestmentStatus.FAILED.equals(inv.getInvStatus())) {
+                log.warn("이미 완료된 투자에 대한 성공 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+                return;
+            }
+
+            // 3) 정상적인 완료 처리
+            Long tokenAmount = event.getPayload().getTokenAmount();
+            if (tokenAmount != null) {
+                inv.setTokenQuantity(tokenAmount.intValue());
+            }
+            inv.setInvStatus(InvestmentStatus.COMPLETED);
+            inv.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(inv);
+
+            log.info("[INVEST] 투자 완료 처리 완료. investmentId={} tokenQuantity={}", investmentId, inv.getTokenQuantity());
+        }, () -> {
+            log.warn("존재하지 않는 투자 번호에 대한 성공 이벤트 수신. investmentId={}", investmentId);
         });
     }
 
+    @Transactional
     public void handleInvestFailed(InvestFailedEvent event) {
-        Long id = event.getPayload().getInvestmentId();
-        investmentRepository.findById(id.intValue()).ifPresent(inv -> {
-            if (inv.getInvStatus() != InvestmentStatus.COMPLETED) {
-                String reason = event.getPayload().getErrorType();
-                if (event.getPayload().getErrorMessage() != null) {
-                    reason = reason + ":" + event.getPayload().getErrorMessage();
-                }
-                inv.setInvStatus(InvestmentStatus.FAILED);
-                inv.setUpdatedAt(LocalDateTime.now());
-                investmentRepository.save(inv);
+        Long investmentId = event.getPayload().getInvestmentId();
+
+        investmentRepository.findById(investmentId.intValue()).ifPresentOrElse(inv -> {
+            // 1) 이미 실패한 경우 중복 이벤트 무시
+            if (InvestmentStatus.FAILED.equals(inv.getInvStatus())) {
+                log.info("이미 실패한 투자. 중복 이벤트 무시. investmentId={}", investmentId);
+                return;
             }
+
+            // 2) 이미 다른 최종 상태인 경우 경고
+            if (InvestmentStatus.COMPLETED.equals(inv.getInvStatus()) ||
+                    InvestmentStatus.REJECTED.equals(inv.getInvStatus())) {
+                log.warn("이미 완료된 투자에 대한 실패 이벤트 수신. investmentId={}, status={}", investmentId, inv.getInvStatus());
+                return;
+            }
+
+            // 3) 정상적인 실패 처리
+            String reason = event.getPayload().getErrorType();
+            if (event.getPayload().getErrorMessage() != null) {
+                reason = reason + ":" + event.getPayload().getErrorMessage();
+            }
+            inv.setInvStatus(InvestmentStatus.FAILED);
+            inv.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(inv);
+
+            log.info("[INVEST] 투자 실패 처리 완료. investmentId={} reason={}", investmentId, reason);
+        }, () -> {
+            log.warn("존재하지 않는 투자 번호에 대한 실패 이벤트 수신. investmentId={}", investmentId);
         });
     }
 }
