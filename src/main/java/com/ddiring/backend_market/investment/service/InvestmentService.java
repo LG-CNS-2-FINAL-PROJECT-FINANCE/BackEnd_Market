@@ -237,6 +237,12 @@ public class InvestmentService {
         marketBuyDto.setTransType(0);
 
         try {
+            assetClient.checkBalance(userSeq, role, marketBuyDto);
+        } catch (Exception e) {
+            new IllegalStateException("잔액 확인 실패");
+        }
+
+        try {
             assetClient.marketBuy(userSeq, role, marketBuyDto);
         } catch (Exception e) {
             CancelInvestmentRequest cancelInvestmentRequest = new CancelInvestmentRequest();
