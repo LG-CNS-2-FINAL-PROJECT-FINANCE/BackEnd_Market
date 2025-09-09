@@ -68,8 +68,8 @@ public class TradeService {
                         sellOrderForLog.getOrdersId());
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
-                        .purchaseId(order.getOrdersType() == 1 ? order.getUserSeq() : oldOrder.getUserSeq())
-                        .sellId(order.getOrdersType() == 0 ? order.getUserSeq() : oldOrder.getUserSeq())
+                        .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
+                        .sellId(order.getOrdersType() == 0 ? order.getOrdersId() : oldOrder.getOrdersId())
                         .buyerAddress(order.getOrdersType() == 1 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .sellerAddress(order.getOrdersType() == 0 ? order.getWalletAddress() : oldOrder.getWalletAddress())
                         .tradePrice(tradePrice * tradedQuantity)

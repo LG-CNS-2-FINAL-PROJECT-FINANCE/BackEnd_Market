@@ -23,10 +23,10 @@ public class Trade {
     private String projectId;
 
     @Column(name = "purchase_id", nullable = false)
-    private String purchaseId;
+    private Integer purchaseId;
 
     @Column(name = "sell_id", nullable = false)
-    private String sellId;
+    private Integer sellId;
 
     @Column(name = "trade_status")
     private String tradeStatus;
@@ -65,7 +65,7 @@ public class Trade {
     private LocalDate updatedAt;
 
     @Builder
-    public Trade(String projectId, String purchaseId, String sellId, Integer tradePrice, Integer tokenQuantity,Integer tokenPerPrice, String tradeStatus, LocalDateTime tradedAt, String buyerAddress, String sellerAddress, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
+    public Trade(String projectId, Integer purchaseId, Integer sellId, Integer tradePrice, Integer tokenQuantity,Integer tokenPerPrice, String tradeStatus, LocalDateTime tradedAt, String buyerAddress, String sellerAddress, Integer createdId, LocalDate createdAt, Integer updatedId, LocalDate updatedAt) {
         this.projectId = projectId;
         this.purchaseId = purchaseId;
         this.sellId = sellId;

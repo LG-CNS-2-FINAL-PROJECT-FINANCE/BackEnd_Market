@@ -10,6 +10,6 @@ public class TradeInfoResponseDto {
     private String projectId;
     private Integer price;
     private Integer tokenQuantity;
-    private String buyerUserSeq;
-    private String sellerUserSeq;
+    private Integer buyerUserSeq;
+    private Integer sellerUserSeq;
 }
