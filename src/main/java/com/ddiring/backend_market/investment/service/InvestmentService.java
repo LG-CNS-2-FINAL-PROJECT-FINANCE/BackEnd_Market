@@ -452,7 +452,7 @@ public class InvestmentService {
                 }
                 investInfoList.add(InvestmentDto.InvestInfo.builder()
                         .investmentId(inv.getInvestmentSeq().longValue())
-                        .investorAddress(address)
+                        .investorAddress(String.valueOf(address))
                         .tokenAmount(inv.getTokenQuantity().longValue())
                         .build());
             } catch (Exception e) {
