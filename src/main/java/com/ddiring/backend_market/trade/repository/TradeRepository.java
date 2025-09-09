@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface TradeRepository extends JpaRepository<Trade, Integer> {
+public interface TradeRepository extends JpaRepository<Trade, Long> {
     List<Trade> findTop20ByProjectIdOrderByTradedAtDesc(String projectId);
     Optional<Trade> findByTradeId(Long tradeId);
 
-    Boolean existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(Long tradeId, String purchaseId, String sellId, Integer tokenQuantity);
+    Boolean existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(Long tradeId, Long purchaseId, Long sellId, Integer tokenQuantity);
 
 }

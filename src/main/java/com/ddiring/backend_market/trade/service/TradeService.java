@@ -549,8 +549,8 @@ public class TradeService {
 
         Boolean isExisted = tradeRepository.existsByTradeIdAndPurchaseIdAndSellIdAndTokenQuantity(
                 requestDto.getTradeId(),
-                requestDto.getBuyId().toString(),
-                requestDto.getSellId().toString(),
+                requestDto.getBuyId(),
+                requestDto.getSellId(),
                 requestDto.getTradeAmount()
         );
 

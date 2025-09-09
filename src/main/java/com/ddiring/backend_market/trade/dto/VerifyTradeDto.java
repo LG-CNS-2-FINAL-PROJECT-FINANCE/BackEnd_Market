@@ -16,10 +16,10 @@ public class VerifyTradeDto {
         private Long tradeId;
 
         @NotNull
-        private Integer buyId;
+        private Long buyId;
 
         @NotNull
-        private Integer sellId;
+        private Long sellId;
 
         @NotNull
         private Integer tradeAmount;
