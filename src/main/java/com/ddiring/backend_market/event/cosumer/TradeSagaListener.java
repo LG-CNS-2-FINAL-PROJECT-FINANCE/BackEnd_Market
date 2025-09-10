@@ -95,7 +95,7 @@ public class TradeSagaListener {
             marketSellDto.setOrdersId(order.getOrdersId());
             marketSellDto.setProjectId(order.getProjectId());
             marketSellDto.setSellToken(order.getTokenQuantity());
-            marketSellDto.setTransType(2);
+            marketSellDto.setTransType(0);
 
             assetClient.marketSell(order.getUserSeq(), marketSellDto);
             log.info("Saga: Asset 서비스에 판매 요청 성공. 주문 ID: {}", order.getOrdersId());
