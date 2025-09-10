@@ -66,6 +66,7 @@ public class TradeService {
                         purchaseOrderForLog.getOrdersId());
                 log.info("판매 주문 정보: userSeq={}, ordersId={}", sellOrderForLog.getUserSeq(),
                         sellOrderForLog.getOrdersId());
+
                 Trade trade = Trade.builder()
                         .projectId(order.getProjectId())
                         .purchaseId(order.getOrdersType() == 1 ? order.getOrdersId() : oldOrder.getOrdersId())
@@ -125,9 +126,6 @@ public class TradeService {
 
                     return; // 매칭 중단
                 }
-
-                    TradePriceUpdateEvent priceUpdateEvent = TradePriceUpdateEvent.of(order.getProjectId(), tradePrice);
-                    tradeEventProducer.send(TradePriceUpdateEvent.TOPIC, priceUpdateEvent);
 
                     TitleRequestDto titleRequestDto = new TitleRequestDto();
                     titleRequestDto.setProjectId(order.getProjectId());
@@ -414,12 +412,13 @@ public class TradeService {
             String r = Numeric.toHexString(r_bytes);
             String s = Numeric.toHexString(s_bytes);
 
+            BigInteger deadline = dataToSign.getMessage().getDeadline();
             DepositDto depositDto = DepositDto.builder()
                     .projectId(order.getProjectId())
                     .sellerAddress(order.getWalletAddress())
                     .sellId(Long.valueOf(order.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(order.getTokenQuantity()))
-                    .deadline(BigInteger.valueOf(0))
+                    .deadline(deadline)
                     .v(v)
                     .r(r)
                     .s(s)
