@@ -203,6 +203,26 @@ public class TradeService {
         if (tokenCheckResponse == null || !Boolean.TRUE.equals(tokenCheckResponse.getData())) {
             throw new BadParameter("판매할 토큰이 부족합니다.");
         }
+
+        // 토큰을 즉시 차감하여 주문에 대한 토큰을 예약
+        MarketSellDto sellDto = new MarketSellDto();
+        sellDto.setTransType(0); // 판매 타입
+        sellDto.setProjectId(ordersRequestDto.getProjectId());
+        sellDto.setSellToken(ordersRequestDto.getTokenQuantity());
+
+        try {
+            ApiResponseDto<String> sellResponse = assetClient.marketSell(userSeq, sellDto);
+            if (sellResponse == null || sellResponse.getData() == null) {
+                throw new BadParameter("토큰 차감 처리에 실패했습니다.");
+            }
+            log.info("판매 주문 접수: 토큰 차감 완료. userSeq={}, projectId={}, tokenQuantity={}",
+                    userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getTokenQuantity());
+        } catch (Exception e) {
+            log.error("토큰 차감 실패: userSeq={}, projectId={}, tokenQuantity={}",
+                    userSeq, ordersRequestDto.getProjectId(), ordersRequestDto.getTokenQuantity(), e);
+            throw new BadParameter("토큰 차감에 실패했습니다: " + e.getMessage());
+        }
+
         ApiResponseDto<String> response = assetClient.getWalletAddress(userSeq);
         String walletAddress = response.getData();
         log.info("판매 주문 접수: Asset 서비스에서 지갑 주소 조회 완료. walletAddress={}", walletAddress);
@@ -221,6 +241,10 @@ public class TradeService {
                 .build();
 
         Orders savedOrder = ordersRepository.save(order);
+
+        // MarketSellDto에 주문 ID 설정 (차감된 토큰과 주문을 연결하기 위해)
+        sellDto.setOrdersId(savedOrder.getOrdersId());
+
         tradeEventProducer.send("SELL_ORDER_INITIATED", savedOrder);
         log.info("판매 주문 Saga 시작. 주문 ID: {}", savedOrder.getOrdersId());
 
@@ -240,7 +264,7 @@ public class TradeService {
             }
 
             Sign.SignatureData signature = signatureService.signPermit(userSeq, dataToSign);
-            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", order.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서버 서명 및 제출 완료", savedOrder.getOrdersId());
 
             byte[] v_bytes = signature.getV();
             byte[] r_bytes = signature.getR();
@@ -254,7 +278,7 @@ public class TradeService {
             DepositDto depositDto = DepositDto.builder()
                     .projectId(ordersRequestDto.getProjectId())
                     .sellerAddress(walletAddress)
-                    .sellId(Long.valueOf(order.getOrdersId()))
+                    .sellId(Long.valueOf(savedOrder.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
                     .deadline(deadline)
                     .v(v)
@@ -262,13 +286,30 @@ public class TradeService {
                     .s(s)
                     .build();
             blockchainClient.requestDeposit(depositDto);
-            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
         } catch (Exception e) {
-            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", order.getOrdersId(), e.getMessage(), e);
+            log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
+
+            // 블록체인 처리 실패 시 차감된 토큰을 환불
+            try {
+                MarketRefundDto rollbackRefundDto = new MarketRefundDto();
+                rollbackRefundDto.setOrdersId(savedOrder.getOrdersId());
+                rollbackRefundDto.setProjectId(ordersRequestDto.getProjectId());
+                rollbackRefundDto.setRefundAmount(ordersRequestDto.getTokenQuantity());
+                rollbackRefundDto.setOrderType(0); // 판매 주문
+                assetClient.marketRefund(userSeq, role, rollbackRefundDto);
+                log.info("블록체인 처리 실패로 인한 토큰 롤백 완료. 주문 ID: {}", savedOrder.getOrdersId());
+            } catch (Exception rollbackException) {
+                log.error("토큰 롤백 실패. 주문 ID: {}", savedOrder.getOrdersId(), rollbackException);
+            }
+
+            // 실패한 주문 삭제
+            ordersRepository.delete(savedOrder);
+
             throw new RuntimeException("블록체인 서명 처리에 실패했습니다.", e);
         }
 
-        return (long)order.getOrdersId();
+        return (long)savedOrder.getOrdersId();
     }
 
     @Transactional
@@ -277,6 +318,7 @@ public class TradeService {
             if ("PENDING".equals(order.getOrdersStatus())) {
                 log.info("판매 주문 보상 트랜잭션 시작. 주문 ID: {}", orderId);
 
+                // 블록체인 예치 실패 시에만 토큰 환불 (이미 차감되었기 때문에)
                 MarketRefundDto marketRefundDto = new MarketRefundDto();
                 marketRefundDto.setOrdersId(order.getOrdersId());
                 marketRefundDto.setProjectId(order.getProjectId());
@@ -284,11 +326,15 @@ public class TradeService {
                 marketRefundDto.setOrderType(order.getOrdersType());
                 assetClient.marketRefund(order.getUserSeq(), order.getRole(), marketRefundDto);
 
+                log.info("판매 주문 토큰 환불 완료. 주문 ID: {}, 환불 토큰 수량: {}",
+                        orderId, order.getTokenQuantity());
+
                 ordersRepository.delete(order);
-                log.info("판매 주문 상태 FAILED로 변경. 주문 ID: {}", orderId);
+                log.info("판매 주문 삭제 완료. 주문 ID: {}", orderId);
             }
         });
     }
+
     @Transactional
     public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
