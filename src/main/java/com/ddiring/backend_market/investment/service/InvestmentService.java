@@ -302,7 +302,7 @@ public class InvestmentService {
             marketRefundDto.setProjectId(investment.getProjectId());
             marketRefundDto.setRefundPrice(investment.getInvestedPrice());
             marketRefundDto.setRefundAmount(investment.getTokenQuantity());
-            marketRefundDto.setOrderType(0);
+            marketRefundDto.setOrderType(2);
 
             try {
                 assetClient.marketRefund(userSeq, role, marketRefundDto);
