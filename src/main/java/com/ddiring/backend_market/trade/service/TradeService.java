@@ -278,7 +278,7 @@ public class TradeService {
             DepositDto depositDto = DepositDto.builder()
                     .projectId(ordersRequestDto.getProjectId())
                     .sellerAddress(walletAddress)
-                    .sellId(Long.valueOf(savedOrder.getOrdersId()))
+                    .sellId(Long.valueOf(order.getOrdersId()))
                     .tokenAmount(BigInteger.valueOf(ordersRequestDto.getTokenQuantity()))
                     .deadline(deadline)
                     .v(v)
@@ -286,7 +286,7 @@ public class TradeService {
                     .s(s)
                     .build();
             blockchainClient.requestDeposit(depositDto);
-            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", savedOrder.getOrdersId());
+            log.info("판매 주문 ID {}에 대한 서명 생성 및 Deposit 요청 완료", order.getOrdersId());
         } catch (Exception e) {
             log.error("판매 주문 ID {}에 대한 서버 서명 실패: {}", savedOrder.getOrdersId(), e.getMessage(), e);
 
@@ -334,7 +334,6 @@ public class TradeService {
             }
         });
     }
-
     @Transactional
     public void buyReception(String userSeq, String role, OrdersRequestDto ordersRequestDto) {
         if (userSeq == null || ordersRequestDto.getProjectId() == null || ordersRequestDto.getOrdersType() == null
