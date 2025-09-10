@@ -26,11 +26,10 @@ public class TradeSagaListener {
     public void handleBuyOrderInitiated(String message) {
         Orders buyOrder = null;
         try {
-            // 1. 메시지에서 주문 정보 읽기
+
             Orders orderFromMessage = objectMapper.readValue(message, Orders.class);
             log.info("Saga: BUY_ORDER_INITIATED 수신. 주문 ID: {}", orderFromMessage.getOrdersId());
 
-            // 2. DB에서 최신 주문 정보 다시 조회 (매우 중요)
             buyOrder = ordersRepository.findById(orderFromMessage.getOrdersId())
                     .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다. ID: " + orderFromMessage.getOrdersId()));
 
@@ -39,10 +38,6 @@ public class TradeSagaListener {
                         buyOrder.getOrdersId(), buyOrder.getOrdersStatus());
                 return;
             }
-
-            buyOrder.setOrdersStatus("PROCESSING");
-            ordersRepository.save(buyOrder);
-            log.info("주문 처리 시작. 상태를 PROCESSING으로 변경. 주문 ID: {}", buyOrder.getOrdersId());
 
             MarketBuyDto marketBuyDto = new MarketBuyDto();
             marketBuyDto.setOrdersId(buyOrder.getOrdersId());
@@ -53,10 +48,10 @@ public class TradeSagaListener {
             assetClient.marketBuy(buyOrder.getUserSeq(), buyOrder.getRole(), marketBuyDto);
             log.info("Saga: Asset 서비스에 구매 요청(marketBuy) 성공. 주문 ID: {}", buyOrder.getOrdersId());
 
-            tradeService.beforeMatch(buyOrder);
-
             buyOrder.setOrdersStatus("SUCCEEDED");
             ordersRepository.save(buyOrder);
+
+            tradeService.beforeMatch(buyOrder);
             log.info("Saga: 구매 주문 최종 처리 성공. 상태를 SUCCEEDED로 변경. 주문 ID: {}", buyOrder.getOrdersId());
 
         } catch (Exception e) {
