@@ -239,7 +239,7 @@ public class InvestmentService {
         try {
             assetClient.checkBalance(userSeq, role, marketBuyDto);
         } catch (Exception e) {
-            new IllegalStateException("잔액 확인 실패");
+            throw new IllegalStateException("잔액 확인 실패");
         }
 
         try {
