@@ -29,6 +29,9 @@ pipeline {
             }
             steps {
                 script {
+
+                    REGISTRY_HOST = PROD_REGISTRY
+
                     withCredentials([[
                         $class: 'AmazonWebServicesCredentialsBinding',
                         credentialsId: 'aws-credential',
@@ -37,7 +40,7 @@ pipeline {
                     ]]) {
                         sh """
                         aws ecr get-login-password --region ap-northeast-2 \
-                        | podman login --username AWS --password-stdin ${PROD_REGISTRY}
+                        | podman login --username AWS --password-stdin ${REGISTRY_HOST}
                         """
                     }
                 }
@@ -94,7 +97,7 @@ pipeline {
                     }
                     // master/main 브랜취일시 ecr로 푸쉬
                     else if (env.BRANCH_NAME == 'master' || env.BRANCH_NAME == 'main'){
-                        PROD_IMAGE_NAME = "${PROD_REGISTRY}/${APP_NAME}:${APP_VERSION}"
+                        PROD_IMAGE_NAME = "${REGISTRY_HOST}/${APP_NAME}:${APP_VERSION}"
                         sh "echo Image pushing to prod registry..."
                         sh "podman tag ${DOCKER_IMAGE_NAME} ${PROD_IMAGE_NAME}"
                         sh "podman push ${PROD_IMAGE_NAME}"
