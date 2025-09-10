@@ -74,24 +74,40 @@ public class TradeSagaListener {
     public void handleSellOrderInitiated(String message) {
         Orders sellOrder = null;
         try {
-            // 1. 받은 메시지(String)를 Orders 객체로 변환
             Orders order = objectMapper.readValue(message, Orders.class);
-
             log.info("Saga: SELL_ORDER_INITIATED 수신. 주문 ID: {}", order.getOrdersId());
+
+            // OrdersRepository를 통해 최신 주문 정보를 가져옵니다.
+            sellOrder = ordersRepository.findById(order.getOrdersId())
+                    .orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다"));
+
+            // 주문 상태가 "PENDING"일 때만 처리하도록 수정
+            if (!"PENDING".equals(sellOrder.getOrdersStatus())) {
+                log.warn("Saga: 이미 처리되었거나 유효하지 않은 주문입니다. 주문 ID: {}, 상태: {}", sellOrder.getOrdersId(), sellOrder.getOrdersStatus());
+                return;
+            }
+
+            // 주문 상태를 "PROCESSING" 등으로 변경하여 중복 실행 방지
+            sellOrder.setOrdersStatus("PROCESSING");
+            ordersRepository.save(sellOrder);
 
             MarketSellDto marketSellDto = new MarketSellDto();
             marketSellDto.setOrdersId(order.getOrdersId());
             marketSellDto.setProjectId(order.getProjectId());
             marketSellDto.setSellToken(order.getTokenQuantity());
-            marketSellDto.setTransType(0);
+            marketSellDto.setTransType(2);
 
             assetClient.marketSell(order.getUserSeq(), marketSellDto);
             log.info("Saga: Asset 서비스에 판매 요청 성공. 주문 ID: {}", order.getOrdersId());
-            sellOrder = ordersRepository.findById(order.getOrdersId()).orElseThrow(() -> new IllegalStateException("주문을 찾을 수 없습니다"));
+
         } catch (Exception e) {
-            // JSON 파싱 실패 또는 Asset 서비스 호출 실패 시
             log.error("Saga: SELL_ORDER_INITIATED 처리 실패. 메시지: {}", message, e);
-            tradeService.sellOrderRefund(sellOrder.getOrdersId());
+            if (sellOrder != null) {
+                // 실패 시 주문 상태를 다시 "PENDING"으로 돌리거나, "FAILED"로 변경하는 등의 보상 트랜잭션 처리
+                sellOrder.setOrdersStatus("PENDING");
+                ordersRepository.save(sellOrder);
+                tradeService.sellOrderRefund(sellOrder.getOrdersId());
+            }
         }
     }
 }
