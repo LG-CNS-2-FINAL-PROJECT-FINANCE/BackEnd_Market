@@ -138,11 +138,22 @@ public class KafkaInvestmentEventsListener {
             return;
         }
 
+        // 블록체인 검증 상태 확인 로직 추가
+        String status = event.getPayload().getStatus();
+        if ("FAILED".equals(status)) {
+            log.warn("블록체인에서 거절된 투자 요청. investmentId={} status={}", investmentId, status);
+            inv.setInvStatus(InvestmentStatus.REJECTED);
+            inv.setUpdatedAt(LocalDateTime.now());
+            investmentRepository.save(inv);
+            log.info("투자 할당 거절 처리 완료. investmentId={}", investmentId);
+            return;
+        }
+
         inv.setInvStatus(InvestmentStatus.ALLOC_REQUESTED);
         inv.setUpdatedAt(LocalDateTime.now());
         investmentRepository.save(inv);
 
-        log.info("투자 할당 요청 처리 완료. investmentId={}", investmentId);
+        log.info("투자 할당 요청 처리 완료. investmentId={} status={}", investmentId, status);
     }
 
     @Transactional
