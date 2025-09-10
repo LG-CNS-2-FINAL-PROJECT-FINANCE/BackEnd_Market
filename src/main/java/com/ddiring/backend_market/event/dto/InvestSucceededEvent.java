@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 
 @Getter
 @Builder
@@ -36,7 +35,8 @@ public class InvestSucceededEvent {
         private Long initialAmountPerToken;
     }
 
-    public static InvestSucceededEvent of(String projectId, Long investmentId, String investorAddress, Long tokenAmount, Long initialAmountPerToken) {
+    public static InvestSucceededEvent of(String projectId, Long investmentId, String investorAddress, Long tokenAmount,
+            Long initialAmountPerToken) {
         String uuid = java.util.UUID.randomUUID().toString();
         String eventType = TOPIC + ".SUCCEEDED";
 
@@ -51,8 +51,7 @@ public class InvestSucceededEvent {
                         .investorAddress(investorAddress)
                         .tokenAmount(tokenAmount)
                         .initialAmountPerToken(initialAmountPerToken)
-                        .build()
-                )
+                        .build())
                 .build();
     }
 }
