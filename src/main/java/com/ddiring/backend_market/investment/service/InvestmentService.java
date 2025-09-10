@@ -311,6 +311,17 @@ public class InvestmentService {
             }
         }
 
+        log.info("Investment successful: userSeq={}", userSeq);
+        log.info("projectId: {}", investment.getProjectId());
+        MarketTokenDto marketTokenDto = MarketTokenDto.builder()
+                .perPrice(investment.getInvestedPrice() / investment.getTokenQuantity())
+                .tokenQuantity(investment.getTokenQuantity())
+                .userSeq(userSeq)
+                .build();
+
+        log.info("MarketTokenDto: {}", marketTokenDto);
+        assetClient.getToken(investment.getProjectId(), marketTokenDto);
+
         // 환불 성공 -> 상태 CANCELLED 후 삭제
         investment.setInvStatus(InvestmentStatus.CANCELLED);
         investment.setUpdatedAt(LocalDateTime.now());
